@@ -1415,20 +1415,25 @@ function resetAll() {
 }
 function setFilter(f, btn) {
   if (f === 'all') {
-    // All button: clear everything and go back to show-all
     activeFilters = new Set(['all']);
   } else {
-    // Toggle this category on/off
-    activeFilters.delete('all'); // leaving "all" mode
+    activeFilters.delete('all');
     if (activeFilters.has(f)) {
       activeFilters.delete(f);
-      // If nothing selected, fall back to all
       if (activeFilters.size === 0) activeFilters = new Set(['all']);
     } else {
       activeFilters.add(f);
     }
   }
-  // Sync button states
+
+  // When switching to Your List, ensure the first character is active
+  if (f === 'yourlist') {
+    if (!characters.includes(currentChar)) currentChar = characters[0];
+    // If no char is visually active, default to first
+    currentChar = currentChar || characters[0];
+    renderChars();
+  }
+
   document.querySelectorAll('.tab-btn').forEach(b => {
     const val = b.getAttribute('data-filter');
     b.classList.toggle('active', activeFilters.has(val));
