@@ -337,6 +337,29 @@
   }
   .task-del:hover { color: #c0534a; background: rgba(192,83,74,0.1); }
 
+  .task-hide {
+    margin-left: auto; flex-shrink: 0;
+    font-size: 13px; color: transparent;
+    background: none; border: none; cursor: pointer;
+    padding: 2px 6px; border-radius: 3px;
+    transition: color 0.2s, background 0.2s;
+  }
+  .task:hover .task-hide { color: var(--text-muted); }
+  .task-hide:hover { color: var(--void-glow) !important; background: rgba(124,92,191,0.1); }
+
+  .task.task-hidden {
+    opacity: 0.25;
+    border-left: 2px solid var(--border-bright);
+  }
+  .task.task-hidden .task-hide { color: var(--void-purple); }
+  .task.task-hidden:hover .task-hide { color: var(--void-glow) !important; }
+
+  .hidden-count {
+    font-size: 11px; color: var(--void-purple);
+    font-family: 'Cinzel', serif; letter-spacing: 0.05em;
+    margin-left: 0.4rem;
+  }
+
   .modal-overlay {
     display: none; position: fixed; inset: 0;
     background: rgba(0,0,0,0.75); z-index: 100;
@@ -405,6 +428,7 @@
       <span id="prog-label" style="color:var(--text-secondary);font-size:13px;">0 / 0 done</span>
     </div>
     <button class="btn-reset-all" onclick="resetAll()">↺ Reset Week</button>
+    <button class="btn-reset-all" id="btn-reveal" onclick="toggleRevealHidden()" style="display:none;">👁 Show Hidden</button>
   </div>
 
   <div class="char-bar">
@@ -419,12 +443,15 @@
     <button class="tab-btn" data-filter="mythic" onclick="setFilter('mythic',this)">Mythic+</button>
     <button class="tab-btn" data-filter="delve" onclick="setFilter('delve',this)">Delves</button>
     <button class="tab-btn" data-filter="prey" onclick="setFilter('prey',this)">Prey</button>
-    <button class="tab-btn" data-filter="void" onclick="setFilter('void',this)">Void Assaults</button>
+    <button class="tab-btn" data-filter="void-assaults" onclick="setFilter('void-assaults',this)">Void Assaults</button>
+    <button class="tab-btn" data-filter="ritual-sites" onclick="setFilter('ritual-sites',this)">Ritual Sites</button>
+    <button class="tab-btn" data-filter="voidforge" onclick="setFilter('voidforge',this)">Voidforge</button>
     <button class="tab-btn" data-filter="world" onclick="setFilter('world',this)">World Events</button>
     <button class="tab-btn" data-filter="currency" onclick="setFilter('currency',this)">Currency</button>
     <button class="tab-btn" data-filter="housing" onclick="setFilter('housing',this)">Housing</button>
     <button class="tab-btn" data-filter="pvp" onclick="setFilter('pvp',this)">PvP</button>
     <button class="tab-btn" data-filter="optional" onclick="setFilter('optional',this)">Optional</button>
+    <button class="tab-btn" data-filter="world-events" onclick="setFilter('world-events',this)">World Events</button>
     <button class="tab-btn tab-custom" data-filter="custom" onclick="setFilter('custom',this)">✦ Custom</button>
   </div>
 
@@ -432,7 +459,7 @@
 
   <footer>
     Resets Tuesday 15:00 UTC &nbsp;·&nbsp; Progress saved per character in your browser &nbsp;·&nbsp;
-    Sources: Icy Veins, Mythic-Store &nbsp;·&nbsp; Patch 12.0.5 · May 2026
+    Sources: Icy Veins &nbsp;·&nbsp; Patch 12.0.5 · May 2026
   </footer>
 </div>
 
@@ -537,7 +564,7 @@ const SECTIONS = [
     icon: '🌀', iconClass: 'icon-void',
     title: 'Void Assaults',
     meta: 'Start here each reset · Rotates between Eversong Woods and Zul\'Aman weekly',
-    categories: ['void'],
+    categories: ['void-assaults'],
     priority: 1,
     tasks: [
       { id: 'va1', name: 'Check which zone has the active Void Assault this week',
@@ -583,7 +610,7 @@ const SECTIONS = [
     icon: '⚗️', iconClass: 'icon-void',
     title: 'Voidforge',
     meta: '12.0.5 · Top priority if not yet complete · Powers endgame bonus rolls',
-    categories: ['void', 'currency'],
+    categories: ['voidforge', 'currency'],
     priority: 1,
     tasks: [
       { id: 'vf1', name: 'Check Voidforge quest status — visit Decimus at 51.2, 68.4 in The Voidstorm',
@@ -674,7 +701,7 @@ const SECTIONS = [
     icon: '🔮', iconClass: 'icon-void',
     title: 'Ritual Sites',
     meta: '12.0.5 · 1–5 players · Great Vault World row · Do early in the week',
-    categories: ['world', 'void'],
+    categories: ['ritual-sites'],
     priority: 2,
     tasks: [
       { id: 'rs1', name: 'Complete Ritual Sites this week (flexible — solo or small group)',
@@ -790,7 +817,7 @@ const SECTIONS = [
     id: 'optional',
     icon: '🎣', iconClass: 'icon-optional',
     title: 'Optional & Collector Content',
-    meta: '12.0.5 side content — no core power progression, great for collectors',
+    meta: '12.0.5 permanent side content — no core power progression, great for collectors',
     categories: ['optional'],
     priority: 3,
     tasks: [
@@ -800,12 +827,244 @@ const SECTIONS = [
       { id: 'op2', name: 'Collect up to 8 Shards of Dundun for Abundance runs',
         desc: 'Weekly cap of 8 shards from outdoor activities, gathering, and Patron Crafting Orders. Used to Empower Abundance events for bonus Unalloyed Abundance (tradeable for transmog and housing decor).',
         tags: ['tag-optional', 'tag-world'] },
-      { id: 'op3', name: 'Spring Balloon Festival — May 10 to May 13',
-        desc: 'Micro-holiday across Broken Isles, Draenor Nagrand, Valley of the Four Winds, Uldum, and Northrend Crystalsong Forest. Balloon rides require 3 players, NPC tour guide included.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'op4', name: 'Review Icy Veins class guide for Voidcore bonus roll priorities',
+      { id: 'op3', name: 'Review Icy Veins class guide for Voidcore bonus roll priorities',
         desc: 'Each spec guide lists optimal Nebulous and Ascendant Voidcore targets. Worth checking after each patch update.',
         tags: ['tag-optional'] },
+    ]
+  },
+
+  {
+    id: 'events',
+    icon: '📅', iconClass: 'icon-optional',
+    title: 'Upcoming World Events',
+    meta: 'Rotating limited-time events — source: Wowhead World Events',
+    categories: ['world-events'],
+    priority: 3,
+    tasks: [
+      { id: 'ev1',
+        name: '<a href="https://www.wowhead.com/event=565/pet-battle-bonus-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Pet Battle Bonus Event</a> — May 19–26',
+        desc: 'Bonus pet battle experience and a weekly quest rewarding a Sack of Pet Supplies. Good week to level battle pets.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev2',
+        name: '<a href="https://www.wowhead.com/event=1559/delves-bonus-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Delves Bonus Event</a> — May 19–26',
+        desc: 'Bonus rewards from Delves this week. Weekly quest rewards extra loot. Combine with your normal Delve progression.',
+        tags: ['tag-optional', 'tag-delve', 'tag-world'] },
+      { id: 'ev3',
+        name: '<a href="https://www.wowhead.com/event=1240/pvp-brawl-deepwind-dunk" target="_blank" style="color:var(--void-glow);text-decoration:none;">PvP Brawl: Deepwind Dunk</a> — May 19–26',
+        desc: 'Wacky basketball-style PvP brawl in Deepwind Gorge. Fun distraction with a weekly quest reward.',
+        tags: ['tag-optional', 'tag-pvp'] },
+      { id: 'ev4',
+        name: '<a href="https://www.wowhead.com/event=648/glowcap-festival" target="_blank" style="color:var(--void-glow);text-decoration:none;">Glowcap Festival</a> — May 27–28',
+        desc: 'Short micro-holiday in Zangarmarsh celebrating the Sporeggar. Collect Glowcaps and earn reputation.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev5',
+        name: '<a href="https://www.wowhead.com/event=1802/midnight-dungeon-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Midnight Dungeon Event</a> — May 26 – Jun 2',
+        desc: 'Bonus rewards from Midnight dungeons. Weekly quest from the Adventure Guide rewards a piece of gear.',
+        tags: ['tag-optional', 'tag-mythic', 'tag-world'] },
+      { id: 'ev6',
+        name: '<a href="https://www.wowhead.com/event=1233/pvp-brawl-shado-pan-showdown" target="_blank" style="color:var(--void-glow);text-decoration:none;">PvP Brawl: Shado-Pan Showdown</a> — May 26 – Jun 2',
+        desc: '1v1 PvP brawl in a Shado-Pan arena. Weekly quest reward.',
+        tags: ['tag-optional', 'tag-pvp'] },
+      { id: 'ev7',
+        name: '<a href="https://www.wowhead.com/event=479/darkmoon-faire" target="_blank" style="color:var(--void-glow);text-decoration:none;">Darkmoon Faire</a> — Jun 6–13',
+        desc: 'Monthly carnival on Darkmoon Island. Profession skill-up quests (+5 skill each), Darkmoon Prize Tickets for mounts/toys/heirlooms, and the Darkmoon Races. Visit before it closes.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev8',
+        name: '<a href="https://www.wowhead.com/event=642/thousand-boat-bash" target="_blank" style="color:var(--void-glow);text-decoration:none;">Thousand Boat Bash</a> — Jun 6–9',
+        desc: 'Micro-holiday on the seas of Azeroth. Ride boats and celebrate.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev9',
+        name: '<a href="https://www.wowhead.com/event=1263/timewalking-dungeon-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Timewalking Dungeon Event</a> — Jun 2–9',
+        desc: 'Weekly quest rewards a cache of loot. Timewalking dungeons scale you down to old content with current stats. Good for Timewalking badges and mounts.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev9b',
+        name: '<a href="https://www.wowhead.com/event=1669/timewalking-dungeon-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Timewalking Dungeon Event</a> — Jun 23–30',
+        desc: 'Second June Timewalking window. Weekly quest cache reward.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev10',
+        name: '<a href="https://www.wowhead.com/event=561/arena-skirmish-bonus-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Arena Skirmish Bonus Event</a> — Jun 9–16',
+        desc: 'Bonus Honor from unrated Arena Skirmishes. Weekly quest rewards a piece of PvP gear.',
+        tags: ['tag-optional', 'tag-pvp'] },
+      { id: 'ev10b',
+        name: '<a href="https://www.wowhead.com/event=1047/pvp-brawl-cooking-impossible" target="_blank" style="color:var(--void-glow);text-decoration:none;">PvP Brawl: Cooking Impossible</a> — Jun 9–16',
+        desc: 'Cooking-themed PvP brawl. Weekly quest reward.',
+        tags: ['tag-optional', 'tag-pvp'] },
+      { id: 'ev11',
+        name: '<a href="https://www.wowhead.com/event=592/world-quest-bonus-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">World Quest Bonus Event</a> — Jun 16–23',
+        desc: 'Bonus reputation and rewards from World Quests. Weekly quest from the Adventure Guide rewards a cache. Good week to grind Renown.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev12',
+        name: '<a href="https://www.wowhead.com/event=1170/pvp-brawl-temple-of-hotmogu" target="_blank" style="color:var(--void-glow);text-decoration:none;">PvP Brawl: Temple of Hotmogu</a> — Jun 16–23',
+        desc: 'Hold the orb, score points, try not to get destroyed. Weekly PvP brawl quest reward.',
+        tags: ['tag-optional', 'tag-pvp'] },
+      { id: 'ev13',
+        name: '<a href="https://www.wowhead.com/event=341/midsummer-fire-festival" target="_blank" style="color:var(--void-glow);text-decoration:none;">Midsummer Fire Festival</a> — Jun 21 – Jul 5',
+        desc: 'Seasonal holiday. Honor the flames across Azeroth for Burning Blossoms — spend them on cosmetics, pets, and the Frostscythe of Lord Ahune transmog. Ahune boss drops the Icebound Frostbrood Vanquisher mount.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev14',
+        name: '<a href="https://www.wowhead.com/event=1793/darkspear-dash" target="_blank" style="color:var(--void-glow);text-decoration:none;">Darkspear Dash</a> — Jun 27–29',
+        desc: 'Racing micro-holiday on the Echo Isles. Troll-themed obstacle course.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev15',
+        name: '<a href="https://www.wowhead.com/event=563/battleground-bonus-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Battleground Bonus Event</a> — Jun 30 – Jul 7',
+        desc: 'Bonus Honor from random Battlegrounds. Weekly quest rewards Conquest.',
+        tags: ['tag-optional', 'tag-pvp'] },
+      { id: 'ev15b',
+        name: '<a href="https://www.wowhead.com/event=1120/pvp-brawl-classic-ashran" target="_blank" style="color:var(--void-glow);text-decoration:none;">PvP Brawl: Classic Ashran</a> — Jun 30 – Jul 7',
+        desc: 'Large-scale PvP brawl in the Ashran zone. Weekly quest reward.',
+        tags: ['tag-optional', 'tag-pvp'] },
+      { id: 'ev16',
+        name: '<a href="https://www.wowhead.com/event=62/fireworks-spectacular" target="_blank" style="color:var(--void-glow);text-decoration:none;">Fireworks Spectacular</a> — Jul 4–5',
+        desc: 'Independence Day micro-holiday. Fireworks displays in major cities.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev17',
+        name: '<a href="https://www.wowhead.com/event=1054/luminous-luminaries" target="_blank" style="color:var(--void-glow);text-decoration:none;">Luminous Luminaries</a> — Jul 13–14',
+        desc: 'Micro-holiday. Collect glowing lanterns across Azeroth.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev18',
+        name: '<a href="https://www.wowhead.com/event=1703/timewalking-dungeon-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Timewalking Dungeon Event</a> — Jul 14–21',
+        desc: 'Timewalking window. Weekly quest cache reward.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev18b',
+        name: '<a href="https://www.wowhead.com/event=1704/timewalking-dungeon-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Timewalking Dungeon Event</a> — Jul 14–22',
+        desc: 'Second concurrent Timewalking window. Weekly quest cache reward.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev18c',
+        name: '<a href="https://www.wowhead.com/event=702/pvp-brawl-deep-six" target="_blank" style="color:var(--void-glow);text-decoration:none;">PvP Brawl: Deep Six</a> — Jul 14–21',
+        desc: 'Six-player free-for-all PvP brawl. Weekly quest reward.',
+        tags: ['tag-optional', 'tag-pvp'] },
+      { id: 'ev19',
+        name: '<a href="https://www.wowhead.com/event=666/pvp-brawl-arathi-blizzard" target="_blank" style="color:var(--void-glow);text-decoration:none;">PvP Brawl: Arathi Blizzard</a> — Jul 21–28',
+        desc: 'Arathi Basin in a blizzard — reduced visibility, chaotic fun. Weekly quest reward.',
+        tags: ['tag-optional', 'tag-pvp'] },
+      { id: 'ev20',
+        name: '<a href="https://www.wowhead.com/event=692/auction-house-dance-party" target="_blank" style="color:var(--void-glow);text-decoration:none;">Auction House Dance Party</a> — Jul 22–23',
+        desc: 'The Auction House in Ironforge/Orgrimmar becomes a dance floor. Micro-holiday with no rewards but maximum vibes.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev20b',
+        name: '<a href="https://www.wowhead.com/event=667/pvp-brawl-packed-house" target="_blank" style="color:var(--void-glow);text-decoration:none;">PvP Brawl: Packed House</a> — Jul 7–14',
+        desc: 'Battleground brawl with a packed roster. Weekly quest reward.',
+        tags: ['tag-optional', 'tag-pvp'] },
+      { id: 'ev21',
+        name: '<a href="https://www.wowhead.com/event=691/trial-of-style" target="_blank" style="color:var(--void-glow);text-decoration:none;">Trial of Style</a> — Aug 1–8',
+        desc: 'Transmog competition event. Build a themed outfit and get judged by other players. Rewards Trial of Style Tokens for cosmetic gear.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev22',
+        name: '<a href="https://www.wowhead.com/event=1508/timewalking-dungeon-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Timewalking Dungeon Event</a> — Aug 4–11',
+        desc: 'Timewalking window. Weekly quest cache reward.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev23',
+        name: '<a href="https://www.wowhead.com/event=1053/free-t-shirt-day" target="_blank" style="color:var(--void-glow);text-decoration:none;">Free T-Shirt Day</a> — Aug 16–17',
+        desc: 'Blizzard anniversary micro-holiday. Grab a free in-game t-shirt toy.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev24',
+        name: '<a href="https://www.wowhead.com/event=1429/northrend-cup" target="_blank" style="color:var(--void-glow);text-decoration:none;">Northrend Cup</a> — Aug 25 – Sep 8',
+        desc: 'Dragonriding race circuit across Northrend zones. Earn Riders of Azeroth Badges for cosmetic rewards.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev25',
+        name: '<a href="https://www.wowhead.com/event=559/outland-timewalking-dungeon-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Outland Timewalking</a> — Aug 25 – Sep 1',
+        desc: 'Timewalking through Burning Crusade dungeons. Weekly quest cache. Good for TBC-era mounts from badge vendor.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev26',
+        name: '<a href="https://www.wowhead.com/event=562/northrend-timewalking-dungeon-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Northrend Timewalking</a> — Sep 15–22',
+        desc: 'Timewalking through Wrath of the Lich King dungeons. Badge vendor sells Reins of the Ironbound Proto-Drake.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev27',
+        name: '<a href="https://www.wowhead.com/event=398/pirates-day" target="_blank" style="color:var(--void-glow);text-decoration:none;">Pirates\' Day</a> — Sep 19–20',
+        desc: 'One-day micro-holiday in Booty Bay. Dress as a pirate, drink grog.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev28',
+        name: '<a href="https://www.wowhead.com/event=372/brewfest" target="_blank" style="color:var(--void-glow);text-decoration:none;">Brewfest</a> — Sep 20 – Oct 6',
+        desc: 'Seasonal holiday. Ram racing, Coren Direbrew boss (drops mounts and trinkets), and Brewfest Tokens for cosmetic rewards and heirlooms.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev29',
+        name: '<a href="https://www.wowhead.com/event=321/harvest-festival" target="_blank" style="color:var(--void-glow);text-decoration:none;">Harvest Festival</a> — Sep 21–28',
+        desc: 'Quiet lore holiday honoring fallen heroes. Visit Uther\'s tomb or Grom Hellscream\'s monument for a buff.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev30',
+        name: '<a href="https://www.wowhead.com/event=587/cataclysm-timewalking-dungeon-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Cataclysm Timewalking</a> — Oct 6–13',
+        desc: 'Timewalking through Cataclysm dungeons. Badge vendor and weekly cache reward.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev31',
+        name: '<a href="https://www.wowhead.com/event=696/the-great-gnomeregan-run" target="_blank" style="color:var(--void-glow);text-decoration:none;">The Great Gnomeregan Run</a> — Oct 10–12',
+        desc: 'Gnome and Goblin charity race. No combat, just running in costume for fun cosmetic rewards.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev32',
+        name: '<a href="https://www.wowhead.com/event=324/hallows-end" target="_blank" style="color:var(--void-glow);text-decoration:none;">Hallow\'s End</a> — Oct 18 – Nov 1',
+        desc: 'Halloween event. The Headless Horseman boss drops mounts and rings. Trick or Treat for Tricky Treats → buy masks, wands, pets. Meta-achievement rewards the Hallowed title.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev33',
+        name: '<a href="https://www.wowhead.com/event=643/timewalking-dungeon-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Timewalking Dungeon Event</a> — Oct 27 – Nov 3',
+        desc: 'Timewalking window overlapping Hallow\'s End. Stack the weekly cache with holiday rewards.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev34',
+        name: '<a href="https://www.wowhead.com/event=409/day-of-the-dead" target="_blank" style="color:var(--void-glow);text-decoration:none;">Day of the Dead</a> — Nov 1–3',
+        desc: 'Short holiday at graveyards. Dance with the dead for the Macabre Marionette pet and holiday food buff.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev35',
+        name: '<a href="https://www.wowhead.com/event=694/moonkin-festival" target="_blank" style="color:var(--void-glow);text-decoration:none;">Moonkin Festival</a> — Nov 12–13',
+        desc: 'Micro-holiday celebrating boomkins. Dance with owlkin across Azeroth.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev36',
+        name: '<a href="https://www.wowhead.com/event=1808/wows-22nd-anniversary" target="_blank" style="color:var(--void-glow);text-decoration:none;">WoW\'s 22nd Anniversary</a> — Nov 17 – Dec 8',
+        desc: 'Annual anniversary event. Rewards anniversary-themed pets, a toy, and anniversary tokens.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev37',
+        name: '<a href="https://www.wowhead.com/event=404/pilgrims-bounty" target="_blank" style="color:var(--void-glow);text-decoration:none;">Pilgrim\'s Bounty</a> — Nov 22–29',
+        desc: 'Thanksgiving-themed event. Cooking skill-up quests, the Plump Turkey pet, and the Pilgrim title meta-achievement.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev38',
+        name: '<a href="https://www.wowhead.com/event=1052/wanderers-festival" target="_blank" style="color:var(--void-glow);text-decoration:none;">Wanderer\'s Festival</a> — Dec 7–8',
+        desc: 'Micro-holiday in Pandaria. Join the Wanderer\'s Festival on the Timeless Isle for pets and buffs.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev39',
+        name: '<a href="https://www.wowhead.com/event=141/feast-of-winter-veil" target="_blank" style="color:var(--void-glow);text-decoration:none;">Feast of Winter Veil</a> — Dec 15 – Jan 2',
+        desc: 'Christmas event. Father Winter gifts under the tree on Dec 25th. Metzen the Reindeer rescue quest, Stolen Treats dailies, and cosmetic rewards including Winter Veil hats and the Gaudy Winter Veil Sweater.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev40',
+        name: '<a href="https://www.wowhead.com/event=658/fireworks-celebration" target="_blank" style="color:var(--void-glow);text-decoration:none;">Fireworks Celebration</a> — Dec 31 – Jan 1',
+        desc: 'New Year\'s Eve micro-holiday. Fireworks in Booty Bay and major cities at midnight.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev41',
+        name: '<a href="https://www.wowhead.com/event=638/call-of-the-scarab" target="_blank" style="color:var(--void-glow);text-decoration:none;">Call of the Scarab</a> — Jan 21–24',
+        desc: 'Faction-based micro-holiday commemorating the opening of AQ. Contribute resources for faction bragging rights.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev42',
+        name: '<a href="https://www.wowhead.com/event=327/lunar-festival" target="_blank" style="color:var(--void-glow);text-decoration:none;">Lunar Festival</a> — Feb 2–16',
+        desc: 'Chinese New Year-inspired event. Visit Elders across Azeroth for Coins of Ancestry → buy cosmetics, the Lunar Festival Fireworks, and the Elder title.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev43',
+        name: '<a href="https://www.wowhead.com/event=423/love-is-in-the-air" target="_blank" style="color:var(--void-glow);text-decoration:none;">Love is in the Air</a> — Feb 8–22',
+        desc: 'Valentine\'s event. Apothecary Hummel boss drops the Toxic Wasteling pet and Big Love Rocket mount. Daily charm quests for Love Tokens → cosmetics and the Peddlefeet pet.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev44',
+        name: '<a href="https://www.wowhead.com/event=634/hatching-of-the-hippogryphs" target="_blank" style="color:var(--void-glow);text-decoration:none;">Hatching of the Hippogryphs</a> — Feb 23–24',
+        desc: 'Micro-holiday in Feralas. Watch hippogryph eggs hatch and earn a temporary baby hippogryph companion.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev45',
+        name: '<a href="https://www.wowhead.com/event=1395/kalimdor-cup" target="_blank" style="color:var(--void-glow);text-decoration:none;">Kalimdor Cup</a> — Feb 23 – Mar 9',
+        desc: 'Dragonriding race circuit across Kalimdor. Riders of Azeroth Badges for cosmetic rewards.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev46',
+        name: '<a href="https://www.wowhead.com/event=644/ungoro-madness" target="_blank" style="color:var(--void-glow);text-decoration:none;">Un\'Goro Madness</a> — Mar 17–20 (2027)',
+        desc: 'Micro-holiday in Un\'Goro Crater. Dinosaurs rampage, chaos ensues.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev47',
+        name: '<a href="https://www.wowhead.com/event=181/noblegarden" target="_blank" style="color:var(--void-glow);text-decoration:none;">Noblegarden</a> — Mar 29 – Apr 5 (2027)',
+        desc: 'Easter event. Hunt Noblegarden Eggs for Chocolates → buy the Swift Springstrider mount, dresses, and the Mystical Spring Bouquet. The Noblegarden meta-achievement rewards the Noble title.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev48',
+        name: '<a href="https://www.wowhead.com/event=647/march-of-the-tadpoles" target="_blank" style="color:var(--void-glow);text-decoration:none;">March of the Tadpoles</a> — Apr 5–6 (2027)',
+        desc: 'Micro-holiday in Pandaria. Escort Jinyu tadpoles to safety.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev49',
+        name: '<a href="https://www.wowhead.com/event=635/volunteer-guard-day" target="_blank" style="color:var(--void-glow);text-decoration:none;">Volunteer Guard Day</a> — Apr 28–29 (2027)',
+        desc: 'Micro-holiday. Stand around as an honorary city guard. Truly the peak of WoW content.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'ev50',
+        name: '<a href="https://www.wowhead.com/event=1400/eastern-kingdoms-cup" target="_blank" style="color:var(--void-glow);text-decoration:none;">Eastern Kingdoms Cup</a> — Aug 24 – Sep 7 (2027)',
+        desc: 'Dragonriding race circuit across Eastern Kingdoms. Riders of Azeroth Badges for cosmetic rewards.',
+        tags: ['tag-optional', 'tag-world'] },
     ]
   },
 ];
@@ -830,6 +1089,12 @@ function storageKey() { return 'wow_mn_' + currentChar + '_' + getWeekKey(); }
 function loadDone()   { return JSON.parse(localStorage.getItem(storageKey()) || '{}'); }
 function saveDone(d)  { localStorage.setItem(storageKey(), JSON.stringify(d)); }
 
+function hiddenKey()      { return 'wow_mn_hidden_' + currentChar; }
+function loadHidden()     { return JSON.parse(localStorage.getItem(hiddenKey()) || '{}'); }
+function saveHidden(h)    { localStorage.setItem(hiddenKey(), JSON.stringify(h)); }
+
+let revealHidden = false;
+
 /* ═══════════════════════════════════════════
    RENDER
 ═══════════════════════════════════════════ */
@@ -849,10 +1114,12 @@ function tagLabel(cls) {
 }
 
 function render() {
-  const done = loadDone();
+  const done   = loadDone();
+  const hidden = loadHidden();
   const container = document.getElementById('sections-container');
   container.innerHTML = '';
   let totalVisible = 0, totalDone = 0, lastPriority = null;
+  let anyHidden = false;
 
   SECTIONS.forEach(sec => {
     const isAll = activeFilters.has('all');
@@ -861,6 +1128,10 @@ function render() {
       return sec.categories.some(c => activeFilters.has(c));
     });
     if (!tasks.length) return;
+
+    const visibleTasks = tasks.filter(t => revealHidden || !hidden[t.id]);
+    const hiddenCount  = tasks.filter(t => hidden[t.id]).length;
+    if (hiddenCount > 0) anyHidden = true;
 
     if (isAll && sec.priority !== lastPriority) {
       lastPriority = sec.priority;
@@ -871,8 +1142,8 @@ function render() {
       container.appendChild(lbl);
     }
 
-    totalVisible += tasks.length;
-    const secDone = tasks.filter(t => done[t.id]).length;
+    totalVisible += visibleTasks.filter(t => !hidden[t.id]).length;
+    const secDone = visibleTasks.filter(t => done[t.id] && !hidden[t.id]).length;
     totalDone += secDone;
     const isOpen = !collapsed[sec.id];
 
@@ -885,18 +1156,22 @@ function render() {
           <div class="section-title">${sec.title}</div>
           <div class="section-meta">${sec.meta}</div>
         </div>
-        <span class="section-count"><span class="done">${secDone}</span>&thinsp;/&thinsp;${tasks.length}</span>
+        <span class="section-count">
+          <span class="done">${secDone}</span>&thinsp;/&thinsp;${visibleTasks.filter(t=>!hidden[t.id]).length}
+          ${hiddenCount > 0 ? `<span class="hidden-count">(${hiddenCount} hidden)</span>` : ''}
+        </span>
         <span class="chevron" style="transform:rotate(${isOpen?'0':'-90'}deg)">▼</span>
       </div>
       <div class="section-body${isOpen?'':' hidden'}" id="body-${sec.id}">
-        ${tasks.map(t => `
-          <div class="task${done[t.id]?' done':''}" onclick="toggle('${t.id}')">
+        ${visibleTasks.map(t => `
+          <div class="task${done[t.id]?' done':''}${hidden[t.id]?' task-hidden':''}" onclick="toggle('${t.id}')">
             <div class="task-check"></div>
             <div class="task-body">
               <div class="task-name">${t.name}</div>
               ${t.desc?`<div class="task-desc">${t.desc}</div>`:''}
               ${t.tags&&t.tags.length?`<div class="task-tags">${t.tags.map(tg=>`<span class="tag ${tg}">${tagLabel(tg)}</span>`).join('')}</div>`:''}
             </div>
+            <button class="task-hide" title="${hidden[t.id]?'Unhide task':'Hide task'}" onclick="toggleHideTask(event,'${t.id}')">${hidden[t.id]?'👁':'🚫'}</button>
           </div>`).join('')}
       </div>`;
     container.appendChild(div);
@@ -905,6 +1180,12 @@ function render() {
   const pct = totalVisible ? Math.round((totalDone / totalVisible) * 100) : 0;
   document.getElementById('prog-fill').style.width = pct + '%';
   document.getElementById('prog-label').textContent = totalDone + ' / ' + totalVisible + ' done';
+
+  // Show/update the reveal hidden button
+  const revealBtn = document.getElementById('btn-reveal');
+  revealBtn.style.display = (anyHidden || revealHidden) ? '' : 'none';
+  revealBtn.textContent = revealHidden ? '🚫 Hide Hidden' : '👁 Show Hidden';
+
   renderCustomSection();
 }
 
@@ -917,6 +1198,19 @@ function toggle(id) {
   saveDone(done); render();
 }
 function toggleSection(id) { collapsed[id] = !collapsed[id]; render(); }
+
+function toggleHideTask(e, id) {
+  e.stopPropagation();
+  const hidden = loadHidden();
+  hidden[id] ? delete hidden[id] : (hidden[id] = true);
+  saveHidden(hidden);
+  render();
+}
+
+function toggleRevealHidden() {
+  revealHidden = !revealHidden;
+  render();
+}
 function resetAll() {
   if (!confirm('Reset all tasks for ' + currentChar + ' this week?')) return;
   localStorage.removeItem(storageKey()); render();
@@ -951,10 +1245,11 @@ function renderChars() {
   document.getElementById('char-list').innerHTML = characters.map(c => `
     <span style="display:inline-flex;align-items:center;gap:2px;">
       <button class="char-btn${c===currentChar?' active':''}" onclick="switchChar('${c}')">${c}</button>
+      <button class="char-btn-del" title="Rename ${c}" onclick="openRenameChar('${c}')">✏️</button>
       ${characters.length>1?`<button class="char-btn-del" title="Remove ${c}" onclick="deleteChar('${c}')">✕</button>`:''}
     </span>`).join('');
 }
-function switchChar(name) { currentChar = name; renderChars(); render(); }
+function switchChar(name) { currentChar = name; revealHidden = false; renderChars(); render(); }
 function deleteChar(name) {
   if (!confirm('Remove ' + name + ' and all saved data?')) return;
   Object.keys(localStorage).filter(k => k.startsWith('wow_mn_' + name + '_')).forEach(k => localStorage.removeItem(k));
@@ -964,19 +1259,50 @@ function deleteChar(name) {
   renderChars(); render();
 }
 function openAddChar() {
+  document.getElementById('modal').querySelector('h3').textContent = 'Add Character';
+  document.getElementById('modal').dataset.renaming = '';
   document.getElementById('modal').classList.add('open');
   document.getElementById('char-input').value = '';
   setTimeout(() => document.getElementById('char-input').focus(), 50);
 }
+function openRenameChar(oldName) {
+  document.getElementById('modal').querySelector('h3').textContent = 'Rename Character';
+  document.getElementById('modal').dataset.renaming = oldName;
+  document.getElementById('modal').classList.add('open');
+  document.getElementById('char-input').value = oldName;
+  setTimeout(() => { const el = document.getElementById('char-input'); el.focus(); el.select(); }, 50);
+}
 function closeModal() { document.getElementById('modal').classList.remove('open'); }
 function saveChar() {
-  const name = document.getElementById('char-input').value.trim();
-  if (!name) return;
-  if (!characters.includes(name)) {
-    characters.push(name);
+  const newName  = document.getElementById('char-input').value.trim();
+  if (!newName) return;
+  const oldName  = document.getElementById('modal').dataset.renaming;
+  const isRename = oldName && oldName !== '';
+
+  if (isRename) {
+    if (newName === oldName) { closeModal(); return; }
+    if (characters.includes(newName)) { alert('A character with that name already exists.'); return; }
+    // Migrate all localStorage keys from oldName to newName
+    const prefix = 'wow_mn_';
+    Object.keys(localStorage)
+      .filter(k => k.startsWith(prefix + oldName + '_') || k === prefix + 'hidden_' + oldName || k === prefix + 'custom_' + oldName)
+      .forEach(k => {
+        const newKey = k.replace(prefix + oldName, prefix + newName);
+        localStorage.setItem(newKey, localStorage.getItem(k));
+        localStorage.removeItem(k);
+      });
+    const idx = characters.indexOf(oldName);
+    characters[idx] = newName;
     localStorage.setItem('wow_midnight_chars', JSON.stringify(characters));
+    if (currentChar === oldName) currentChar = newName;
+    closeModal(); renderChars(); render();
+  } else {
+    if (!characters.includes(newName)) {
+      characters.push(newName);
+      localStorage.setItem('wow_midnight_chars', JSON.stringify(characters));
+    }
+    closeModal(); switchChar(newName);
   }
-  closeModal(); switchChar(name);
 }
 document.getElementById('modal').addEventListener('click', e => { if (e.target===document.getElementById('modal')) closeModal(); });
 
