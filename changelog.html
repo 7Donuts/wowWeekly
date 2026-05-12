@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WoW Midnight — Tracker Changelog</title>
+<link rel="stylesheet" href="midnight.css">
+<style>
+  /* Changelog-specific styles */
+  .cl-version {
+    margin-bottom: 2rem;
+  }
+
+  .cl-version-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 1rem;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    user-select: none;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .cl-version-header:hover { border-color: var(--border-bright); background: var(--bg-card); }
+  .cl-version-header.open { border-bottom-color: transparent; background: var(--bg-card); }
+
+  .cl-version-tag {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--light-pale);
+    letter-spacing: 0.06em;
+  }
+
+  .cl-version-date {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .cl-version-summary {
+    margin-left: auto;
+    font-size: 11px;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.05em;
+  }
+
+  .cl-body {
+    border: 1px solid var(--border-bright);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    background: var(--bg-card);
+    overflow: hidden;
+  }
+  .cl-body.hidden { display: none; }
+
+  .cl-entry {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .cl-entry:last-child { border-bottom: none; }
+
+  .cl-badge {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    padding: 2px 7px;
+    border-radius: 3px;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 3px;
+    text-transform: uppercase;
+  }
+  .badge-new      { background: rgba(74,140,92,0.15);  color: var(--success-bright); border-color: rgba(74,140,92,0.3); }
+  .badge-fix      { background: rgba(192,83,74,0.15);  color: #e07068;               border-color: rgba(192,83,74,0.3); }
+  .badge-improve  { background: rgba(124,92,191,0.15); color: var(--void-glow);      border-color: rgba(124,92,191,0.3); }
+  .badge-content  { background: rgba(201,168,76,0.12); color: var(--light-gold);     border-color: rgba(201,168,76,0.3); }
+
+  .cl-text {
+    flex: 1;
+    font-size: 15px;
+    color: var(--text-primary);
+    line-height: 1.45;
+  }
+
+  .cl-text span {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-style: italic;
+    display: block;
+    margin-top: 1px;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    text-decoration: none;
+    border: 1px solid var(--border);
+    padding: 0.4rem 0.9rem;
+    border-radius: 4px;
+    margin-bottom: 2rem;
+    transition: all 0.2s;
+  }
+  .back-link:hover {
+    color: var(--light-pale);
+    border-color: var(--border-bright);
+    background: var(--bg-card);
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <div class="header-eyebrow">World of Warcraft</div>
+    <h1>Midnight<br><span>Tracker Changelog</span></h1>
+    <p class="subtitle">A record of every update, fix, and addition to the Weekly Tracker.</p>
+    <div class="credit-bar">
+      Curated &amp; maintained by <span class="credit-name">Seven</span>
+      <span style="color:var(--border-bright);margin:0 0.4rem;">·</span>
+      <a href="index.html" class="byline-link">⬅ Back to Tracker</a>
+    </div>
+  </header>
+
+  <a href="index.html" class="back-link">← Back to Weekly Tracker</a>
+
+  <div id="changelog"></div>
+
+  <footer>
+    WoW Midnight Weekly Tracker &nbsp;·&nbsp; Curated by Seven &nbsp;·&nbsp; Patch 12.0.5 · May 2026
+  </footer>
+</div>
+
+<script>
+const VERSIONS = [
+  {
+    version: 'v1.8',
+    date: 'May 2026',
+    summary: '4 changes',
+    entries: [
+      { type: 'improve', text: 'Your List — completed tasks now sort to the bottom automatically', detail: 'Keeps remaining work at the top as you check things off.' },
+      { type: 'new',     text: 'Your List — clicking the tab now auto-selects the first character', detail: 'Ensures a valid character is always referenced when viewing Your List.' },
+      { type: 'improve', text: '"Pick up quest" wording changed to "Complete quest" across all tasks', detail: 'Better reflects the task as a completable action in the checklist.' },
+      { type: 'new',     text: 'Changelog page created and linked from tracker header', detail: 'Shared midnight.css stylesheet extracted for use across both pages.' },
+    ]
+  },
+  {
+    version: 'v1.7',
+    date: 'May 2026',
+    summary: '3 changes',
+    entries: [
+      { type: 'new',     text: '⭐ Your List — personal curated task list built from the master list', detail: 'Select any tasks from any category to build a focused weekly view. Stored per character.' },
+      { type: 'improve', text: 'Your List edit mode — tasks highlight gold with ⭐ when selected', detail: 'Browse all categories and click to toggle tasks in or out of Your List.' },
+      { type: 'new',     text: 'Hide entire sections from the All view', detail: 'Hover any section header to reveal a 🚫 hide button. Hidden sections show as a slim stub. Reveal with 👁 Show Hidden.' },
+    ]
+  },
+  {
+    version: 'v1.6',
+    date: 'May 2026',
+    summary: '5 changes',
+    entries: [
+      { type: 'new',     text: 'Event Calendar tab added with 50+ upcoming world events linked to Wowhead', detail: 'All links use real Wowhead event IDs (e.g. /event=479/darkmoon-faire) sourced from the live events database.' },
+      { type: 'improve', text: 'World Events renamed to Event Calendar; original World Events tab retained', detail: 'Avoids naming conflict between in-game zone events and the holiday calendar.' },
+      { type: 'improve', text: 'Void Assaults split into three separate tabs: Void Assaults, Ritual Sites, Voidforge', detail: 'Each is independently filterable and selectable in multi-select mode.' },
+      { type: 'new',     text: 'Character rename — click ✏️ next to any character to rename with full data migration', detail: 'All localStorage keys (done, hidden, custom, yourlist) migrate automatically.' },
+      { type: 'fix',     text: 'Mythic-Store removed from sources credit in footer', detail: '' },
+    ]
+  },
+  {
+    version: 'v1.5',
+    date: 'May 2026',
+    summary: '4 changes',
+    entries: [
+      { type: 'new',     text: 'Hide individual tasks — hover any task to reveal 🚫, click to hide', detail: 'Hidden tasks stored per character. 👁 Show Hidden button appears in toolbar when tasks are hidden.' },
+      { type: 'new',     text: 'Multi-select category tabs — click multiple categories to view them together', detail: 'All tab clears selections. Deselecting the last active category falls back to All.' },
+      { type: 'new',     text: '✦ Custom tab — add personal tasks with name and description', detail: 'Custom tasks persist per character and never auto-reset on Tuesday.' },
+      { type: 'new',     text: 'Custom tab defaults to character\'s custom list when clicking a character name', detail: 'Falls back to All view if the character has no custom tasks yet.' },
+    ]
+  },
+  {
+    version: 'v1.4',
+    date: 'May 2026',
+    summary: '3 changes',
+    entries: [
+      { type: 'improve', text: 'Content fully rebuilt from real Patch 12.0.5 data via Icy Veins and Wowhead', detail: 'All speculative content removed. Sources: Icy Veins weekly to-do list (updated May 4, 2026), Icy Veins world events guide.' },
+      { type: 'content', text: 'Voidforge, Void Assaults, Ritual Sites, Bazaar quests, Prey system, and Saltheril\'s Soiree added', detail: 'All based on confirmed 12.0.5 Lingering Shadows content.' },
+      { type: 'content', text: 'Raid section removed by request — tracker focuses on non-raid content', detail: 'Raids tab placeholder retained for future addition.' },
+    ]
+  },
+  {
+    version: 'v1.3',
+    date: 'May 2026',
+    summary: '3 changes',
+    entries: [
+      { type: 'new',     text: 'Multi-character support — add unlimited alts with the + button', detail: 'Each character has independent weekly progress, hidden tasks, custom tasks, and Your List.' },
+      { type: 'new',     text: 'Weekly auto-reset — progress clears each Tuesday at 15:00 UTC', detail: 'Data is keyed to the current reset window so old completions never bleed into a new week.' },
+      { type: 'new',     text: 'Live countdown timer to next Tuesday reset', detail: 'Updates every second in the toolbar.' },
+    ]
+  },
+  {
+    version: 'v1.2',
+    date: 'May 2026',
+    summary: '3 changes',
+    entries: [
+      { type: 'new',     text: 'Priority dividers — Do First / Important / Optional groupings in All view', detail: 'Sections are ordered by priority so highest-value weekly tasks appear first.' },
+      { type: 'new',     text: 'Category filter tabs with multi-select support', detail: 'Filter by Raids, Mythic+, Delves, Prey, Void Assaults, World Events, Currency, Housing, PvP, Optional.' },
+      { type: 'new',     text: 'Progress bar shows tasks completed vs total for current view', detail: 'Updates live as checkboxes are toggled.' },
+    ]
+  },
+  {
+    version: 'v1.1',
+    date: 'May 2026',
+    summary: '2 changes',
+    entries: [
+      { type: 'fix',     text: 'Fixed modals showing on page load due to missing .modal-overlay CSS selector', detail: 'The selector was accidentally stripped during a string replacement, leaving display:none as an orphaned property.' },
+      { type: 'fix',     text: 'Fixed sections not rendering on initial page load', detail: 'The init call (renderChars, render, updateCountdown) was dropped during an edit and sections only appeared after clicking a filter tab.' },
+    ]
+  },
+  {
+    version: 'v1.0',
+    date: 'May 2026',
+    summary: 'Initial release',
+    entries: [
+      { type: 'new',     text: 'Initial tracker built with dark fantasy Midnight aesthetic', detail: 'Single self-contained HTML file. No server required — open in any browser.' },
+      { type: 'new',     text: 'Checkbox tasks with localStorage persistence per character per week', detail: 'Checks survive browser closes and resets automatically each Tuesday.' },
+      { type: 'new',     text: 'Collapsible sections with section-level task counts', detail: 'Each section shows done/total and collapses independently.' },
+      { type: 'new',     text: 'Curated by Seven — header credit and patch badge added', detail: 'Patch 12.0.5 · Lingering Shadows · Season 1.' },
+    ]
+  },
+];
+
+function toggleVersion(idx) {
+  const body = document.getElementById('cl-body-' + idx);
+  const hdr  = document.getElementById('cl-hdr-' + idx);
+  const chev = document.getElementById('cl-chev-' + idx);
+  const isHidden = body.classList.contains('hidden');
+  body.classList.toggle('hidden', !isHidden);
+  hdr.classList.toggle('open', isHidden);
+  chev.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
+}
+
+const BADGE = {
+  new:     ['badge-new',     'New'],
+  fix:     ['badge-fix',     'Fix'],
+  improve: ['badge-improve', 'Improved'],
+  content: ['badge-content', 'Content'],
+};
+
+function render() {
+  const container = document.getElementById('changelog');
+  container.innerHTML = VERSIONS.map((v, i) => {
+    const open = i === 0;
+    return `
+      <div class="cl-version">
+        <div class="cl-version-header${open?' open':''}" id="cl-hdr-${i}" onclick="toggleVersion(${i})">
+          <div class="section-icon icon-optional" style="font-size:12px;">📋</div>
+          <div>
+            <div class="cl-version-tag">${v.version}</div>
+            <div class="cl-version-date">${v.date}</div>
+          </div>
+          <div class="cl-version-summary" style="color:var(--text-muted);">${v.summary}</div>
+          <span class="chevron" id="cl-chev-${i}" style="transform:rotate(${open?'0':'-90'}deg);margin-left:0.5rem;">▼</span>
+        </div>
+        <div class="cl-body${open?'':' hidden'}" id="cl-body-${i}">
+          ${v.entries.map(e => {
+            const [cls, label] = BADGE[e.type] || ['badge-new','New'];
+            return `
+            <div class="cl-entry">
+              <span class="cl-badge ${cls}">${label}</span>
+              <div class="cl-text">
+                ${e.text}
+                ${e.detail ? `<span>${e.detail}</span>` : ''}
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+render();
+</script>
+</body>
+</html>
