@@ -327,6 +327,41 @@
   .tab-custom { border-color: rgba(160,125,224,0.4) !important; color: var(--void-glow) !important; }
   .tab-custom:hover, .tab-custom.active { background: rgba(124,92,191,0.15) !important; border-color: var(--void-purple) !important; }
 
+  .tab-yourlist { border-color: rgba(201,168,76,0.4) !important; color: var(--light-gold) !important; }
+  .tab-yourlist:hover, .tab-yourlist.active { background: rgba(201,168,76,0.1) !important; border-color: var(--light-gold) !important; }
+
+  /* Task selected for Your List — subtle warm highlight */
+  .task.in-yourlist {
+    background: rgba(201,168,76,0.07);
+    border-left: 2px solid rgba(201,168,76,0.4);
+  }
+  .task.in-yourlist:hover { background: rgba(201,168,76,0.12); }
+
+  /* Edit mode banner */
+  .yourlist-edit-bar {
+    background: rgba(201,168,76,0.08);
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 8px;
+    padding: 0.75rem 1.1rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    font-size: 13px;
+    color: var(--light-gold);
+    font-style: italic;
+  }
+  .yourlist-edit-bar strong { font-style: normal; font-family: 'Cinzel', serif; letter-spacing: 0.05em; }
+
+  .yourlist-empty {
+    text-align: center; padding: 2.5rem 1rem;
+    color: var(--text-muted); font-style: italic; font-size: 14px;
+    border: 1px dashed var(--border); border-radius: 8px;
+    background: var(--bg-panel);
+  }
+
   .custom-section-wrap { margin-top: 1.75rem; }
 
   .custom-add-bar {
@@ -441,6 +476,7 @@
     </div>
     <button class="btn-reset-all" onclick="resetAll()">↺ Reset Week</button>
     <button class="btn-reset-all" id="btn-reveal" onclick="toggleRevealHidden()" style="display:none;">👁 Show Hidden</button>
+    <button class="btn-reset-all" id="btn-edit-yourlist" onclick="startEditingYourList()" style="display:none;">⭐ Edit List</button>
   </div>
 
   <div class="char-bar">
@@ -450,6 +486,7 @@
   </div>
 
   <div class="filter-tabs">
+    <button class="tab-btn tab-yourlist" data-filter="yourlist" onclick="setFilter('yourlist',this)">⭐ Your List</button>
     <button class="tab-btn active" data-filter="all" onclick="setFilter('all',this)">All</button>
     <button class="tab-btn" data-filter="raid" onclick="setFilter('raid',this)">Raids</button>
     <button class="tab-btn" data-filter="mythic" onclick="setFilter('mythic',this)">Mythic+</button>
@@ -1105,7 +1142,12 @@ function hiddenKey()      { return 'wow_mn_hidden_' + currentChar; }
 function loadHidden()     { return JSON.parse(localStorage.getItem(hiddenKey()) || '{}'); }
 function saveHidden(h)    { localStorage.setItem(hiddenKey(), JSON.stringify(h)); }
 
-let revealHidden = false;
+function yourListKey()    { return 'wow_mn_yourlist_' + currentChar; }
+function loadYourList()   { return JSON.parse(localStorage.getItem(yourListKey()) || '[]'); }
+function saveYourList(l)  { localStorage.setItem(yourListKey(), JSON.stringify(l)); }
+
+let revealHidden    = false;
+let editingYourList = false; // when true, clicking tasks toggles them in/out of Your List
 
 /* ═══════════════════════════════════════════
    RENDER
@@ -1126,12 +1168,80 @@ function tagLabel(cls) {
 }
 
 function render() {
-  const done   = loadDone();
-  const hidden = loadHidden();
+  const done      = loadDone();
+  const hidden    = loadHidden();
+  const yourList  = new Set(loadYourList());
   const container = document.getElementById('sections-container');
   container.innerHTML = '';
   let totalVisible = 0, totalDone = 0, lastPriority = null;
   let anyHidden = false;
+
+  // ── YOUR LIST VIEW ──────────────────────────────────────
+  if (activeFilters.has('yourlist') && !editingYourList) {
+    // Always show the Edit List button
+    const editBtn = document.getElementById('btn-edit-yourlist');
+    editBtn.style.display = '';
+    editBtn.textContent = '⭐ Edit List';
+
+    // Gather all tasks from SECTIONS that are in the list
+    const selected = [];
+    SECTIONS.forEach(sec => {
+      sec.tasks.forEach(t => {
+        if (yourList.has(t.id)) selected.push({ ...t, sectionTitle: sec.title, sectionIcon: sec.icon });
+      });
+    });
+    // Also include custom tasks that are in the list
+    loadCustomTasks().forEach(t => {
+      if (yourList.has('custom_' + t.id)) selected.push({ ...t, id: 'custom_' + t.id, sectionTitle: 'Custom', sectionIcon: '✦' });
+    });
+
+    if (selected.length === 0) {
+      container.innerHTML = `
+        <div class="yourlist-empty">
+          <div style="font-size:2rem;margin-bottom:0.5rem;">⭐</div>
+          Your list is empty.<br>
+          <span style="font-size:13px;margin-top:0.4rem;display:block;">Click <strong style="font-style:normal;color:var(--light-gold);">⭐ Edit List</strong> in the toolbar above to pick tasks from the master list.</span>
+        </div>`;
+    } else {
+      totalVisible = selected.length;
+      totalDone    = selected.filter(t => done[t.id]).length;
+      const body = document.createElement('div');
+      body.className = 'section-body';
+      body.style.cssText = 'border-radius:8px;border:1px solid var(--border-bright);';
+      body.innerHTML = selected.map(t => `
+        <div class="task${done[t.id]?' done':''}" onclick="toggle('${t.id}')">
+          <div class="task-check"></div>
+          <div class="task-body">
+            <div class="task-name">${t.name}</div>
+            ${t.desc?`<div class="task-desc">${t.desc}</div>`:''}
+            <div class="task-tags" style="margin-top:0.35rem;">
+              <span class="tag" style="background:rgba(201,168,76,0.1);color:var(--light-gold);border-color:rgba(201,168,76,0.25);font-size:10px;">${t.sectionIcon} ${t.sectionTitle}</span>
+              ${t.tags&&t.tags.length?t.tags.map(tg=>`<span class="tag ${tg}">${tagLabel(tg)}</span>`).join(''):''}
+            </div>
+          </div>
+        </div>`).join('');
+      container.appendChild(body);
+    }
+
+    const pct = totalVisible ? Math.round((totalDone / totalVisible) * 100) : 0;
+    document.getElementById('prog-fill').style.width = pct + '%';
+    document.getElementById('prog-label').textContent = totalDone + ' / ' + totalVisible + ' done';
+    document.getElementById('btn-reveal').style.display = 'none';
+    return;
+  }
+
+  // ── EDIT YOUR LIST MODE — show all tasks with selection highlight ──
+  if (editingYourList) {
+    const editBar = document.createElement('div');
+    editBar.className = 'yourlist-edit-bar';
+    editBar.innerHTML = `
+      <span>Click any task to add or remove it from <strong>Your List</strong>. Selected tasks are highlighted.</span>
+      <div style="display:flex;gap:0.5rem;">
+        <button class="btn-cancel" style="font-family:\'Cinzel\',serif;font-size:11px;padding:0.4rem 0.9rem;cursor:pointer;" onclick="clearYourList()">Clear All</button>
+        <button class="btn-primary" style="font-size:11px;padding:0.4rem 0.9rem;" onclick="doneEditingYourList()">✓ Done</button>
+      </div>`;
+    container.appendChild(editBar);
+  }
 
   SECTIONS.forEach(sec => {
     const isAll = activeFilters.has('all');
@@ -1198,14 +1308,17 @@ function render() {
       </div>
       <div class="section-body${isOpen?'':' hidden'}" id="body-${sec.id}">
         ${visibleTasks.map(t => `
-          <div class="task${done[t.id]?' done':''}${hidden[t.id]?' task-hidden':''}" onclick="toggle('${t.id}')">
-            <div class="task-check"></div>
+          <div class="task${done[t.id]?' done':''}${hidden[t.id]?' task-hidden':''}${yourList.has(t.id)?' in-yourlist':''}" onclick="${editingYourList ? `toggleYourListTask('${t.id}')` : `toggle('${t.id}')`}">
+            <div class="task-check" style="${editingYourList?'pointer-events:none;':''}"></div>
             <div class="task-body">
               <div class="task-name">${t.name}</div>
               ${t.desc?`<div class="task-desc">${t.desc}</div>`:''}
               ${t.tags&&t.tags.length?`<div class="task-tags">${t.tags.map(tg=>`<span class="tag ${tg}">${tagLabel(tg)}</span>`).join('')}</div>`:''}
             </div>
-            <button class="task-hide" title="${hidden[t.id]?'Unhide task':'Hide task'}" onclick="toggleHideTask(event,'${t.id}')">${hidden[t.id]?'👁':'🚫'}</button>
+            ${editingYourList
+              ? `<span style="flex-shrink:0;font-size:13px;color:${yourList.has(t.id)?'var(--light-gold)':'var(--text-muted)'};">${yourList.has(t.id)?'⭐':'☆'}</span>`
+              : `<button class="task-hide" title="${hidden[t.id]?'Unhide task':'Hide task'}" onclick="toggleHideTask(event,'${t.id}')">${hidden[t.id]?'👁':'🚫'}</button>`
+            }
           </div>`).join('')}
       </div>`;
     container.appendChild(div);
@@ -1219,6 +1332,12 @@ function render() {
   const revealBtn = document.getElementById('btn-reveal');
   revealBtn.style.display = (anyHidden || revealHidden) ? '' : 'none';
   revealBtn.textContent = revealHidden ? '🚫 Hide Hidden' : '👁 Show Hidden';
+
+  // Show Edit List button only when on Your List tab or editing
+  const editBtn = document.getElementById('btn-edit-yourlist');
+  const showEditBtn = activeFilters.has('yourlist') || editingYourList;
+  editBtn.style.display = showEditBtn ? '' : 'none';
+  editBtn.textContent = editingYourList ? '✓ Done Editing' : '⭐ Edit List';
 
   renderCustomSection();
 }
@@ -1252,6 +1371,41 @@ function toggleHideSection(e, id) {
 
 function toggleRevealHidden() {
   revealHidden = !revealHidden;
+  render();
+}
+
+/* ── YOUR LIST ── */
+function startEditingYourList() {
+  if (editingYourList) { doneEditingYourList(); return; }
+  editingYourList = true;
+  // Switch to All view so user can browse and select
+  activeFilters = new Set(['all']);
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-filter') === 'all');
+  });
+  render();
+}
+
+function doneEditingYourList() {
+  editingYourList = false;
+  activeFilters = new Set(['yourlist']);
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-filter') === 'yourlist');
+  });
+  render();
+}
+
+function toggleYourListTask(id) {
+  const list = loadYourList();
+  const idx  = list.indexOf(id);
+  if (idx === -1) list.push(id); else list.splice(idx, 1);
+  saveYourList(list);
+  render();
+}
+
+function clearYourList() {
+  if (!confirm('Clear all tasks from Your List?')) return;
+  saveYourList([]);
   render();
 }
 function resetAll() {
@@ -1295,6 +1449,7 @@ function renderChars() {
 function switchChar(name) {
   currentChar = name;
   revealHidden = false;
+  editingYourList = false;
   // Default to custom view if this character has custom tasks, otherwise all
   const hasTasks = loadCustomTasks().length > 0;
   activeFilters = new Set([hasTasks ? 'custom' : 'all']);
@@ -1307,7 +1462,7 @@ function switchChar(name) {
 }
 function deleteChar(name) {
   if (!confirm('Remove ' + name + ' and all saved data?')) return;
-  Object.keys(localStorage).filter(k => k.startsWith('wow_mn_' + name + '_')).forEach(k => localStorage.removeItem(k));
+  Object.keys(localStorage).filter(k => k.startsWith('wow_mn_' + name + '_') || k === 'wow_mn_hidden_' + name || k === 'wow_mn_custom_' + name || k === 'wow_mn_yourlist_' + name).forEach(k => localStorage.removeItem(k));
   characters = characters.filter(c => c !== name);
   localStorage.setItem('wow_midnight_chars', JSON.stringify(characters));
   if (currentChar === name) currentChar = characters[0];
@@ -1396,6 +1551,7 @@ function renderCustomSection() {
 
   const tasks  = loadCustomTasks();
   const done   = loadDone();
+  const yourList = new Set(loadYourList());
   const wrap   = document.createElement('div');
   wrap.id      = 'custom-section-wrap';
   wrap.className = 'custom-section-wrap';
@@ -1434,15 +1590,20 @@ function renderCustomSection() {
                <div style="font-size:2rem;margin-bottom:0.5rem;">✦</div>
                Nothing here yet — hit <strong>+ Add Task</strong> above to get started.
              </div>`
-          : tasks.map(t => `
-            <div class="task${done['custom_'+t.id]?' done':''}" onclick="toggleCustom('${t.id}')">
-              <div class="task-check"></div>
-              <div class="task-body">
-                <div class="task-name">${escHtml(t.name)}</div>
-                ${t.desc?`<div class="task-desc">${escHtml(t.desc)}</div>`:''}
-              </div>
-              <button class="task-del" title="Delete task" onclick="deleteCustomTask(event,'${t.id}')">✕</button>
-            </div>`).join('')}
+          : tasks.map(t => {
+              const inList = yourList.has('custom_' + t.id);
+              return `
+              <div class="task${done['custom_'+t.id]?' done':''}${inList?' in-yourlist':''}" onclick="${editingYourList ? `toggleYourListTask('custom_${t.id}')` : `toggleCustom('${t.id}')`}">
+                <div class="task-check" style="${editingYourList?'pointer-events:none;':''}"></div>
+                <div class="task-body">
+                  <div class="task-name">${escHtml(t.name)}</div>
+                  ${t.desc?`<div class="task-desc">${escHtml(t.desc)}</div>`:''}
+                </div>
+                ${editingYourList
+                  ? `<span style="flex-shrink:0;font-size:13px;color:${inList?'var(--light-gold)':'var(--text-muted)'};">${inList?'⭐':'☆'}</span>`
+                  : `<button class="task-del" title="Delete task" onclick="deleteCustomTask(event,'${t.id}')">✕</button>`
+                }
+              </div>`;}).join('')}
       </div>`;
   } else {
     header.innerHTML = `
@@ -1461,15 +1622,20 @@ function renderCustomSection() {
         </div>
         ${tasks.length === 0
           ? `<div class="custom-empty">No custom tasks yet — add one above.</div>`
-          : tasks.map(t => `
-            <div class="task${done['custom_'+t.id]?' done':''}" onclick="toggleCustom('${t.id}')">
-              <div class="task-check"></div>
-              <div class="task-body">
-                <div class="task-name">${escHtml(t.name)}</div>
-                ${t.desc ? `<div class="task-desc">${escHtml(t.desc)}</div>` : ''}
-              </div>
-              <button class="task-del" title="Delete task" onclick="deleteCustomTask(event,'${t.id}')">✕</button>
-            </div>`).join('')}
+          : tasks.map(t => {
+              const inList = yourList.has('custom_' + t.id);
+              return `
+              <div class="task${done['custom_'+t.id]?' done':''}${inList?' in-yourlist':''}" onclick="${editingYourList ? `toggleYourListTask('custom_${t.id}')` : `toggleCustom('${t.id}')`}">
+                <div class="task-check" style="${editingYourList?'pointer-events:none;':''}"></div>
+                <div class="task-body">
+                  <div class="task-name">${escHtml(t.name)}</div>
+                  ${t.desc ? `<div class="task-desc">${escHtml(t.desc)}</div>` : ''}
+                </div>
+                ${editingYourList
+                  ? `<span style="flex-shrink:0;font-size:13px;color:${inList?'var(--light-gold)':'var(--text-muted)'};">${inList?'⭐':'☆'}</span>`
+                  : `<button class="task-del" title="Delete task" onclick="deleteCustomTask(event,'${t.id}')">✕</button>`
+                }
+              </div>`;}).join('')}
       </div>`;
   }
 
