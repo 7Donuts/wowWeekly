@@ -259,6 +259,18 @@
   .section-count .done { color: var(--success-bright); }
   .chevron { font-size: 11px; color: var(--text-muted); transition: transform 0.2s; flex-shrink: 0; }
 
+  .section-hide {
+    font-size: 13px; color: transparent;
+    background: none; border: none; cursor: pointer;
+    padding: 2px 6px; border-radius: 3px;
+    transition: color 0.2s, background 0.2s;
+    flex-shrink: 0;
+  }
+  .section-header:hover .section-hide { color: var(--text-muted); }
+  .section-hide:hover { color: var(--void-glow) !important; background: rgba(124,92,191,0.1); }
+  .section-hidden .section-header { opacity: 0.3; border-style: dashed; }
+  .section-hidden .section-hide { color: var(--void-purple) !important; }
+
   .section-body {
     border: 1px solid var(--border-bright); border-top: none;
     border-radius: 0 0 8px 8px; overflow: hidden; background: var(--bg-card);
@@ -1146,9 +1158,30 @@ function render() {
     const secDone = visibleTasks.filter(t => done[t.id] && !hidden[t.id]).length;
     totalDone += secDone;
     const isOpen = !collapsed[sec.id];
+    const isSectionHidden = hidden['section_' + sec.id];
+    if (isSectionHidden) anyHidden = true;
+
+    // Skip hidden sections unless reveal mode is on
+    if (isSectionHidden && !revealHidden) {
+      container.appendChild((() => {
+        const d = document.createElement('div');
+        d.className = 'section section-hidden';
+        d.innerHTML = `
+          <div class="section-header" onclick="">
+            <div class="section-icon ${sec.iconClass}">${sec.icon}</div>
+            <div class="section-title-wrap">
+              <div class="section-title">${sec.title}</div>
+              <div class="section-meta">Hidden from All view</div>
+            </div>
+            <button class="section-hide" title="Unhide section" onclick="toggleHideSection(event,'${sec.id}')">👁</button>
+          </div>`;
+        return d;
+      })());
+      return;
+    }
 
     const div = document.createElement('div');
-    div.className = 'section';
+    div.className = 'section' + (isSectionHidden ? ' section-hidden' : '');
     div.innerHTML = `
       <div class="section-header${isOpen?' open':''}" onclick="toggleSection('${sec.id}')">
         <div class="section-icon ${sec.iconClass}">${sec.icon}</div>
@@ -1160,6 +1193,7 @@ function render() {
           <span class="done">${secDone}</span>&thinsp;/&thinsp;${visibleTasks.filter(t=>!hidden[t.id]).length}
           ${hiddenCount > 0 ? `<span class="hidden-count">(${hiddenCount} hidden)</span>` : ''}
         </span>
+        <button class="section-hide" title="${isSectionHidden?'Unhide section':'Hide section from All view'}" onclick="toggleHideSection(event,'${sec.id}')">${isSectionHidden?'👁':'🚫'}</button>
         <span class="chevron" style="transform:rotate(${isOpen?'0':'-90'}deg)">▼</span>
       </div>
       <div class="section-body${isOpen?'':' hidden'}" id="body-${sec.id}">
@@ -1203,6 +1237,15 @@ function toggleHideTask(e, id) {
   e.stopPropagation();
   const hidden = loadHidden();
   hidden[id] ? delete hidden[id] : (hidden[id] = true);
+  saveHidden(hidden);
+  render();
+}
+
+function toggleHideSection(e, id) {
+  e.stopPropagation();
+  const hidden = loadHidden();
+  const key = 'section_' + id;
+  hidden[key] ? delete hidden[key] : (hidden[key] = true);
   saveHidden(hidden);
   render();
 }
