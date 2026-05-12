@@ -238,13 +238,14 @@ h1 span { color: var(--void-glow); }
   display: flex; align-items: center; gap: 0.75rem;
   cursor: pointer; user-select: none;
   padding: 0.65rem 1rem;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-bright);
   border-radius: 8px;
   background: var(--bg-panel);
   transition: border-color 0.2s, background 0.2s;
 }
-.section-header:hover { border-color: var(--border-bright); background: var(--bg-card); }
+.section-header:hover { background: var(--bg-card-hover); }
 .section-header.open { border-radius: 8px 8px 0 0; border-bottom-color: transparent; background: var(--bg-card); }
+.section-header.open:hover { background: var(--bg-card-hover); }
 
 .section-icon {
   width: 30px; height: 30px; border-radius: 6px;
