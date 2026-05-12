@@ -1249,7 +1249,19 @@ function renderChars() {
       ${characters.length>1?`<button class="char-btn-del" title="Remove ${c}" onclick="deleteChar('${c}')">✕</button>`:''}
     </span>`).join('');
 }
-function switchChar(name) { currentChar = name; revealHidden = false; renderChars(); render(); }
+function switchChar(name) {
+  currentChar = name;
+  revealHidden = false;
+  // Default to custom view if this character has custom tasks, otherwise all
+  const hasTasks = loadCustomTasks().length > 0;
+  activeFilters = new Set([hasTasks ? 'custom' : 'all']);
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    const val = b.getAttribute('data-filter');
+    b.classList.toggle('active', activeFilters.has(val));
+  });
+  renderChars();
+  render();
+}
 function deleteChar(name) {
   if (!confirm('Remove ' + name + ' and all saved data?')) return;
   Object.keys(localStorage).filter(k => k.startsWith('wow_mn_' + name + '_')).forEach(k => localStorage.removeItem(k));
@@ -1353,36 +1365,70 @@ function renderCustomSection() {
     wrap.appendChild(lbl);
   }
 
-  // Section header
+  // When in custom-only view, show a prominent top add bar
+  if (activeFilters.has('custom') && !activeFilters.has('all')) {
+    const addBar = document.createElement('div');
+    addBar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;';
+    addBar.innerHTML = `
+      <div style="font-family:\'Cinzel\',serif;font-size:13px;color:var(--text-secondary);letter-spacing:0.05em;">
+        ${tasks.length === 0 ? 'No custom tasks yet' : `${tasks.filter(t=>done['custom_'+t.id]).length} / ${tasks.length} done`}
+      </div>
+      <button class="btn-primary" style="font-size:12px;padding:0.5rem 1.2rem;letter-spacing:0.1em;" onclick="openCustomModal()">+ Add Task</button>`;
+    wrap.appendChild(addBar);
+  }
+
+  // Section header — flat list in custom-only view, collapsible in all view
   const isOpen = !collapsed['custom'];
+  const isCustomOnly = activeFilters.has('custom') && !activeFilters.has('all');
   const header = document.createElement('div');
-  header.className = 'section' + (activeFilters.has('custom') && !activeFilters.has('all') ? '' : '');
-  header.innerHTML = `
-    <div class="section-header${isOpen?' open':''}" onclick="toggleSection('custom')" style="margin-bottom:0;">
-      <div class="section-icon icon-optional">✦</div>
-      <div class="section-title-wrap">
-        <div class="section-title">Custom Tasks</div>
-        <div class="section-meta">Your personal weekly to-dos · Saved per character · Never auto-reset</div>
+  header.className = 'section';
+
+  if (isCustomOnly) {
+    header.innerHTML = `
+      <div class="section-body" id="body-custom" style="border-radius:8px;border:1px solid var(--border-bright);">
+        ${tasks.length === 0
+          ? `<div class="custom-empty" style="border:none;padding:2.5rem 1rem;">
+               <div style="font-size:2rem;margin-bottom:0.5rem;">✦</div>
+               Nothing here yet — hit <strong>+ Add Task</strong> above to get started.
+             </div>`
+          : tasks.map(t => `
+            <div class="task${done['custom_'+t.id]?' done':''}" onclick="toggleCustom('${t.id}')">
+              <div class="task-check"></div>
+              <div class="task-body">
+                <div class="task-name">${escHtml(t.name)}</div>
+                ${t.desc?`<div class="task-desc">${escHtml(t.desc)}</div>`:''}
+              </div>
+              <button class="task-del" title="Delete task" onclick="deleteCustomTask(event,'${t.id}')">✕</button>
+            </div>`).join('')}
+      </div>`;
+  } else {
+    header.innerHTML = `
+      <div class="section-header${isOpen?' open':''}" onclick="toggleSection('custom')" style="margin-bottom:0;">
+        <div class="section-icon icon-optional">✦</div>
+        <div class="section-title-wrap">
+          <div class="section-title">Custom Tasks</div>
+          <div class="section-meta">Your personal weekly to-dos · Saved per character · Never auto-reset</div>
+        </div>
+        <span class="section-count"><span class="done">${tasks.filter(t=>done['custom_'+t.id]).length}</span>&thinsp;/&thinsp;${tasks.length}</span>
+        <span class="chevron" style="transform:rotate(${isOpen?'0':'-90'}deg)">▼</span>
       </div>
-      <span class="section-count"><span class="done">${tasks.filter(t=>done['custom_'+t.id]).length}</span>&thinsp;/&thinsp;${tasks.length}</span>
-      <span class="chevron" style="transform:rotate(${isOpen?'0':'-90'}deg)">▼</span>
-    </div>
-    <div class="section-body${isOpen?'':' hidden'}" id="body-custom">
-      <div style="padding:0.65rem 1rem; border-bottom:1px solid var(--border); display:flex; gap:0.6rem;">
-        <button class="btn-primary" style="font-size:11px;padding:0.35rem 0.9rem;" onclick="openCustomModal()">+ Add Task</button>
-      </div>
-      ${tasks.length === 0
-        ? `<div class="custom-empty">No custom tasks yet — add one above.</div>`
-        : tasks.map(t => `
-          <div class="task${done['custom_'+t.id]?' done':''}" onclick="toggleCustom('${t.id}')">
-            <div class="task-check"></div>
-            <div class="task-body">
-              <div class="task-name">${escHtml(t.name)}</div>
-              ${t.desc ? `<div class="task-desc">${escHtml(t.desc)}</div>` : ''}
-            </div>
-            <button class="task-del" title="Delete task" onclick="deleteCustomTask(event,'${t.id}')">✕</button>
-          </div>`).join('')}
-    </div>`;
+      <div class="section-body${isOpen?'':' hidden'}" id="body-custom">
+        <div style="padding:0.65rem 1rem; border-bottom:1px solid var(--border); display:flex; gap:0.6rem;">
+          <button class="btn-primary" style="font-size:11px;padding:0.35rem 0.9rem;" onclick="openCustomModal()">+ Add Task</button>
+        </div>
+        ${tasks.length === 0
+          ? `<div class="custom-empty">No custom tasks yet — add one above.</div>`
+          : tasks.map(t => `
+            <div class="task${done['custom_'+t.id]?' done':''}" onclick="toggleCustom('${t.id}')">
+              <div class="task-check"></div>
+              <div class="task-body">
+                <div class="task-name">${escHtml(t.name)}</div>
+                ${t.desc ? `<div class="task-desc">${escHtml(t.desc)}</div>` : ''}
+              </div>
+              <button class="task-del" title="Delete task" onclick="deleteCustomTask(event,'${t.id}')">✕</button>
+            </div>`).join('')}
+      </div>`;
+  }
 
   wrap.appendChild(header);
   document.getElementById('sections-container').appendChild(wrap);
