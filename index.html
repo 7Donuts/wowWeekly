@@ -46,7 +46,7 @@
   </div>
 
   <div class="filter-tabs">
-    <button class="tab-btn tab-yourlist" data-filter="yourlist" onclick="setFilter('yourlist',this)">⭐ Your List</button>
+    <button class="tab-btn tab-yourlist" data-filter="yourlist" onclick="setFilter('yourlist',this)"> Your List</button>
     <button class="tab-btn active" data-filter="all" onclick="setFilter('all',this)">All</button>
     <button class="tab-btn" data-filter="raid" onclick="setFilter('raid',this)">Raids</button>
     <button class="tab-btn" data-filter="mythic" onclick="setFilter('mythic',this)">Mythic+</button>
@@ -118,7 +118,7 @@ const SECTIONS = [
 
   {
     id: 'raid',
-    icon: '⚔️', iconClass: 'icon-raid',
+    icon: '', iconClass: 'icon-raid',
     title: 'Raids',
     meta: 'Personal loot lockout resets Tuesday · LFR wings independent',
     categories: ['raid'],
@@ -153,7 +153,7 @@ const SECTIONS = [
 
   {
     id: 'vault',
-    icon: '🏆', iconClass: 'icon-vault',
+    icon: '', iconClass: 'icon-vault',
     title: 'Great Vault',
     meta: 'Opens Tuesday reset — claim before doing anything else',
     categories: ['currency'],
@@ -193,7 +193,7 @@ const SECTIONS = [
 
   {
     id: 'bazaar',
-    icon: '🎁', iconClass: 'icon-world',
+    icon: '', iconClass: 'icon-bazaar',
     title: 'Bazaar Weekly Quests',
     meta: 'Free weekly value — easy to forget, never skip',
     categories: ['world', 'currency'],
@@ -216,7 +216,7 @@ const SECTIONS = [
 
   {
     id: 'voidforge',
-    icon: '⚗️', iconClass: 'icon-void',
+    icon: '', iconClass: 'icon-void',
     title: 'Voidforge',
     meta: '12.0.5 · Top priority if not yet complete · Powers endgame bonus rolls',
     categories: ['voidforge', 'currency'],
@@ -241,7 +241,7 @@ const SECTIONS = [
 
   {
     id: 'mythicplus',
-    icon: '🗝️', iconClass: 'icon-mythic',
+    icon: '', iconClass: 'icon-mythic',
     title: 'Mythic+ Dungeons',
     meta: 'No lockout — farm freely · Vault slots unlock at 1 / 4 / 8 runs',
     categories: ['mythic'],
@@ -267,7 +267,7 @@ const SECTIONS = [
 
   {
     id: 'delves',
-    icon: '🕳️', iconClass: 'icon-delve',
+    icon: '', iconClass: 'icon-delve',
     title: 'Delves',
     meta: 'Solo/2-player instanced content · Contributes to Great Vault World row',
     categories: ['delve'],
@@ -327,7 +327,7 @@ const SECTIONS = [
 
   {
     id: 'world-events',
-    icon: '🌍', iconClass: 'icon-world',
+    icon: '', iconClass: 'icon-world',
     title: 'World Events',
     meta: 'Rotating across all four Midnight zones each week',
     categories: ['world'],
@@ -356,7 +356,7 @@ const SECTIONS = [
 
   {
     id: 'currency',
-    icon: '💎', iconClass: 'icon-currency',
+    icon: '', iconClass: 'icon-currency',
     title: 'Currency & Upgrades',
     meta: 'Weekly caps — spend before reset or lose value',
     categories: ['currency'],
@@ -379,7 +379,7 @@ const SECTIONS = [
 
   {
     id: 'housing',
-    icon: '🏡', iconClass: 'icon-housing',
+    icon: '', iconClass: 'icon-housing',
     title: 'Player Housing',
     meta: 'Decor sources spread across multiple weekly systems',
     categories: ['housing'],
@@ -402,7 +402,7 @@ const SECTIONS = [
 
   {
     id: 'pvp',
-    icon: '⚔️', iconClass: 'icon-pvp',
+    icon: '', iconClass: 'icon-pvp',
     title: 'PvP',
     meta: 'Conquest cap resets Tuesday',
     categories: ['pvp'],
@@ -424,7 +424,7 @@ const SECTIONS = [
 
   {
     id: 'optional',
-    icon: '🎣', iconClass: 'icon-optional',
+    icon: '', iconClass: 'icon-optional',
     title: 'Optional & Collector Content',
     meta: '12.0.5 permanent side content — no core power progression, great for collectors',
     categories: ['optional'],
@@ -444,7 +444,7 @@ const SECTIONS = [
 
   {
     id: 'events',
-    icon: '📅', iconClass: 'icon-optional',
+    icon: '', iconClass: 'icon-worldevents',
     title: 'Upcoming World Events',
     meta: 'Rotating limited-time events — source: Wowhead World Events',
     categories: ['world-events'],

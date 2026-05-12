@@ -145,6 +145,31 @@
 <script>
 const VERSIONS = [
   {
+    version: 'v1.9',
+    date: 'May 2026',
+    summary: '13 changes',
+    entries: [
+      { type: 'improve', text: 'CSS extracted into shared midnight.css — both tracker and changelog use the same stylesheet', detail: 'Future visual updates only require editing one file.' },
+      { type: 'improve', text: 'Section header borders are now always visible (border-bright)', detail: 'Previously the bright border only appeared on hover. Hover now lightens the background instead.' },
+      { type: 'new',     text: 'WoW UI icons replace emoji for 13 sections', detail: 'Real game icons embedded as base64 PNGs — no external image files required.' },
+      { type: 'improve', text: 'Great Vault icon → Achievement_ChallengeMode_Gold', detail: '' },
+      { type: 'improve', text: 'Raids icon → INV_Achievement_RaidDragon_Magmorax', detail: '' },
+      { type: 'improve', text: 'Mythic+ Dungeons icon → INV_Staff_2H_PlunderKey', detail: '' },
+      { type: 'improve', text: 'Delves icon → UI_Delves', detail: '' },
+      { type: 'improve', text: 'Prey System icon → UI_Prey (red crystal)', detail: '' },
+      { type: 'improve', text: 'Voidforge icon → SovereignVoidcores', detail: '' },
+      { type: 'improve', text: 'World Events icon → Spell_Azerite_Essence', detail: '' },
+      { type: 'improve', text: 'Event Calendar icon → Achievement_WorldEvent_DastardlyDuos', detail: '' },
+      { type: 'improve', text: 'Currency icon → UI_PlunderCoins', detail: '' },
+      { type: 'improve', text: 'Player Housing icon → UI_Homestone', detail: '' },
+      { type: 'improve', text: 'PvP icon → Achievement_LegionPVPTier4', detail: '' },
+      { type: 'improve', text: 'Optional & Collector icon → INV_Fishingpole', detail: '' },
+      { type: 'improve', text: 'Bazaar Weekly Quests icon → INV_Misc_Bag_10_Green', detail: '' },
+      { type: 'improve', text: 'Your List tab icon → WoW_Store icon via CSS ::before', detail: '' },
+      { type: 'improve', text: 'index.html now exported directly — no manual rename required', detail: '' },
+    ]
+  },
+  {
     version: 'v1.8',
     date: 'May 2026',
     summary: '4 changes',
