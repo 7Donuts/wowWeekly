@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WoW Midnight — Weekly Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,500;1,300&display=swap');
+
+  :root {
+    --bg-deep:       #0a090f;
+    --bg-panel:      #12101a;
+    --bg-card:       #1a1726;
+    --bg-card-hover: #201d30;
+    --border:        #2e2845;
+    --border-bright: #4a3f6b;
+    --void-purple:   #7c5cbf;
+    --void-glow:     #a07de0;
+    --light-gold:    #c9a84c;
+    --light-pale:    #e8d9a0;
+    --text-primary:  #e8e0f0;
+    --text-secondary:#9d90b8;
+    --text-muted:    #5a5070;
+    --success:       #4a8c5c;
+    --success-bright:#6abf80;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 15% 20%, rgba(160,125,224,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 73% 8%,  rgba(160,125,224,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 42% 55%, rgba(201,168,76,0.3)  0%, transparent 100%),
+      radial-gradient(1px 1px at 88% 42%, rgba(160,125,224,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 5%  80%, rgba(201,168,76,0.2)  0%, transparent 100%),
+      radial-gradient(1px 1px at 60% 90%, rgba(160,125,224,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 30% 68%, rgba(255,255,255,0.15) 0%, transparent 100%),
+      radial-gradient(1px 1px at 95% 75%, rgba(255,255,255,0.1) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  header {
+    text-align: center;
+    padding: 2.5rem 0 2rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2rem;
+  }
+
+  .header-eyebrow {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--void-purple);
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  h1 {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 700;
+    color: var(--light-pale);
+    letter-spacing: 0.05em;
+    line-height: 1.15;
+  }
+  h1 span { color: var(--void-glow); }
+
+  .subtitle { margin-top: 0.75rem; color: var(--text-secondary); font-size: 15px; font-style: italic; }
+
+  .patch-badge {
+    display: inline-block;
+    margin-top: 0.75rem;
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    padding: 4px 14px;
+    border: 1px solid var(--border-bright);
+    border-radius: 20px;
+    color: var(--light-gold);
+    background: rgba(201,168,76,0.08);
+  }
+
+  .byline {
+    margin-top: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 13px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .byline-name {
+    font-family: 'Cinzel', serif;
+    font-style: normal;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    color: var(--void-glow);
+  }
+
+  .byline-dot {
+    color: var(--border-bright);
+    font-style: normal;
+  }
+
+  .credit-bar {
+    margin-top: 0.65rem;
+    font-size: 13px;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    font-style: italic;
+  }
+  .credit-name {
+    font-family: 'Cinzel', serif;
+    font-style: normal;
+    font-size: 13px;
+    color: var(--void-glow);
+    letter-spacing: 0.1em;
+  }
+
+  .reset-bar {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.9rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    font-size: 14px;
+  }
+
+  .reset-info { display: flex; align-items: center; gap: 0.6rem; color: var(--text-secondary); }
+  .reset-countdown { font-family: 'Cinzel', serif; font-size: 13px; color: var(--light-gold); letter-spacing: 0.05em; }
+  .progress-wrap { display: flex; align-items: center; gap: 0.75rem; font-size: 13px; color: var(--text-secondary); }
+  .progress-bar-track { width: 140px; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--void-purple), var(--void-glow)); border-radius: 3px; transition: width 0.4s ease; }
+
+  .btn-reset-all {
+    font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.1em;
+    padding: 0.4rem 0.9rem; border: 1px solid var(--border-bright);
+    background: transparent; color: var(--text-secondary);
+    border-radius: 4px; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-reset-all:hover { background: var(--bg-card-hover); color: var(--text-primary); border-color: var(--void-purple); }
+
+  .char-bar { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .char-label { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.15em; color: var(--text-muted); text-transform: uppercase; }
+
+  .char-btn {
+    font-family: 'Cinzel', serif; font-size: 12px;
+    padding: 0.35rem 0.85rem; border: 1px solid var(--border);
+    background: var(--bg-panel); color: var(--text-secondary);
+    border-radius: 4px; cursor: pointer; transition: all 0.2s;
+  }
+  .char-btn:hover { border-color: var(--border-bright); color: var(--text-primary); }
+  .char-btn.active { border-color: var(--void-purple); color: var(--void-glow); background: rgba(124,92,191,0.1); }
+
+  .char-btn-del {
+    font-size: 11px; color: var(--text-muted); background: none;
+    border: none; cursor: pointer; margin-left: 3px;
+    padding: 0 2px; transition: color 0.2s; vertical-align: middle;
+  }
+  .char-btn-del:hover { color: #c0534a; }
+
+  .char-add {
+    font-size: 18px; color: var(--text-muted); background: none;
+    border: 1px dashed var(--border); border-radius: 4px;
+    width: 30px; height: 30px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+  }
+  .char-add:hover { border-color: var(--border-bright); color: var(--text-primary); }
+
+  .filter-tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.75rem; }
+
+  .tab-btn {
+    font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.12em;
+    padding: 0.45rem 1rem; border: 1px solid var(--border);
+    background: transparent; color: var(--text-muted);
+    border-radius: 4px; cursor: pointer; transition: all 0.2s; text-transform: uppercase;
+  }
+  .tab-btn:hover { background: var(--bg-card); color: var(--light-pale); border-color: var(--border-bright); }
+  .tab-btn.active { background: var(--bg-card); color: var(--void-glow); border-color: var(--void-purple); }
+
+  .priority-label {
+    font-family: 'Cinzel', serif; font-size: 10px;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--text-muted); margin: 1.75rem 0 0.6rem;
+    padding-left: 2px; display: flex; align-items: center; gap: 0.5rem;
+  }
+  .priority-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .priority-label.p1 { color: var(--void-glow); }
+  .priority-label.p1::after { background: rgba(160,125,224,0.3); }
+  .priority-label.p2 { color: var(--light-gold); }
+  .priority-label.p2::after { background: rgba(201,168,76,0.25); }
+  .priority-label.p3 { color: var(--text-secondary); }
+  .priority-label.p3::after { background: rgba(90,80,112,0.3); }
+
+  .section { margin-bottom: 0.5rem; }
+
+  .section-header {
+    display: flex; align-items: center; gap: 0.75rem;
+    cursor: pointer; user-select: none;
+    padding: 0.65rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-panel);
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .section-header:hover { border-color: var(--border-bright); background: var(--bg-card); }
+  .section-header.open { border-radius: 8px 8px 0 0; border-bottom-color: transparent; background: var(--bg-card); }
+
+  .section-icon {
+    width: 30px; height: 30px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+  }
+  .icon-vault   { background: rgba(201,168,76,0.2);  color: var(--light-gold); }
+  .icon-raid    { background: rgba(192,83,74,0.2);   color: #e07068; }
+  .icon-mythic  { background: rgba(124,92,191,0.2);  color: var(--void-glow); }
+  .icon-delve   { background: rgba(124,92,191,0.15); color: #b090e0; }
+  .icon-prey    { background: rgba(74,140,92,0.2);   color: var(--success-bright); }
+  .icon-void    { background: rgba(124,92,191,0.2);  color: var(--void-glow); }
+  .icon-world   { background: rgba(74,140,92,0.2);   color: var(--success-bright); }
+  .icon-housing { background: rgba(201,168,76,0.15); color: var(--light-gold); }
+  .icon-pvp     { background: rgba(192,83,74,0.2);   color: #e07068; }
+  .icon-currency{ background: rgba(201,168,76,0.2);  color: var(--light-gold); }
+  .icon-optional{ background: rgba(90,80,112,0.2);   color: #8878aa; }
+
+  .section-title-wrap { flex: 1; }
+  .section-title { font-family: 'Cinzel', serif; font-size: 14px; font-weight: 600; color: var(--light-pale); letter-spacing: 0.05em; }
+  .section-meta { font-size: 12px; color: var(--text-muted); font-style: italic; margin-top: 1px; }
+  .section-count { font-size: 12px; color: var(--text-muted); font-family: 'Cinzel', serif; white-space: nowrap; }
+  .section-count .done { color: var(--success-bright); }
+  .chevron { font-size: 11px; color: var(--text-muted); transition: transform 0.2s; flex-shrink: 0; }
+
+  .section-body {
+    border: 1px solid var(--border-bright); border-top: none;
+    border-radius: 0 0 8px 8px; overflow: hidden; background: var(--bg-card);
+  }
+  .section-body.hidden { display: none; }
+
+  .task {
+    display: flex; align-items: flex-start; gap: 0.85rem;
+    padding: 0.7rem 1rem; border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: background 0.15s;
+  }
+  .task:last-child { border-bottom: none; }
+  .task:hover { background: var(--bg-card-hover); }
+  .task.done { opacity: 0.45; }
+  .task.done .task-name { text-decoration: line-through; color: var(--text-muted); }
+
+  .task-check {
+    width: 19px; height: 19px; border: 1.5px solid var(--border-bright);
+    border-radius: 4px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 3px; transition: all 0.15s; background: transparent;
+  }
+  .task.done .task-check { background: var(--success); border-color: var(--success); }
+  .task-check::after {
+    content: ''; display: none;
+    width: 5px; height: 9px;
+    border: 2px solid white; border-top: none; border-left: none;
+    transform: rotate(45deg) translateY(-1px);
+  }
+  .task.done .task-check::after { display: block; }
+
+  .task-body { flex: 1; min-width: 0; }
+  .task-name { font-size: 15px; color: var(--text-primary); line-height: 1.4; }
+  .task-desc { font-size: 13px; color: var(--text-secondary); font-style: italic; margin-top: 2px; line-height: 1.4; }
+  .task-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.35rem; }
+
+  .tag {
+    font-size: 10px; font-family: 'Cinzel', serif;
+    letter-spacing: 0.05em; padding: 2px 7px;
+    border-radius: 3px; border: 1px solid transparent;
+  }
+  .tag-vault    { background: rgba(201,168,76,0.12); color: var(--light-gold);      border-color: rgba(201,168,76,0.3); }
+  .tag-raid     { background: rgba(192,83,74,0.15);  color: #e07068;                border-color: rgba(192,83,74,0.3); }
+  .tag-mythic   { background: rgba(124,92,191,0.15); color: var(--void-glow);       border-color: rgba(124,92,191,0.3); }
+  .tag-delve    { background: rgba(124,92,191,0.1);  color: #b090e0;                border-color: rgba(124,92,191,0.25); }
+  .tag-void     { background: rgba(124,92,191,0.12); color: #b090e0;                border-color: rgba(124,92,191,0.25); }
+  .tag-world    { background: rgba(74,140,92,0.15);  color: var(--success-bright);  border-color: rgba(74,140,92,0.3); }
+  .tag-gold     { background: rgba(201,168,76,0.12); color: var(--light-gold);      border-color: rgba(201,168,76,0.25); }
+  .tag-pvp      { background: rgba(192,83,74,0.12);  color: #d48080;                border-color: rgba(192,83,74,0.25); }
+  .tag-optional { background: rgba(90,80,112,0.15);  color: #8878aa;                border-color: rgba(90,80,112,0.3); }
+  .tag-housing  { background: rgba(201,168,76,0.1);  color: #b8976a;                border-color: rgba(201,168,76,0.2); }
+  .tag-new      { background: rgba(160,125,224,0.2); color: var(--void-glow);       border-color: rgba(160,125,224,0.4); }
+
+  .tab-custom { border-color: rgba(160,125,224,0.4) !important; color: var(--void-glow) !important; }
+  .tab-custom:hover, .tab-custom.active { background: rgba(124,92,191,0.15) !important; border-color: var(--void-purple) !important; }
+
+  .custom-section-wrap { margin-top: 1.75rem; }
+
+  .custom-add-bar {
+    display: flex; gap: 0.6rem; margin-bottom: 0.6rem; align-items: center;
+  }
+
+  .custom-empty {
+    text-align: center; padding: 2rem 1rem;
+    color: var(--text-muted); font-style: italic; font-size: 14px;
+    border: 1px dashed var(--border); border-radius: 8px;
+    background: var(--bg-panel);
+  }
+
+  .task-del {
+    margin-left: auto; flex-shrink: 0;
+    font-size: 13px; color: var(--text-muted);
+    background: none; border: none; cursor: pointer;
+    padding: 2px 6px; border-radius: 3px;
+    transition: color 0.2s, background 0.2s;
+  }
+  .task-del:hover { color: #c0534a; background: rgba(192,83,74,0.1); }
+
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75); z-index: 100;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg-panel); border: 1px solid var(--border-bright);
+    border-radius: 10px; padding: 1.75rem; width: 320px; max-width: 90vw;
+  }
+  .modal h3 { font-family: 'Cinzel', serif; font-size: 16px; margin-bottom: 1rem; color: var(--light-pale); }
+  .modal input {
+    width: 100%; background: var(--bg-deep); border: 1px solid var(--border-bright);
+    border-radius: 5px; padding: 0.6rem 0.85rem; color: var(--text-primary);
+    font-family: 'Crimson Pro', serif; font-size: 15px; outline: none; margin-bottom: 1rem;
+  }
+  .modal input:focus { border-color: var(--void-purple); }
+  .modal-btns { display: flex; gap: 0.5rem; justify-content: flex-end; }
+  .btn-primary {
+    font-family: 'Cinzel', serif; font-size: 12px; padding: 0.5rem 1.1rem;
+    background: var(--void-purple); border: none; border-radius: 5px;
+    color: white; cursor: pointer; letter-spacing: 0.08em; transition: background 0.2s;
+  }
+  .btn-primary:hover { background: var(--void-glow); }
+  .btn-cancel {
+    font-family: 'Cinzel', serif; font-size: 12px; padding: 0.5rem 1.1rem;
+    background: transparent; border: 1px solid var(--border); border-radius: 5px;
+    color: var(--text-secondary); cursor: pointer; letter-spacing: 0.08em;
+  }
+
+  footer {
+    border-top: 1px solid var(--border); padding-top: 1.5rem;
+    text-align: center; font-size: 12px; color: var(--text-muted);
+    font-style: italic; margin-top: 2.5rem;
+  }
+
+  @media (max-width: 600px) {
+    .reset-bar { flex-direction: column; align-items: flex-start; }
+    .progress-wrap { width: 100%; }
+    .progress-bar-track { flex: 1; }
+    h1 { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <div class="header-eyebrow">World of Warcraft</div>
+    <h1>Midnight<br><span>Weekly Tracker</span></h1>
+    <p class="subtitle">Quel'Thalas burns. The Void hungers. Make every reset count.</p>
+    <div class="patch-badge">Patch 12.0.5 · Lingering Shadows · Season 1</div>
+    <div class="credit-bar">Curated &amp; maintained by <span class="credit-name">Seven</span></div>
+  </header>
+
+  <div class="reset-bar">
+    <div class="reset-info">
+      <span style="color:var(--light-gold)">⏳</span>
+      <span>Weekly reset in:</span>
+      <span class="reset-countdown" id="countdown">calculating…</span>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="prog-fill" style="width:0%"></div>
+      </div>
+      <span id="prog-label" style="color:var(--text-secondary);font-size:13px;">0 / 0 done</span>
+    </div>
+    <button class="btn-reset-all" onclick="resetAll()">↺ Reset Week</button>
+  </div>
+
+  <div class="char-bar">
+    <span class="char-label">Character:</span>
+    <div id="char-list" style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;"></div>
+    <button class="char-add" title="Add character" onclick="openAddChar()">+</button>
+  </div>
+
+  <div class="filter-tabs">
+    <button class="tab-btn active" data-filter="all" onclick="setFilter('all',this)">All</button>
+    <button class="tab-btn" data-filter="raid" onclick="setFilter('raid',this)">Raids</button>
+    <button class="tab-btn" data-filter="mythic" onclick="setFilter('mythic',this)">Mythic+</button>
+    <button class="tab-btn" data-filter="delve" onclick="setFilter('delve',this)">Delves</button>
+    <button class="tab-btn" data-filter="prey" onclick="setFilter('prey',this)">Prey</button>
+    <button class="tab-btn" data-filter="void" onclick="setFilter('void',this)">Void Assaults</button>
+    <button class="tab-btn" data-filter="world" onclick="setFilter('world',this)">World Events</button>
+    <button class="tab-btn" data-filter="currency" onclick="setFilter('currency',this)">Currency</button>
+    <button class="tab-btn" data-filter="housing" onclick="setFilter('housing',this)">Housing</button>
+    <button class="tab-btn" data-filter="pvp" onclick="setFilter('pvp',this)">PvP</button>
+    <button class="tab-btn" data-filter="optional" onclick="setFilter('optional',this)">Optional</button>
+    <button class="tab-btn tab-custom" data-filter="custom" onclick="setFilter('custom',this)">✦ Custom</button>
+  </div>
+
+  <div id="sections-container"></div>
+
+  <footer>
+    Resets Tuesday 15:00 UTC &nbsp;·&nbsp; Progress saved per character in your browser &nbsp;·&nbsp;
+    Sources: Icy Veins, Mythic-Store &nbsp;·&nbsp; Patch 12.0.5 · May 2026
+  </footer>
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3>Add Character</h3>
+    <input type="text" id="char-input" placeholder="Character name…" maxlength="24"
+           onkeydown="if(event.key==='Enter')saveChar()" />
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveChar()">Add</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-custom">
+  <div class="modal">
+    <h3>Add Custom Task</h3>
+    <input type="text" id="custom-name-input" placeholder="Task name…" maxlength="80"
+           onkeydown="if(event.key==='Enter')document.getElementById('custom-desc-input').focus()" />
+    <input type="text" id="custom-desc-input" placeholder="Description (optional)…" maxlength="160"
+           style="margin-bottom:1rem;"
+           onkeydown="if(event.key==='Enter')saveCustomTask()" />
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeCustomModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveCustomTask()">Add Task</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   TASK DATA  —  Patch 12.0.5 Lingering Shadows  (May 2026)
+   Sources: Icy Veins weekly to-do list, Icy Veins world
+   events guide, Mythic-Store weekly checklist.
+   No raid content included by design.
+
+   To update for a new patch:
+     • Edit task name/desc fields below
+     • Add new sections following the same object shape
+     • Remove or set priority:3 for outdated content
+     • tag-new marks 12.0.5-introduced content
+═══════════════════════════════════════════════════════════ */
+const SECTIONS = [
+
+  // ── PRIORITY 1  (Do First) ─────────────────────────────
+
+  {
+    id: 'raid',
+    icon: '⚔️', iconClass: 'icon-raid',
+    title: 'Raids',
+    meta: 'Personal loot lockout resets Tuesday · LFR wings independent',
+    categories: ['raid'],
+    priority: 1,
+    tasks: [
+      { id: 'ra1', name: 'Claim Great Vault raid reward (if row unlocked)',
+        desc: 'Opens Tuesday. Raid row unlocks at 1, 3, and 6 boss kills. Choose from unlocked options.',
+        tags: ['tag-raid', 'tag-vault'] },
+      { id: 'ra2', name: 'LFR — The Sundered Sanctum Wing 1',
+        desc: 'Queue via Group Finder. Rewards Veteran-quality gear and Crests. No lockout — repeatable but only first kill awards personal loot.',
+        tags: ['tag-raid'] },
+      { id: 'ra3', name: 'LFR — The Sundered Sanctum Wing 2',
+        desc: 'Unlocks after Wing 1. Continues the Quel\'Thalas siege storyline.',
+        tags: ['tag-raid'] },
+      { id: 'ra4', name: 'LFR — The Sundered Sanctum Wing 3',
+        desc: 'Final wing. Higher item level tier token drop rate. Counts toward Raid vault row.',
+        tags: ['tag-raid'] },
+      { id: 'ra5', name: 'Normal / Heroic — The Sundered Sanctum',
+        desc: 'Personal loot lockout per difficulty. Each boss killed counts toward your Raid vault row slots (unlock at 1, 3, 6 kills).',
+        tags: ['tag-raid'] },
+      { id: 'ra6', name: 'Use Catalyst charge on tier set piece (if available)',
+        desc: 'Catalyst converts eligible gear into tier set items. Prioritize the 2-piece bonus first, then 4-piece.',
+        tags: ['tag-raid', 'tag-gold'] },
+      { id: 'ra7', name: 'Use Nebulous Voidcores as bonus rolls on raid loot',
+        desc: 'Voidforge Nebulous Voidcores can target raid boss loot pools. Check your Icy Veins class guide for best slots.',
+        tags: ['tag-raid', 'tag-void'] },
+      { id: 'ra8', name: 'Pick up weekly raid quest from The Bazaar (if active)',
+        desc: 'Some weekly reset quests reward bonus loot or Crests for completing a raid boss. Check Lady Liadrin and the Adventure Guide.',
+        tags: ['tag-raid', 'tag-gold'] },
+    ]
+  },
+
+  {
+    id: 'vault',
+    icon: '🏆', iconClass: 'icon-vault',
+    title: 'Great Vault',
+    meta: 'Opens Tuesday reset — claim before doing anything else',
+    categories: ['currency'],
+    priority: 1,
+    tasks: [
+      { id: 'v1', name: 'Open your Great Vault',
+        desc: 'First thing every Tuesday. Choose from up to 9 unlocked reward slots across World, Dungeon, and Raid rows.',
+        tags: ['tag-vault'] },
+      { id: 'v2', name: 'Plan your Vault rows intentionally this week',
+        desc: 'World row: Delves + Prey + Ritual Sites. Dungeon row: Mythic+ runs. Build rows with a goal — don\'t fill randomly.',
+        tags: ['tag-vault'] },
+    ]
+  },
+
+  {
+    id: 'void-assaults',
+    icon: '🌀', iconClass: 'icon-void',
+    title: 'Void Assaults',
+    meta: 'Start here each reset · Rotates between Eversong Woods and Zul\'Aman weekly',
+    categories: ['void'],
+    priority: 1,
+    tasks: [
+      { id: 'va1', name: 'Check which zone has the active Void Assault this week',
+        desc: 'Void Strikes rotate weekly between Eversong Woods and Zul\'Aman. Check your map at reset.',
+        tags: ['tag-void', 'tag-new'] },
+      { id: 'va2', name: 'Complete Void Strikes in the active zone',
+        desc: 'Smaller targeted attacks — easily soloable or in a small group. Defeating one spawns another nearby. Each awards Field Accolades.',
+        tags: ['tag-void', 'tag-world'] },
+      { id: 'va3', name: 'Participate in the Void Incursion (once bar reaches 100%)',
+        desc: 'Larger assault requiring more players. Triggered by clearing enough Void Strikes. Best Void Assault rewards.',
+        tags: ['tag-void', 'tag-world'] },
+      { id: 'va4', name: 'Complete Void Assault weekly quest',
+        desc: 'Rewards Ranger\'s Cache Pinnacle cache. Worth doing even if you no longer need Veteran-quality gear.',
+        tags: ['tag-void', 'tag-gold'] },
+    ]
+  },
+
+  {
+    id: 'bazaar',
+    icon: '🎁', iconClass: 'icon-world',
+    title: 'Bazaar Weekly Quests',
+    meta: 'Free weekly value — easy to forget, never skip',
+    categories: ['world', 'currency'],
+    priority: 1,
+    tasks: [
+      { id: 'bq1', name: 'Pick up quest from Ranger Captain Lilatha (2nd floor, The Bazaar)',
+        desc: 'Rewards a Ranger\'s Cache containing Field Accolades, Relic Coffer Key shards, gear-upgrade materials, and gold.',
+        tags: ['tag-world', 'tag-gold'] },
+      { id: 'bq2', name: 'Pick up quest from Kul\'amara the Fierce (2nd floor, The Bazaar)',
+        desc: 'Second free Ranger\'s Cache weekly. Takes minutes and runs naturally alongside Void Assault activity.',
+        tags: ['tag-world', 'tag-gold'] },
+      { id: 'bq3', name: 'Pick up Weekly World Event quest from Lady Liadrin',
+        desc: 'Rewards a Spark — used for crafted gear progression.',
+        tags: ['tag-world', 'tag-gold'] },
+      { id: 'bq4', name: 'Pick up Housing Weekly quest from Vaeli (outside Silvermoon bank)',
+        desc: 'Weekly housing quest for decor rewards and housing progression.',
+        tags: ['tag-housing', 'tag-world'] },
+    ]
+  },
+
+  {
+    id: 'voidforge',
+    icon: '⚗️', iconClass: 'icon-void',
+    title: 'Voidforge',
+    meta: '12.0.5 · Top priority if not yet complete · Powers endgame bonus rolls',
+    categories: ['void', 'currency'],
+    priority: 1,
+    tasks: [
+      { id: 'vf1', name: 'Check Voidforge quest status — visit Decimus at 51.2, 68.4 in The Voidstorm',
+        desc: 'Requires campaign completion up to "Domus Penumbra." If behind, Decimus offers all 6 catch-up weeks at once.',
+        tags: ['tag-void', 'tag-new'] },
+      { id: 'vf2', name: 'Complete this week\'s Voidforge quest',
+        desc: 'Completed Voidforge rewards 2 Nebulous Voidcores per week. Weekly cap increases by 2 each week for the rest of the season.',
+        tags: ['tag-void', 'tag-new'] },
+      { id: 'vf3', name: 'Use Nebulous Voidcores as bonus rolls on weak gear slots',
+        desc: 'Available from Mythic+, Bountiful Delves, and Nightmare Prey Hunts. Check your class guide on Icy Veins for optimal slot priorities.',
+        tags: ['tag-void', 'tag-gold', 'tag-new'] },
+      { id: 'vf4', name: 'Use Ascendant Voidcores on trinkets or weapons (if in endgame)',
+        desc: 'Drops from Season 1 endgame content. Upgrades max ilvl trinkets and weapons beyond normal caps.',
+        tags: ['tag-void', 'tag-gold', 'tag-new'] },
+    ]
+  },
+
+  // ── PRIORITY 2  (Important) ────────────────────────────
+
+  {
+    id: 'mythicplus',
+    icon: '🗝️', iconClass: 'icon-mythic',
+    title: 'Mythic+ Dungeons',
+    meta: 'No lockout — farm freely · Vault slots unlock at 1 / 4 / 8 runs',
+    categories: ['mythic'],
+    priority: 2,
+    tasks: [
+      { id: 'm1', name: 'Complete 1 Mythic+ key (unlocks Dungeon Vault slot 1)',
+        desc: 'Any key level qualifies. Get this done early in the week.',
+        tags: ['tag-mythic'] },
+      { id: 'm2', name: 'Complete 4 Mythic+ keys (unlocks Dungeon Vault slot 2)',
+        desc: 'Cumulative with the first run.',
+        tags: ['tag-mythic'] },
+      { id: 'm3', name: 'Complete 8 Mythic+ keys (unlocks Dungeon Vault slot 3)',
+        desc: 'Full Dungeon Vault row. Best dungeon reward value for the week.',
+        tags: ['tag-mythic'] },
+      { id: 'm4', name: 'Farm the highest keys you can, up to +10s',
+        desc: 'Icy Veins weekly recommendation for optimal Crest income this week.',
+        tags: ['tag-mythic', 'tag-gold'] },
+      { id: 'm5', name: 'Spend all Crests of Champion quality and below on upgrades',
+        desc: 'Lower-tier Crests should be spent each week. Upgrade your weakest gear slots first.',
+        tags: ['tag-mythic', 'tag-gold'] },
+    ]
+  },
+
+  {
+    id: 'delves',
+    icon: '🕳️', iconClass: 'icon-delve',
+    title: 'Delves',
+    meta: 'Solo/2-player instanced content · Contributes to Great Vault World row',
+    categories: ['delve'],
+    priority: 2,
+    tasks: [
+      { id: 'd1', name: 'Complete at least one T11 Delve (or highest tier manageable)',
+        desc: 'Icy Veins weekly goal. T11 provides optimal rewards. Counts toward Great Vault World row.',
+        tags: ['tag-delve'] },
+      { id: 'd2', name: 'Complete a Bountiful Delve for Nebulous Voidcore drop chance',
+        desc: 'Bountiful Delves are eligible Voidforge bonus roll sources.',
+        tags: ['tag-delve', 'tag-void'] },
+      { id: 'd3', name: 'Collect Delve weekly cache reward',
+        desc: 'Check for any active weekly Delve quest associated with your current tier.',
+        tags: ['tag-delve', 'tag-gold'] },
+    ]
+  },
+
+  {
+    id: 'prey',
+    icon: '🏹', iconClass: 'icon-prey',
+    title: 'Prey System',
+    meta: 'Open-world hunting · Great Vault World row · Enable via Astalor Bloodsworn in Murder Row, Silvermoon',
+    categories: ['prey'],
+    priority: 2,
+    tasks: [
+      { id: 'pr1', name: 'Complete three Nightmare Prey hunts (weekly quest)',
+        desc: 'Icy Veins weekly goal. Nightmare difficulty also drops Nebulous Voidcores for bonus rolls.',
+        tags: ['tag-world'] },
+      { id: 'pr2', name: 'Track additional Prey for Great Vault World row credit',
+        desc: 'Each dispatch contributes to the World row alongside Delves and Ritual Sites.',
+        tags: ['tag-world', 'tag-vault'] },
+      { id: 'pr3', name: 'Check Prey target list for transmog / mount / housing drops',
+        desc: 'Specific Prey targets drop unique achievements, transmog, mounts, and housing decor.',
+        tags: ['tag-world', 'tag-optional'] },
+    ]
+  },
+
+  {
+    id: 'ritual-sites',
+    icon: '🔮', iconClass: 'icon-void',
+    title: 'Ritual Sites',
+    meta: '12.0.5 · 1–5 players · Great Vault World row · Do early in the week',
+    categories: ['world', 'void'],
+    priority: 2,
+    tasks: [
+      { id: 'rs1', name: 'Complete Ritual Sites this week (flexible — solo or small group)',
+        desc: 'Repeatable instanced content with escalating tiers and greater rewards at higher difficulties. Counts toward Great Vault World row.',
+        tags: ['tag-void', 'tag-world', 'tag-new'] },
+      { id: 'rs2', name: 'Earn Field Accolades from Ritual Sites',
+        desc: 'Alongside Void Assaults, Ritual Sites are the main source of Field Accolades — the key 12.0.5 currency.',
+        tags: ['tag-void', 'tag-gold', 'tag-new'] },
+      { id: 'rs3', name: 'Spend Field Accolades — practical gear upgrades before cosmetics',
+        desc: 'Silvermoon City vendors sell Champion and Heroic quality gear, mounts, pets, housing decor, and transmog. Gear first.',
+        tags: ['tag-gold', 'tag-new'] },
+    ]
+  },
+
+  {
+    id: 'world-events',
+    icon: '🌍', iconClass: 'icon-world',
+    title: 'World Events',
+    meta: 'Rotating across all four Midnight zones each week',
+    categories: ['world'],
+    priority: 2,
+    tasks: [
+      { id: 'we1', name: 'World Bosses — kill each available boss once',
+        desc: 'One kill per boss per week. Four world bosses total across the four Midnight zones. Rewards Champion-quality loot.',
+        tags: ['tag-world', 'tag-gold'] },
+      { id: 'we2', name: 'Abundance — complete Weekly: Abundance quest (20,000 points)',
+        desc: 'Events spawn in zone caverns and rotate every 8 hours. Use Shards of Dundun to empower runs (up to 8 shards per week from outdoor activities). Rewards Overflowing Abundant Satchel + 1,000 Amani Tribe rep.',
+        tags: ['tag-world'] },
+      { id: 'we3', name: 'Stormarion Assault — complete Stand Your Ground weekly',
+        desc: 'Tower defense event at Stormarion Citadel in The Voidstorm, every 30 minutes. Defend 3 waves of void attackers. Rewards Victorious Stormarion Pinnacle Cache.',
+        tags: ['tag-world', 'tag-void'] },
+      { id: 'we4', name: 'Saltheril\'s Soiree — complete weekly faction quests in Eversong Woods',
+        desc: 'Choose your subfaction (Magisters / Blood Knights / Farstriders / Shades of the Row). Fortify the Runestones quest rewards pinnacle chest + 150 Brimming Arcana + 2,000 Silvermoon Court rep. Actions can affect standing with other subfactions.',
+        tags: ['tag-world', 'tag-gold'] },
+      { id: 'we5', name: 'Legends of the Haranir — complete Lost Legends weekly (Harandar)',
+        desc: 'Choose one of 7 Hara\'ti relics and play through its history in a scenario. Rewards Avid Learner\'s Supply Pack (counts as a Midnight Weekly Cache) + 1,000 Hara\'ti rep + a housing decor item based on your relic choice.',
+        tags: ['tag-world', 'tag-housing'] },
+      { id: 'we6', name: 'Darkmoon Faire (live until May 10)',
+        desc: 'Profession skill-ups, Darkmoon Prize Tickets, and side activities. Don\'t miss the weekly profession quests if skill points matter.',
+        tags: ['tag-world', 'tag-optional'] },
+    ]
+  },
+
+  {
+    id: 'currency',
+    icon: '💎', iconClass: 'icon-currency',
+    title: 'Currency & Upgrades',
+    meta: 'Weekly caps — spend before reset or lose value',
+    categories: ['currency'],
+    priority: 2,
+    tasks: [
+      { id: 'cu1', name: 'Spend all Crests of Champion quality and below on gear upgrades',
+        desc: 'Lower-tier Crests lose value if stockpiled. Prioritize weakest item level slots each week.',
+        tags: ['tag-gold'] },
+      { id: 'cu2', name: 'Use weekly Catalyst charge (if available)',
+        desc: 'Catalyst converts eligible gear into tier set pieces. 1 charge accrues per week.',
+        tags: ['tag-gold'] },
+      { id: 'cu3', name: 'Collect and spend Brimming Arcana (from Soiree / subfaction quartermasters)',
+        desc: 'Popular Blood Elf currency. Subfaction QMs and Silvermoon Court QM sell cosmetics, housing decor, and crafting recipes.',
+        tags: ['tag-gold'] },
+      { id: 'cu4', name: 'Open Relic Coffers with accumulated Key shards (from Bazaar caches)',
+        desc: 'Relic Coffer Key shards drop from Ranger\'s Cache rewards. Combine to open Coffers for additional loot.',
+        tags: ['tag-gold'] },
+    ]
+  },
+
+  {
+    id: 'housing',
+    icon: '🏡', iconClass: 'icon-housing',
+    title: 'Player Housing',
+    meta: 'Decor sources spread across multiple weekly systems',
+    categories: ['housing'],
+    priority: 2,
+    tasks: [
+      { id: 'h1', name: 'Complete Housing Weekly quest from Vaeli (outside Silvermoon bank)',
+        desc: 'Pick up every reset. Weekly housing quest with decor rewards.',
+        tags: ['tag-housing', 'tag-gold'] },
+      { id: 'h2', name: 'Spend Field Accolades on housing decor at Silvermoon vendors',
+        desc: 'Both Void Assaults and Ritual Sites generate Field Accolades, redeemable for housing items, mounts, and pets.',
+        tags: ['tag-housing', 'tag-gold', 'tag-new'] },
+      { id: 'h3', name: 'Legends of the Haranir — note which relic gives desired decor this week',
+        desc: 'Each of the 7 relic choices rewards a different housing decor item. Rotate across weeks for the full collection.',
+        tags: ['tag-housing', 'tag-world'] },
+      { id: 'h4', name: 'Check Ritual Sites Field Accolade vendor for new decor unlocks',
+        desc: 'New housing items become purchasable after completing associated Ritual Site weeklies.',
+        tags: ['tag-housing', 'tag-new'] },
+    ]
+  },
+
+  {
+    id: 'pvp',
+    icon: '⚔️', iconClass: 'icon-pvp',
+    title: 'PvP',
+    meta: 'Conquest cap resets Tuesday',
+    categories: ['pvp'],
+    priority: 2,
+    tasks: [
+      { id: 'pv1', name: 'Earn weekly Conquest cap',
+        desc: 'Fastest via Rated BGs and Arena (2v2 / 3v3). Conquest cap increases each week of the season.',
+        tags: ['tag-pvp'] },
+      { id: 'pv2', name: 'Queue Decor Duels — prop hunt PvP in instanced Silvermoon City',
+        desc: '12.0.5 new mode. No combat involved — hide using housing decor to blend in. Recommended even for PvP-averse players. Rewards housing decor.',
+        tags: ['tag-pvp', 'tag-housing', 'tag-new'] },
+      { id: 'pv3', name: 'Complete PvP Weekly Bonus Event quest (if active)',
+        desc: 'Check Adventure Guide. Rewards Honor + gear when PvP is the featured weekly activity.',
+        tags: ['tag-pvp', 'tag-gold'] },
+    ]
+  },
+
+  // ── PRIORITY 3  (Optional / Collector) ────────────────
+
+  {
+    id: 'optional',
+    icon: '🎣', iconClass: 'icon-optional',
+    title: 'Optional & Collector Content',
+    meta: '12.0.5 side content — no core power progression, great for collectors',
+    categories: ['optional'],
+    priority: 3,
+    tasks: [
+      { id: 'op1', name: 'Abyss Anglers — visit Depthdiver Jeju at 68.2, 20.0 off Zul\'Aman coast',
+        desc: 'Deep-sea spearfishing activity. Earns Angler Pearls for new armor sets, housing decor, pets, and a floppy fish mace. Upgrade diving gear to reach deeper zones with better treasure.',
+        tags: ['tag-optional', 'tag-housing', 'tag-new'] },
+      { id: 'op2', name: 'Collect up to 8 Shards of Dundun for Abundance runs',
+        desc: 'Weekly cap of 8 shards from outdoor activities, gathering, and Patron Crafting Orders. Used to Empower Abundance events for bonus Unalloyed Abundance (tradeable for transmog and housing decor).',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'op3', name: 'Spring Balloon Festival — May 10 to May 13',
+        desc: 'Micro-holiday across Broken Isles, Draenor Nagrand, Valley of the Four Winds, Uldum, and Northrend Crystalsong Forest. Balloon rides require 3 players, NPC tour guide included.',
+        tags: ['tag-optional', 'tag-world'] },
+      { id: 'op4', name: 'Review Icy Veins class guide for Voidcore bonus roll priorities',
+        desc: 'Each spec guide lists optimal Nebulous and Ascendant Voidcore targets. Worth checking after each patch update.',
+        tags: ['tag-optional'] },
+    ]
+  },
+];
+
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
+let currentChar   = 'Main';
+let characters    = JSON.parse(localStorage.getItem('wow_midnight_chars') || '["Main"]');
+let activeFilters = new Set(['all']); // 'all' means show everything
+let collapsed     = {};
+
+function getWeekKey() {
+  const now = new Date();
+  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 15, 0, 0));
+  while (d.getUTCDay() !== 2) d.setUTCDate(d.getUTCDate() - 1);
+  if (now < d) d.setUTCDate(d.getUTCDate() - 7);
+  return d.toISOString().slice(0, 10);
+}
+
+function storageKey() { return 'wow_mn_' + currentChar + '_' + getWeekKey(); }
+function loadDone()   { return JSON.parse(localStorage.getItem(storageKey()) || '{}'); }
+function saveDone(d)  { localStorage.setItem(storageKey(), JSON.stringify(d)); }
+
+/* ═══════════════════════════════════════════
+   RENDER
+═══════════════════════════════════════════ */
+const PRIORITY_META = {
+  1: ['p1', '⬡ Do First — highest weekly value'],
+  2: ['p2', '◈ Important — fill out your week'],
+  3: ['p3', '◇ Optional — collector & side content'],
+};
+
+function tagLabel(cls) {
+  const m = {
+    'tag-vault':'Vault','tag-raid':'Raid','tag-mythic':'Mythic+','tag-delve':'Delve',
+    'tag-void':'Void','tag-world':'World','tag-gold':'Currency',
+    'tag-pvp':'PvP','tag-optional':'Optional','tag-housing':'Housing','tag-new':'12.0.5'
+  };
+  return m[cls] || cls;
+}
+
+function render() {
+  const done = loadDone();
+  const container = document.getElementById('sections-container');
+  container.innerHTML = '';
+  let totalVisible = 0, totalDone = 0, lastPriority = null;
+
+  SECTIONS.forEach(sec => {
+    const isAll = activeFilters.has('all');
+    const tasks = sec.tasks.filter(t => {
+      if (isAll) return true;
+      return sec.categories.some(c => activeFilters.has(c));
+    });
+    if (!tasks.length) return;
+
+    if (isAll && sec.priority !== lastPriority) {
+      lastPriority = sec.priority;
+      const [cls, text] = PRIORITY_META[sec.priority];
+      const lbl = document.createElement('div');
+      lbl.className = 'priority-label ' + cls;
+      lbl.textContent = text;
+      container.appendChild(lbl);
+    }
+
+    totalVisible += tasks.length;
+    const secDone = tasks.filter(t => done[t.id]).length;
+    totalDone += secDone;
+    const isOpen = !collapsed[sec.id];
+
+    const div = document.createElement('div');
+    div.className = 'section';
+    div.innerHTML = `
+      <div class="section-header${isOpen?' open':''}" onclick="toggleSection('${sec.id}')">
+        <div class="section-icon ${sec.iconClass}">${sec.icon}</div>
+        <div class="section-title-wrap">
+          <div class="section-title">${sec.title}</div>
+          <div class="section-meta">${sec.meta}</div>
+        </div>
+        <span class="section-count"><span class="done">${secDone}</span>&thinsp;/&thinsp;${tasks.length}</span>
+        <span class="chevron" style="transform:rotate(${isOpen?'0':'-90'}deg)">▼</span>
+      </div>
+      <div class="section-body${isOpen?'':' hidden'}" id="body-${sec.id}">
+        ${tasks.map(t => `
+          <div class="task${done[t.id]?' done':''}" onclick="toggle('${t.id}')">
+            <div class="task-check"></div>
+            <div class="task-body">
+              <div class="task-name">${t.name}</div>
+              ${t.desc?`<div class="task-desc">${t.desc}</div>`:''}
+              ${t.tags&&t.tags.length?`<div class="task-tags">${t.tags.map(tg=>`<span class="tag ${tg}">${tagLabel(tg)}</span>`).join('')}</div>`:''}
+            </div>
+          </div>`).join('')}
+      </div>`;
+    container.appendChild(div);
+  });
+
+  const pct = totalVisible ? Math.round((totalDone / totalVisible) * 100) : 0;
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('prog-label').textContent = totalDone + ' / ' + totalVisible + ' done';
+  renderCustomSection();
+}
+
+/* ═══════════════════════════════════════════
+   INTERACTIONS
+═══════════════════════════════════════════ */
+function toggle(id) {
+  const done = loadDone();
+  done[id] ? delete done[id] : (done[id] = true);
+  saveDone(done); render();
+}
+function toggleSection(id) { collapsed[id] = !collapsed[id]; render(); }
+function resetAll() {
+  if (!confirm('Reset all tasks for ' + currentChar + ' this week?')) return;
+  localStorage.removeItem(storageKey()); render();
+}
+function setFilter(f, btn) {
+  if (f === 'all') {
+    // All button: clear everything and go back to show-all
+    activeFilters = new Set(['all']);
+  } else {
+    // Toggle this category on/off
+    activeFilters.delete('all'); // leaving "all" mode
+    if (activeFilters.has(f)) {
+      activeFilters.delete(f);
+      // If nothing selected, fall back to all
+      if (activeFilters.size === 0) activeFilters = new Set(['all']);
+    } else {
+      activeFilters.add(f);
+    }
+  }
+  // Sync button states
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    const val = b.getAttribute('data-filter');
+    b.classList.toggle('active', activeFilters.has(val));
+  });
+  render();
+}
+
+/* ═══════════════════════════════════════════
+   CHARACTERS
+═══════════════════════════════════════════ */
+function renderChars() {
+  document.getElementById('char-list').innerHTML = characters.map(c => `
+    <span style="display:inline-flex;align-items:center;gap:2px;">
+      <button class="char-btn${c===currentChar?' active':''}" onclick="switchChar('${c}')">${c}</button>
+      ${characters.length>1?`<button class="char-btn-del" title="Remove ${c}" onclick="deleteChar('${c}')">✕</button>`:''}
+    </span>`).join('');
+}
+function switchChar(name) { currentChar = name; renderChars(); render(); }
+function deleteChar(name) {
+  if (!confirm('Remove ' + name + ' and all saved data?')) return;
+  Object.keys(localStorage).filter(k => k.startsWith('wow_mn_' + name + '_')).forEach(k => localStorage.removeItem(k));
+  characters = characters.filter(c => c !== name);
+  localStorage.setItem('wow_midnight_chars', JSON.stringify(characters));
+  if (currentChar === name) currentChar = characters[0];
+  renderChars(); render();
+}
+function openAddChar() {
+  document.getElementById('modal').classList.add('open');
+  document.getElementById('char-input').value = '';
+  setTimeout(() => document.getElementById('char-input').focus(), 50);
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function saveChar() {
+  const name = document.getElementById('char-input').value.trim();
+  if (!name) return;
+  if (!characters.includes(name)) {
+    characters.push(name);
+    localStorage.setItem('wow_midnight_chars', JSON.stringify(characters));
+  }
+  closeModal(); switchChar(name);
+}
+document.getElementById('modal').addEventListener('click', e => { if (e.target===document.getElementById('modal')) closeModal(); });
+
+/* ═══════════════════════════════════════════
+   COUNTDOWN
+═══════════════════════════════════════════ */
+function updateCountdown() {
+  const now = new Date();
+  let next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 15, 0, 0));
+  while (next.getUTCDay() !== 2) next.setUTCDate(next.getUTCDate() + 1);
+  if (next <= now) next.setUTCDate(next.getUTCDate() + 7);
+  const diff = next - now;
+  const d = Math.floor(diff/86400000);
+  const h = Math.floor((diff%86400000)/3600000);
+  const m = Math.floor((diff%3600000)/60000);
+  const s = Math.floor((diff%60000)/1000);
+  document.getElementById('countdown').textContent =
+    (d>0?d+'d ':'')+String(h).padStart(2,'0')+'h '+String(m).padStart(2,'0')+'m '+String(s).padStart(2,'0')+'s';
+}
+
+/* ═══════════════════════════════════════════
+   CUSTOM TASKS
+   Stored per character (not per week — persist
+   until manually deleted)
+═══════════════════════════════════════════ */
+function customStorageKey() { return 'wow_mn_custom_' + currentChar; }
+function loadCustomTasks()  { return JSON.parse(localStorage.getItem(customStorageKey()) || '[]'); }
+function saveCustomTasks(t) { localStorage.setItem(customStorageKey(), JSON.stringify(t)); }
+
+function renderCustomSection() {
+  // Remove existing custom section if present
+  const existing = document.getElementById('custom-section-wrap');
+  if (existing) existing.remove();
+
+  if (!activeFilters.has('all') && !activeFilters.has('custom')) return;
+
+  const tasks  = loadCustomTasks();
+  const done   = loadDone();
+  const wrap   = document.createElement('div');
+  wrap.id      = 'custom-section-wrap';
+  wrap.className = 'custom-section-wrap';
+
+  // Priority label when in "all" view
+  if (activeFilters.has('all')) {
+    const lbl = document.createElement('div');
+    lbl.className = 'priority-label p3';
+    lbl.textContent = '✦ Custom Tasks';
+    wrap.appendChild(lbl);
+  }
+
+  // Section header
+  const isOpen = !collapsed['custom'];
+  const header = document.createElement('div');
+  header.className = 'section' + (activeFilters.has('custom') && !activeFilters.has('all') ? '' : '');
+  header.innerHTML = `
+    <div class="section-header${isOpen?' open':''}" onclick="toggleSection('custom')" style="margin-bottom:0;">
+      <div class="section-icon icon-optional">✦</div>
+      <div class="section-title-wrap">
+        <div class="section-title">Custom Tasks</div>
+        <div class="section-meta">Your personal weekly to-dos · Saved per character · Never auto-reset</div>
+      </div>
+      <span class="section-count"><span class="done">${tasks.filter(t=>done['custom_'+t.id]).length}</span>&thinsp;/&thinsp;${tasks.length}</span>
+      <span class="chevron" style="transform:rotate(${isOpen?'0':'-90'}deg)">▼</span>
+    </div>
+    <div class="section-body${isOpen?'':' hidden'}" id="body-custom">
+      <div style="padding:0.65rem 1rem; border-bottom:1px solid var(--border); display:flex; gap:0.6rem;">
+        <button class="btn-primary" style="font-size:11px;padding:0.35rem 0.9rem;" onclick="openCustomModal()">+ Add Task</button>
+      </div>
+      ${tasks.length === 0
+        ? `<div class="custom-empty">No custom tasks yet — add one above.</div>`
+        : tasks.map(t => `
+          <div class="task${done['custom_'+t.id]?' done':''}" onclick="toggleCustom('${t.id}')">
+            <div class="task-check"></div>
+            <div class="task-body">
+              <div class="task-name">${escHtml(t.name)}</div>
+              ${t.desc ? `<div class="task-desc">${escHtml(t.desc)}</div>` : ''}
+            </div>
+            <button class="task-del" title="Delete task" onclick="deleteCustomTask(event,'${t.id}')">✕</button>
+          </div>`).join('')}
+    </div>`;
+
+  wrap.appendChild(header);
+  document.getElementById('sections-container').appendChild(wrap);
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toggleCustom(id) {
+  const done = loadDone();
+  const key  = 'custom_' + id;
+  done[key] ? delete done[key] : (done[key] = true);
+  saveDone(done);
+  render(); // re-render will call renderCustomSection
+}
+
+function deleteCustomTask(e, id) {
+  e.stopPropagation();
+  if (!confirm('Delete this custom task?')) return;
+  const tasks = loadCustomTasks().filter(t => t.id !== id);
+  saveCustomTasks(tasks);
+  // also clear done state
+  const done = loadDone();
+  delete done['custom_' + id];
+  saveDone(done);
+  render();
+}
+
+function openCustomModal() {
+  document.getElementById('modal-custom').classList.add('open');
+  document.getElementById('custom-name-input').value = '';
+  document.getElementById('custom-desc-input').value = '';
+  setTimeout(() => document.getElementById('custom-name-input').focus(), 50);
+}
+
+function closeCustomModal() { document.getElementById('modal-custom').classList.remove('open'); }
+
+function saveCustomTask() {
+  const name = document.getElementById('custom-name-input').value.trim();
+  if (!name) return;
+  const desc  = document.getElementById('custom-desc-input').value.trim();
+  const tasks = loadCustomTasks();
+  tasks.push({ id: Date.now().toString(36), name, desc });
+  saveCustomTasks(tasks);
+  closeCustomModal();
+  render();
+}
+
+document.getElementById('modal-custom').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-custom')) closeCustomModal();
+});
+
+/* ── INIT ── */
+renderChars(); render(); updateCountdown(); setInterval(updateCountdown, 1000);
+</script>
+</body>
+</html>
