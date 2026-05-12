@@ -1205,10 +1205,11 @@ function render() {
     } else {
       totalVisible = selected.length;
       totalDone    = selected.filter(t => done[t.id]).length;
+      const sorted = [...selected].sort((a, b) => (done[a.id] ? 1 : 0) - (done[b.id] ? 1 : 0));
       const body = document.createElement('div');
       body.className = 'section-body';
       body.style.cssText = 'border-radius:8px;border:1px solid var(--border-bright);';
-      body.innerHTML = selected.map(t => `
+      body.innerHTML = sorted.map(t => `
         <div class="task${done[t.id]?' done':''}" onclick="toggle('${t.id}')">
           <div class="task-check"></div>
           <div class="task-body">
