@@ -8,6 +8,7 @@
 
 </head>
 <body>
+<canvas id="confetti-canvas" style="position:fixed;inset:0;pointer-events:none;z-index:9999;width:100%;height:100%;"></canvas>
 <div class="wrapper">
 
   <header>
@@ -35,6 +36,11 @@
       <span id="prog-label" style="color:var(--text-secondary);font-size:13px;">0 / 0 done</span>
     </div>
     <button class="btn-reset-all" onclick="resetAll()">↺ Reset Week</button>
+    <button class="btn-reset-all" onclick="openSummary()">📊 Summary</button>
+    <button class="btn-reset-all" onclick="openExportImport()">⇅ Data</button>
+    <button class="btn-reset-all" id="btn-whats-next" onclick="whatsNext()" title="Randomly pick an uncompleted task from Your List">🎲 What's Next?</button>
+    <button class="btn-reset-all" id="btn-theme" onclick="toggleTheme()" title="Toggle dark/light mode">☀️ Light</button>
+    <button class="btn-reset-all" id="btn-compact" onclick="toggleCompact()" title="Toggle compact view">⊟ Compact</button>
     <button class="btn-reset-all" id="btn-reveal" onclick="toggleRevealHidden()" style="display:none;">👁 Show Hidden</button>
     <button class="btn-reset-all" id="btn-edit-yourlist" onclick="startEditingYourList()" style="display:none;">⭐ Edit List</button>
     <button class="btn-reset-all" id="btn-yourlist-allchars" onclick="applyYourListToAll()" style="display:none;">⭐ Apply to All</button>
@@ -45,6 +51,7 @@
     <div id="char-list" style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;"></div>
     <button class="char-add" title="Add character" onclick="openAddChar()">+</button>
   </div>
+  <div id="class-links-bar" style="display:none;"></div>
 
   <div class="filter-tabs">
     <button class="tab-btn tab-yourlist" data-filter="yourlist" onclick="setFilter('yourlist',this)"> Your List</button>
@@ -74,13 +81,15 @@
 </div>
 
 <div class="modal-overlay" id="modal">
-  <div class="modal">
-    <h3>Add Character</h3>
+  <div class="modal" style="width:480px;max-width:95vw;">
+    <h3 id="char-modal-title">Add Character</h3>
     <input type="text" id="char-input" placeholder="Character name…" maxlength="24"
            onkeydown="if(event.key==='Enter')saveChar()" />
+    <div style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.1em;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.6rem;">Class (optional)</div>
+    <div id="class-picker" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:1.1rem;"></div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-      <button class="btn-primary" onclick="saveChar()">Add</button>
+      <button class="btn-primary" onclick="saveChar()">Save</button>
     </div>
   </div>
 </div>
@@ -180,7 +189,7 @@ const SECTIONS = [
       { id: 'va1', name: 'Check which zone has the active Void Assault this week',
         desc: 'Void Strikes rotate weekly between Eversong Woods and Zul\'Aman. Check your map at reset.',
         tags: ['tag-void', 'tag-new'] },
-      { id: 'va2', name: 'Complete Void Strikes in the active zone',
+      { id: 'va2', goal: {max:5, label:'strikes'}, name: 'Complete Void Strikes in the active zone',
         desc: 'Smaller targeted attacks — easily soloable or in a small group. Defeating one spawns another nearby. Each awards Field Accolades.',
         tags: ['tag-void', 'tag-world'] },
       { id: 'va3', name: 'Participate in the Void Incursion (once bar reaches 100%)',
@@ -248,15 +257,14 @@ const SECTIONS = [
     categories: ['mythic'],
     priority: 2,
     tasks: [
-      { id: 'm1', name: 'Complete 1 Mythic+ key (unlocks Dungeon Vault slot 1)',
-        desc: 'Any key level qualifies. Get this done early in the week.',
-        tags: ['tag-mythic'] },
-      { id: 'm2', name: 'Complete 4 Mythic+ keys (unlocks Dungeon Vault slot 2)',
-        desc: 'Cumulative with the first run.',
-        tags: ['tag-mythic'] },
-      { id: 'm3', name: 'Complete 8 Mythic+ keys (unlocks Dungeon Vault slot 3)',
-        desc: 'Full Dungeon Vault row. Best dungeon reward value for the week.',
-        tags: ['tag-mythic'] },
+      { id: 'm1', goal: {max:8, label:'runs', milestones:[
+          {at:1, note:'🔓 Vault slot 1 unlocked'},
+          {at:4, note:'🔓🔓 Vault slots 1–2 unlocked'},
+          {at:8, note:'🔓🔓🔓 All 3 Vault slots unlocked'},
+        ]},
+        name: 'Complete Mythic+ keys for Great Vault',
+        desc: 'Run 1 for slot 1, 4 for slot 2, 8 for all 3 slots.',
+        tags: ['tag-mythic', 'tag-vault'] },
       { id: 'm4', name: 'Farm the highest keys you can, up to +10s',
         desc: 'Icy Veins weekly recommendation for optimal Crest income this week.',
         tags: ['tag-mythic', 'tag-gold'] },
@@ -274,7 +282,7 @@ const SECTIONS = [
     categories: ['delve'],
     priority: 2,
     tasks: [
-      { id: 'd1', name: 'Complete at least one T11 Delve (or highest tier manageable)',
+      { id: 'd1', goal: {max:4, label:'delves'}, name: 'Complete at least one T11 Delve (or highest tier manageable)',
         desc: 'Icy Veins weekly goal. T11 provides optimal rewards. Counts toward Great Vault World row.',
         tags: ['tag-delve'] },
       { id: 'd2', name: 'Complete a Bountiful Delve for Nebulous Voidcore drop chance',
@@ -294,7 +302,7 @@ const SECTIONS = [
     categories: ['prey'],
     priority: 2,
     tasks: [
-      { id: 'pr1', name: 'Complete three Nightmare Prey hunts (weekly quest)',
+      { id: 'pr1', goal: {max:3, label:'hunts'}, name: 'Complete three Nightmare Prey hunts (weekly quest)',
         desc: 'Icy Veins weekly goal. Nightmare difficulty also drops Nebulous Voidcores for bonus rolls.',
         tags: ['tag-world'] },
       { id: 'pr2', name: 'Track additional Prey for Great Vault World row credit',
@@ -314,7 +322,7 @@ const SECTIONS = [
     categories: ['ritual-sites'],
     priority: 2,
     tasks: [
-      { id: 'rs1', name: 'Complete Ritual Sites this week (flexible — solo or small group)',
+      { id: 'rs1', goal: {max:5, label:'sites'}, name: 'Complete Ritual Sites this week (flexible — solo or small group)',
         desc: 'Repeatable instanced content with escalating tiers and greater rewards at higher difficulties. Counts toward Great Vault World row.',
         tags: ['tag-void', 'tag-world', 'tag-new'] },
       { id: 'rs2', name: 'Earn Field Accolades from Ritual Sites',
@@ -409,7 +417,7 @@ const SECTIONS = [
     categories: ['pvp'],
     priority: 2,
     tasks: [
-      { id: 'pv1', name: 'Earn weekly Conquest cap',
+      { id: 'pv1', goal: {max:1750, label:'conquest'}, name: 'Earn weekly Conquest cap',
         desc: 'Fastest via Rated BGs and Arena (2v2 / 3v3). Conquest cap increases each week of the season.',
         tags: ['tag-pvp'] },
       { id: 'pv2', name: 'Queue Decor Duels — prop hunt PvP in instanced Silvermoon City',
@@ -434,7 +442,7 @@ const SECTIONS = [
       { id: 'op1', name: 'Abyss Anglers — visit Depthdiver Jeju at 68.2, 20.0 off Zul\'Aman coast',
         desc: 'Deep-sea spearfishing activity. Earns Angler Pearls for new armor sets, housing decor, pets, and a floppy fish mace. Upgrade diving gear to reach deeper zones with better treasure.',
         tags: ['tag-optional', 'tag-housing', 'tag-new'] },
-      { id: 'op2', name: 'Collect up to 8 Shards of Dundun for Abundance runs',
+      { id: 'op2', goal: {max:8, label:'shards'}, name: 'Collect up to 8 Shards of Dundun for Abundance runs',
         desc: 'Weekly cap of 8 shards from outdoor activities, gathering, and Patron Crafting Orders. Used to Empower Abundance events for bonus Unalloyed Abundance (tradeable for transmog and housing decor).',
         tags: ['tag-optional', 'tag-world'] },
       { id: 'op3', name: 'Review Icy Veins class guide for Voidcore bonus roll priorities',
@@ -703,12 +711,29 @@ function hiddenKey()      { return 'wow_mn_hidden_' + currentChar; }
 function loadHidden()     { return JSON.parse(localStorage.getItem(hiddenKey()) || '{}'); }
 function saveHidden(h)    { localStorage.setItem(hiddenKey(), JSON.stringify(h)); }
 
-function yourListKey()    { return 'wow_mn_yourlist_' + currentChar; }
-function loadYourList()   { return JSON.parse(localStorage.getItem(yourListKey()) || '[]'); }
-function saveYourList(l)  { localStorage.setItem(yourListKey(), JSON.stringify(l)); }
+function yourListKey()      { return 'wow_mn_yourlist_' + currentChar; }
+function loadYourList()     { return JSON.parse(localStorage.getItem(yourListKey()) || '[]'); }
+function saveYourList(l)    { localStorage.setItem(yourListKey(), JSON.stringify(l)); }
+
+function notesKey()         { return 'wow_mn_notes_' + currentChar; }
+function loadNotes()        { return JSON.parse(localStorage.getItem(notesKey()) || '{}'); }
+function saveNotes(n)       { localStorage.setItem(notesKey(), JSON.stringify(n)); }
+
+function yourListOrderKey()  { return 'wow_mn_ylorder_' + currentChar; }
+function loadYourListOrder() { return JSON.parse(localStorage.getItem(yourListOrderKey()) || '[]'); }
+function saveYourListOrder(o){ localStorage.setItem(yourListOrderKey(), JSON.stringify(o)); }
+
+function goalsKey()          { return 'wow_mn_goals_' + currentChar + '_' + getWeekKey(); }
+function loadGoals()         { return JSON.parse(localStorage.getItem(goalsKey()) || '{}'); }
+function saveGoals(g)        { localStorage.setItem(goalsKey(), JSON.stringify(g)); }
 
 let revealHidden    = false;
-let editingYourList = false; // when true, clicking tasks toggles them in/out of Your List
+let editingYourList = false;
+let isCompact       = localStorage.getItem('wow_mn_compact') === 'true';
+let isLightMode     = localStorage.getItem('wow_mn_theme') === 'light';
+
+if (isCompact)   document.body.classList.add('compact-mode');
+if (isLightMode) { document.body.classList.add('light-mode'); }
 
 /* ═══════════════════════════════════════════
    RENDER
@@ -732,6 +757,7 @@ function render() {
   const done      = loadDone();
   const hidden    = loadHidden();
   const yourList  = new Set(loadYourList());
+  const notes     = loadNotes();
   const container = document.getElementById('sections-container');
   container.innerHTML = '';
   let totalVisible = 0, totalDone = 0, lastPriority = null;
@@ -739,7 +765,6 @@ function render() {
 
   // ── YOUR LIST VIEW ──────────────────────────────────────
   if (activeFilters.has('yourlist') && !editingYourList) {
-    // Always show the Edit List button
     const editBtn = document.getElementById('btn-edit-yourlist');
     editBtn.style.display = '';
     editBtn.textContent = '⭐ Edit List';
@@ -751,7 +776,6 @@ function render() {
         if (yourList.has(t.id)) selected.push({ ...t, sectionTitle: sec.title, sectionIcon: sec.icon });
       });
     });
-    // Also include custom tasks that are in the list
     loadCustomTasks().forEach(t => {
       if (yourList.has('custom_' + t.id)) selected.push({ ...t, id: 'custom_' + t.id, sectionTitle: 'Custom', sectionIcon: '✦' });
     });
@@ -764,24 +788,70 @@ function render() {
           <span style="font-size:13px;margin-top:0.4rem;display:block;">Click <strong style="font-style:normal;color:var(--light-gold);">⭐ Edit List</strong> in the toolbar above to pick tasks from the master list.</span>
         </div>`;
     } else {
-      totalVisible = selected.length;
-      totalDone    = selected.filter(t => done[t.id]).length;
-      const sorted = [...selected].sort((a, b) => (done[a.id] ? 1 : 0) - (done[b.id] ? 1 : 0));
+      // Apply saved order, then sort done to bottom
+      const order = loadYourListOrder();
+      const goals = loadGoals();
+      const sorted = [...selected].sort((a, b) => {
+        const ai = order.indexOf(a.id), bi = order.indexOf(b.id);
+        const aPos = ai === -1 ? 999 : ai;
+        const bPos = bi === -1 ? 999 : bi;
+        // done always last
+        const aDone = done[a.id] ? 1 : 0, bDone = done[b.id] ? 1 : 0;
+        if (aDone !== bDone) return aDone - bDone;
+        return aPos - bPos;
+      });
+
+      totalVisible = sorted.length;
+      totalDone    = sorted.filter(t => done[t.id]).length;
+
       const body = document.createElement('div');
       body.className = 'section-body';
+      body.id = 'yourlist-body';
       body.style.cssText = 'border-radius:8px;border:1px solid var(--border-bright);';
-      body.innerHTML = sorted.map(t => `
-        <div class="task${done[t.id]?' done':''}" onclick="toggle('${t.id}')">
-          <div class="task-check"></div>
-          <div class="task-body">
-            <div class="task-name">${t.name}</div>
-            ${t.desc?`<div class="task-desc">${t.desc}</div>`:''}
-            <div class="task-tags" style="margin-top:0.35rem;">
-              <span class="tag" style="background:rgba(201,168,76,0.1);color:var(--light-gold);border-color:rgba(201,168,76,0.25);font-size:10px;">${t.sectionIcon} ${t.sectionTitle}</span>
-              ${t.tags&&t.tags.length?t.tags.map(tg=>`<span class="tag ${tg}">${tagLabel(tg)}</span>`).join(''):''}
+
+      body.innerHTML = sorted.map(t => {
+        const goalDef  = t.goal;
+        const goalVal  = goalDef ? (goals[t.id] || 0) : null;
+
+        // Find active milestone note
+        let milestoneNote = '';
+        if (goalDef && goalDef.milestones) {
+          const passed = goalDef.milestones.filter(m => goalVal >= m.at);
+          if (passed.length) milestoneNote = passed[passed.length - 1].note;
+        }
+
+        const goalHtml = goalDef ? `
+          <div class="goal-tracker" onclick="event.stopPropagation()">
+            <button class="goal-btn" onclick="adjustGoal('${t.id}',${goalDef.max},-1)">−</button>
+            <span class="goal-val ${goalVal >= goalDef.max ? 'goal-complete' : ''}">${goalVal}<span class="goal-max"> / ${goalDef.max}</span></span>
+            <button class="goal-btn" onclick="adjustGoal('${t.id}',${goalDef.max},1)">+</button>
+            <span class="goal-label">${goalDef.label}</span>
+          </div>` : '';
+        return `
+          <div class="task yl-task${done[t.id]?' done':''}" draggable="true" data-id="${t.id}"
+               ondragstart="ylDragStart(event)"
+               ondragover="ylDragOver(event)"
+               ondrop="ylDrop(event)"
+               ondragend="ylDragEnd(event)">
+            <div class="yl-drag-handle" onclick="event.stopPropagation()" title="Drag to reorder">⠿</div>
+            <div class="task-check" onclick="event.stopPropagation();toggle('${t.id}',this)" style="cursor:pointer;"></div>
+            <div class="task-body">
+              <div class="task-name">${t.name}</div>
+              ${t.desc?`<div class="task-desc">${t.desc}</div>`:''}
+              ${milestoneNote ? `<div class="milestone-note">${milestoneNote}</div>` : ''}
+              <div class="task-tags" style="margin-top:0.35rem;">
+                <span class="tag" style="background:rgba(201,168,76,0.1);color:var(--light-gold);border-color:rgba(201,168,76,0.25);font-size:10px;">${t.sectionIcon} ${t.sectionTitle}</span>
+                ${t.tags&&t.tags.length?t.tags.map(tg=>`<span class="tag ${tg}">${tagLabel(tg)}</span>`).join(''):''}
+              </div>
+              ${noteHtml(t.id, notes)}
             </div>
-          </div>
-        </div>`).join('');
+            <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">
+              ${noteBtnHtml(t.id, notes)}
+            </div>
+            ${goalHtml}
+          </div>`;
+      }).join('');
+
       container.appendChild(body);
     }
 
@@ -870,16 +940,20 @@ function render() {
       </div>
       <div class="section-body${isOpen?'':' hidden'}" id="body-${sec.id}">
         ${visibleTasks.map(t => `
-          <div class="task${done[t.id]?' done':''}${hidden[t.id]?' task-hidden':''}${yourList.has(t.id)?' in-yourlist':''}" onclick="${editingYourList ? `toggleYourListTask('${t.id}')` : `toggle('${t.id}')`}">
-            <div class="task-check" style="${editingYourList?'pointer-events:none;':''}"></div>
+          <div class="task${done[t.id]?' done':''}${hidden[t.id]?' task-hidden':''}${yourList.has(t.id)?' in-yourlist':''}" >
+            <div class="task-check" onclick="event.stopPropagation();${editingYourList ? `toggleYourListTask('${t.id}')` : `toggle('${t.id}',this)`}" style="cursor:pointer;"></div>
             <div class="task-body">
               <div class="task-name">${t.name}</div>
               ${t.desc?`<div class="task-desc">${t.desc}</div>`:''}
               ${t.tags&&t.tags.length?`<div class="task-tags">${t.tags.map(tg=>`<span class="tag ${tg}">${tagLabel(tg)}</span>`).join('')}</div>`:''}
+              ${!editingYourList ? noteHtml(t.id, notes) : ''}
             </div>
             ${editingYourList
               ? `<span style="flex-shrink:0;font-size:13px;color:${yourList.has(t.id)?'var(--light-gold)':'var(--text-muted)'};">${yourList.has(t.id)?'⭐':'☆'}</span>`
-              : `<button class="task-hide" title="${hidden[t.id]?'Unhide task':'Hide task'}" onclick="toggleHideTask(event,'${t.id}')">${hidden[t.id]?'👁':'🚫'}</button>`
+              : `<div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">
+                  ${noteBtnHtml(t.id, notes)}
+                  <button class="task-hide" title="${hidden[t.id]?'Unhide task':'Hide task'}" onclick="toggleHideTask(event,'${t.id}')">${hidden[t.id]?'👁':'🚫'}</button>
+                </div>`
             }
           </div>`).join('')}
       </div>`;
@@ -909,12 +983,159 @@ function render() {
 }
 
 /* ═══════════════════════════════════════════
-   INTERACTIONS
+   CONFETTI ENGINE
 ═══════════════════════════════════════════ */
-function toggle(id) {
-  const done = loadDone();
+const _confetti = (() => {
+  const canvas  = document.getElementById('confetti-canvas');
+  const ctx     = canvas.getContext('2d');
+  let particles = [];
+  let raf       = null;
+  let W, H;
+
+  // WoW Midnight palette — void purples, golds, pale whites
+  const COLORS = [
+    '#a07de0','#7c5cbf','#c9a84c','#e8d9a0',
+    '#6abf80','#e07068','#b090e0','#ffffff',
+    '#d4af37','#c084fc',
+  ];
+
+  const SHAPES = ['circle','square','ribbon'];
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function randomBetween(a, b) { return a + Math.random() * (b - a); }
+
+  function makeParticle(x, y, big) {
+    const shape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+    return {
+      x, y,
+      vx: randomBetween(-6, 6) * (big ? 1.4 : 1),
+      vy: randomBetween(-14, -6) * (big ? 1.5 : 1),
+      ax: 0,
+      ay: randomBetween(0.3, 0.55),
+      r:  randomBetween(big ? 5 : 3, big ? 11 : 7),
+      rot: randomBetween(0, Math.PI * 2),
+      rotV: randomBetween(-0.2, 0.2),
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      alpha: 1,
+      shape,
+      wobble: randomBetween(0, Math.PI * 2),
+      wobbleV: randomBetween(0.05, 0.15),
+      life: big ? 220 : 140,
+      age: 0,
+    };
+  }
+
+  function drawParticle(p) {
+    ctx.save();
+    ctx.globalAlpha = p.alpha;
+    ctx.fillStyle   = p.color;
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rot);
+
+    if (p.shape === 'circle') {
+      ctx.beginPath();
+      ctx.arc(0, 0, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (p.shape === 'square') {
+      ctx.fillRect(-p.r, -p.r, p.r * 2, p.r * 2);
+    } else {
+      // ribbon — thin rectangle with wobble-based skew
+      ctx.fillRect(-p.r * 0.4, -p.r * 1.5, p.r * 0.8, p.r * 3);
+    }
+    ctx.restore();
+  }
+
+  function step() {
+    ctx.clearRect(0, 0, W, H);
+    particles = particles.filter(p => p.age < p.life && p.y < H + 40);
+
+    particles.forEach(p => {
+      p.age++;
+      p.wobble += p.wobbleV;
+      p.vx += p.ax + Math.sin(p.wobble) * 0.15;
+      p.vy += p.ay;
+      p.vx *= 0.99;
+      p.x  += p.vx;
+      p.y  += p.vy;
+      p.rot += p.rotV;
+      // Fade in last 40% of life
+      const fadeStart = p.life * 0.6;
+      if (p.age > fadeStart) {
+        p.alpha = 1 - (p.age - fadeStart) / (p.life - fadeStart);
+      }
+      drawParticle(p);
+    });
+
+    if (particles.length > 0) {
+      raf = requestAnimationFrame(step);
+    } else {
+      raf = null;
+    }
+  }
+
+  function burst(x, y, count, big) {
+    for (let i = 0; i < count; i++) particles.push(makeParticle(x, y, big));
+    if (!raf) raf = requestAnimationFrame(step);
+  }
+
+  function celebrate() {
+    // Full-screen celebration — fire from multiple points
+    const points = [
+      [W * 0.2, H * 0.4], [W * 0.5, H * 0.35],
+      [W * 0.8, H * 0.4], [W * 0.35, H * 0.5],
+      [W * 0.65, H * 0.5],
+    ];
+    points.forEach(([x, y], i) => {
+      setTimeout(() => burst(x, y, 55, true), i * 120);
+    });
+  }
+
+  return { burst, celebrate };
+})();
+
+// Get click position from a task element for the burst origin
+function _getTaskPos(taskEl) {
+  if (!taskEl) return { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+  const rect = taskEl.getBoundingClientRect();
+  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+}
+
+// Check if all visible tasks are done after a toggle
+function _checkCompletion() {
+  const done   = loadDone();
+  const hidden = loadHidden();
+  let total = 0, completed = 0;
+  SECTIONS.forEach(sec => {
+    sec.tasks.filter(t => !hidden[t.id]).forEach(t => {
+      total++;
+      if (done[t.id]) completed++;
+    });
+  });
+  loadCustomTasks().forEach(t => {
+    total++;
+    if (done['custom_' + t.id]) completed++;
+  });
+  return total > 0 && completed === total;
+}
+function toggle(id, taskEl) {
+  const done    = loadDone();
+  const wasDown = !!done[id];
   done[id] ? delete done[id] : (done[id] = true);
-  saveDone(done); render();
+  saveDone(done);
+  if (!wasDown) {
+    // Task just checked — burst from task position
+    const pos = _getTaskPos(taskEl);
+    _confetti.burst(pos.x, pos.y, 28, false);
+    // Check for full completion
+    if (_checkCompletion()) setTimeout(() => _confetti.celebrate(), 200);
+  }
+  render();
 }
 function toggleSection(id) { collapsed[id] = !collapsed[id]; render(); }
 
@@ -975,6 +1196,58 @@ function clearYourList() {
   render();
 }
 
+/* ── DRAG TO REORDER YOUR LIST ── */
+let ylDragSrcId = null;
+
+function ylDragStart(e) {
+  ylDragSrcId = e.currentTarget.dataset.id;
+  e.currentTarget.style.opacity = '0.4';
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function ylDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  document.querySelectorAll('.yl-task').forEach(el => el.classList.remove('yl-drag-over'));
+  e.currentTarget.classList.add('yl-drag-over');
+}
+
+function ylDrop(e) {
+  e.preventDefault();
+  const targetId = e.currentTarget.dataset.id;
+  if (!targetId || targetId === ylDragSrcId) return;
+
+  // Build new order from current DOM, then swap
+  const items = [...document.querySelectorAll('.yl-task')].map(el => el.dataset.id);
+  const srcIdx = items.indexOf(ylDragSrcId);
+  const tgtIdx = items.indexOf(targetId);
+  if (srcIdx === -1 || tgtIdx === -1) return;
+  items.splice(srcIdx, 1);
+  items.splice(tgtIdx, 0, ylDragSrcId);
+  saveYourListOrder(items);
+  render();
+}
+
+function ylDragEnd(e) {
+  e.currentTarget.style.opacity = '';
+  document.querySelectorAll('.yl-task').forEach(el => el.classList.remove('yl-drag-over'));
+}
+
+/* ── WEEKLY GOAL TRACKER ── */
+function adjustGoal(id, max, delta) {
+  const goals = loadGoals();
+  const cur   = goals[id] || 0;
+  const next  = Math.max(0, Math.min(max, cur + delta));
+  goals[id]   = next;
+  saveGoals(goals);
+  // Auto-check only when goal fully met; uncheck when decremented below max
+  const done = loadDone();
+  if (next >= max) { done[id] = true; }
+  else             { delete done[id]; }
+  saveDone(done);
+  render();
+}
+
 function applyYourListToAll() {
   if (characters.length <= 1) { alert('You only have one character.'); return; }
   const others = characters.filter(c => c !== currentChar);
@@ -1021,12 +1294,19 @@ function setFilter(f, btn) {
    CHARACTERS
 ═══════════════════════════════════════════ */
 function renderChars() {
-  document.getElementById('char-list').innerHTML = characters.map(c => `
+  document.getElementById('char-list').innerHTML = characters.map(c => {
+    const cls = loadCharClass(c);
+    const def = cls ? CLASSES.find(x => x.id === cls) : null;
+    const dot = def ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${def.color};margin-right:5px;flex-shrink:0;"></span>` : '';
+    return `
     <span style="display:inline-flex;align-items:center;gap:2px;">
-      <button class="char-btn${c===currentChar?' active':''}" onclick="switchChar('${c}')">${c}</button>
-      <button class="char-btn-del" title="Rename ${c}" onclick="openRenameChar('${c}')">✏️</button>
+      <button class="char-btn${c===currentChar?' active':''}" onclick="switchChar('${c}')" style="display:flex;align-items:center;gap:0;">
+        ${dot}${c}
+      </button>
+      <button class="char-btn-del" title="Edit ${c}" onclick="openRenameChar('${c}')">✏️</button>
       ${characters.length>1?`<button class="char-btn-del" title="Remove ${c}" onclick="deleteChar('${c}')">✕</button>`:''}
-    </span>`).join('');
+    </span>`;
+  }).join('');
 }
 function switchChar(name) {
   currentChar = name;
@@ -1040,28 +1320,31 @@ function switchChar(name) {
     b.classList.toggle('active', activeFilters.has(val));
   });
   renderChars();
+  renderClassLinksBar();
   render();
 }
 function deleteChar(name) {
   if (!confirm('Remove ' + name + ' and all saved data?')) return;
-  Object.keys(localStorage).filter(k => k.startsWith('wow_mn_' + name + '_') || k === 'wow_mn_hidden_' + name || k === 'wow_mn_custom_' + name || k === 'wow_mn_yourlist_' + name).forEach(k => localStorage.removeItem(k));
+  Object.keys(localStorage).filter(k => k.startsWith('wow_mn_' + name + '_') || k === 'wow_mn_hidden_' + name || k === 'wow_mn_custom_' + name || k === 'wow_mn_yourlist_' + name || k === 'wow_mn_ylorder_' + name || k === 'wow_mn_notes_' + name || k === classKey(name)).forEach(k => localStorage.removeItem(k));
   characters = characters.filter(c => c !== name);
   localStorage.setItem('wow_midnight_chars', JSON.stringify(characters));
   if (currentChar === name) currentChar = characters[0];
   renderChars(); render();
 }
 function openAddChar() {
-  document.getElementById('modal').querySelector('h3').textContent = 'Add Character';
+  document.getElementById('char-modal-title').textContent = 'Add Character';
   document.getElementById('modal').dataset.renaming = '';
   document.getElementById('modal').classList.add('open');
   document.getElementById('char-input').value = '';
+  renderClassPicker('');
   setTimeout(() => document.getElementById('char-input').focus(), 50);
 }
 function openRenameChar(oldName) {
-  document.getElementById('modal').querySelector('h3').textContent = 'Rename Character';
+  document.getElementById('char-modal-title').textContent = 'Edit Character';
   document.getElementById('modal').dataset.renaming = oldName;
   document.getElementById('modal').classList.add('open');
   document.getElementById('char-input').value = oldName;
+  renderClassPicker(loadCharClass(oldName));
   setTimeout(() => { const el = document.getElementById('char-input'); el.focus(); el.select(); }, 50);
 }
 function closeModal() { document.getElementById('modal').classList.remove('open'); }
@@ -1072,9 +1355,13 @@ function saveChar() {
   const isRename = oldName && oldName !== '';
 
   if (isRename) {
-    if (newName === oldName) { closeModal(); return; }
+    if (newName === oldName) {
+      // Name unchanged — still save class update
+      saveCharClass(oldName, _modalSelectedClass);
+      closeModal(); renderChars(); renderClassLinksBar();
+      return;
+    }
     if (characters.includes(newName)) { alert('A character with that name already exists.'); return; }
-    // Migrate all localStorage keys from oldName to newName
     const prefix = 'wow_mn_';
     Object.keys(localStorage)
       .filter(k => k.startsWith(prefix + oldName + '_') || k === prefix + 'hidden_' + oldName || k === prefix + 'custom_' + oldName)
@@ -1083,20 +1370,25 @@ function saveChar() {
         localStorage.setItem(newKey, localStorage.getItem(k));
         localStorage.removeItem(k);
       });
+    // Migrate class
+    const existingClass = loadCharClass(oldName);
+    localStorage.removeItem(classKey(oldName));
+    saveCharClass(newName, _modalSelectedClass || existingClass);
     const idx = characters.indexOf(oldName);
     characters[idx] = newName;
     localStorage.setItem('wow_midnight_chars', JSON.stringify(characters));
     if (currentChar === oldName) currentChar = newName;
-    closeModal(); renderChars(); render();
+    closeModal(); renderChars(); renderClassLinksBar(); render();
   } else {
     if (!characters.includes(newName)) {
       characters.push(newName);
       localStorage.setItem('wow_midnight_chars', JSON.stringify(characters));
     }
+    saveCharClass(newName, _modalSelectedClass);
     closeModal(); switchChar(newName);
   }
 }
-document.getElementById('modal').addEventListener('click', e => { if (e.target===document.getElementById('modal')) closeModal(); });
+
 
 /* ═══════════════════════════════════════════
    COUNTDOWN
@@ -1131,9 +1423,10 @@ function renderCustomSection() {
 
   if (!activeFilters.has('all') && !activeFilters.has('custom')) return;
 
-  const tasks  = loadCustomTasks();
-  const done   = loadDone();
+  const tasks   = loadCustomTasks();
+  const done    = loadDone();
   const yourList = new Set(loadYourList());
+  const notes   = loadNotes();
   const wrap   = document.createElement('div');
   wrap.id      = 'custom-section-wrap';
   wrap.className = 'custom-section-wrap';
@@ -1175,15 +1468,19 @@ function renderCustomSection() {
           : tasks.map(t => {
               const inList = yourList.has('custom_' + t.id);
               return `
-              <div class="task${done['custom_'+t.id]?' done':''}${inList?' in-yourlist':''}" onclick="${editingYourList ? `toggleYourListTask('custom_${t.id}')` : `toggleCustom('${t.id}')`}">
-                <div class="task-check" style="${editingYourList?'pointer-events:none;':''}"></div>
+              <div class="task${done['custom_'+t.id]?' done':''}${inList?' in-yourlist':''}" >
+                <div class="task-check" onclick="event.stopPropagation();${editingYourList ? `toggleYourListTask('custom_${t.id}')` : `toggleCustom('${t.id}',this)`}" style="cursor:pointer;"></div>
                 <div class="task-body">
                   <div class="task-name">${escHtml(t.name)}</div>
                   ${t.desc?`<div class="task-desc">${escHtml(t.desc)}</div>`:''}
+                  ${!editingYourList ? noteHtml('custom_'+t.id, notes) : ''}
                 </div>
                 ${editingYourList
                   ? `<span style="flex-shrink:0;font-size:13px;color:${inList?'var(--light-gold)':'var(--text-muted)'};">${inList?'⭐':'☆'}</span>`
-                  : `<button class="task-del" title="Delete task" onclick="deleteCustomTask(event,'${t.id}')">✕</button>`
+                  : `<div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">
+                      ${noteBtnHtml('custom_'+t.id, notes)}
+                      <button class="task-del" title="Delete task" onclick="deleteCustomTask(event,'${t.id}')">✕</button>
+                    </div>`
                 }
               </div>`;}).join('')}
       </div>`;
@@ -1207,15 +1504,19 @@ function renderCustomSection() {
           : tasks.map(t => {
               const inList = yourList.has('custom_' + t.id);
               return `
-              <div class="task${done['custom_'+t.id]?' done':''}${inList?' in-yourlist':''}" onclick="${editingYourList ? `toggleYourListTask('custom_${t.id}')` : `toggleCustom('${t.id}')`}">
-                <div class="task-check" style="${editingYourList?'pointer-events:none;':''}"></div>
+              <div class="task${done['custom_'+t.id]?' done':''}${inList?' in-yourlist':''}" >
+                <div class="task-check" onclick="event.stopPropagation();${editingYourList ? `toggleYourListTask('custom_${t.id}')` : `toggleCustom('${t.id}',this)`}" style="cursor:pointer;"></div>
                 <div class="task-body">
                   <div class="task-name">${escHtml(t.name)}</div>
                   ${t.desc ? `<div class="task-desc">${escHtml(t.desc)}</div>` : ''}
+                  ${!editingYourList ? noteHtml('custom_'+t.id, notes) : ''}
                 </div>
                 ${editingYourList
                   ? `<span style="flex-shrink:0;font-size:13px;color:${inList?'var(--light-gold)':'var(--text-muted)'};">${inList?'⭐':'☆'}</span>`
-                  : `<button class="task-del" title="Delete task" onclick="deleteCustomTask(event,'${t.id}')">✕</button>`
+                  : `<div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">
+                      ${noteBtnHtml('custom_'+t.id, notes)}
+                      <button class="task-del" title="Delete task" onclick="deleteCustomTask(event,'${t.id}')">✕</button>
+                    </div>`
                 }
               </div>`;}).join('')}
       </div>`;
@@ -1229,12 +1530,18 @@ function escHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function toggleCustom(id) {
-  const done = loadDone();
-  const key  = 'custom_' + id;
+function toggleCustom(id, taskEl) {
+  const done    = loadDone();
+  const key     = 'custom_' + id;
+  const wasDown = !!done[key];
   done[key] ? delete done[key] : (done[key] = true);
   saveDone(done);
-  render(); // re-render will call renderCustomSection
+  if (!wasDown) {
+    const pos = _getTaskPos(taskEl);
+    _confetti.burst(pos.x, pos.y, 28, false);
+    if (_checkCompletion()) setTimeout(() => _confetti.celebrate(), 200);
+  }
+  render();
 }
 
 function deleteCustomTask(e, id) {
@@ -1269,12 +1576,533 @@ function saveCustomTask() {
   render();
 }
 
-document.getElementById('modal-custom').addEventListener('click', e => {
-  if (e.target === document.getElementById('modal-custom')) closeCustomModal();
-});
+
+
+/* ═══════════════════════════════════════════
+   WEEKLY SUMMARY
+═══════════════════════════════════════════ */
+function openSummary() {
+  const done    = loadDone();
+  const hidden  = loadHidden();
+  const content = document.getElementById('summary-content');
+  document.getElementById('summary-title').textContent = `Weekly Summary — ${currentChar}`;
+
+  const d = new Date();
+  const rd = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  while (rd.getUTCDay() !== 2) rd.setUTCDate(rd.getUTCDate() - 1);
+  const weekLabel = rd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+
+  let rows = [], grandTotal = 0, grandDone = 0;
+
+  SECTIONS.forEach(sec => {
+    const visible = sec.tasks.filter(t => !hidden[t.id]);
+    if (!visible.length) return;
+    const secDone = visible.filter(t => done[t.id]).length;
+    grandTotal += visible.length;
+    grandDone  += secDone;
+    rows.push({ title: sec.title, icon: sec.icon, iconClass: sec.iconClass, done: secDone, total: visible.length });
+  });
+
+  const customTasks = loadCustomTasks();
+  if (customTasks.length) {
+    const cDone = customTasks.filter(t => done['custom_' + t.id]).length;
+    grandTotal += customTasks.length;
+    grandDone  += cDone;
+    rows.push({ title: 'Custom Tasks', icon: '✦', iconClass: 'icon-optional', done: cDone, total: customTasks.length });
+  }
+
+  const pct = grandTotal ? Math.round((grandDone / grandTotal) * 100) : 0;
+
+  content.innerHTML = `
+    <div class="summary-week">Reset week of ${weekLabel}</div>
+    ${rows.map(r => {
+      const p = r.total ? Math.round((r.done / r.total) * 100) : 0;
+      const complete = r.done === r.total && r.total > 0;
+      return `
+      <div class="summary-section">
+        <div class="section-icon ${r.iconClass}" style="width:22px;height:22px;font-size:11px;flex-shrink:0;">${r.icon}</div>
+        <span class="summary-label" title="${r.title}">${r.title}</span>
+        <div class="summary-bar-track">
+          <div class="summary-bar-fill${complete?' complete':''}" style="width:${p}%"></div>
+        </div>
+        <span class="summary-count" style="${complete?'color:var(--success-bright)':''}">${r.done}/${r.total}</span>
+      </div>`;
+    }).join('')}
+    <div class="summary-total">
+      <span class="summary-label">Overall Progress</span>
+      <div class="summary-bar-track">
+        <div class="summary-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,var(--light-gold),var(--void-glow))"></div>
+      </div>
+      <span class="summary-count" style="color:var(--light-gold);font-size:12px;">${grandDone}/${grandTotal} &nbsp;${pct}%</span>
+    </div>`;
+
+  document.getElementById('modal-summary').classList.add('open');
+}
+
+function closeSummary() { document.getElementById('modal-summary').classList.remove('open'); }
+
+
+/* ═══════════════════════════════════════════
+   EXPORT / IMPORT CHARACTER DATA
+═══════════════════════════════════════════ */
+function getAllCharData(charName) {
+  const prefix = 'wow_mn_';
+  const data = {
+    version: '1.0', character: charName, exported: new Date().toISOString(),
+    weeklyDone: {},
+    hidden:      JSON.parse(localStorage.getItem(`${prefix}hidden_${charName}`)    || '{}'),
+    customTasks: JSON.parse(localStorage.getItem(`${prefix}custom_${charName}`)    || '[]'),
+    yourList:    JSON.parse(localStorage.getItem(`${prefix}yourlist_${charName}`)  || '[]'),
+    notes:       JSON.parse(localStorage.getItem(`${prefix}notes_${charName}`)     || '{}'),
+  };
+  Object.keys(localStorage)
+    .filter(k => k.startsWith(`${prefix}${charName}_`))
+    .forEach(k => {
+      const week = k.replace(`${prefix}${charName}_`, '');
+      data.weeklyDone[week] = JSON.parse(localStorage.getItem(k) || '{}');
+    });
+  return data;
+}
+
+function openExportImport() {
+  const modal   = document.getElementById('modal-data');
+  const content = document.getElementById('data-modal-content');
+  const btns    = document.getElementById('data-modal-btns');
+  document.getElementById('data-modal-title').textContent = `Character Data — ${currentChar}`;
+  btns.innerHTML = `<button class="btn-cancel" onclick="closeDataModal()">Close</button>`;
+  content.innerHTML = `
+    <div class="data-option" onclick="exportCharData()">
+      <div class="data-option-icon">📤</div>
+      <div class="data-option-body">
+        <div class="data-option-title">Export Character</div>
+        <div class="data-option-desc">Download ${currentChar}'s progress, custom tasks, hidden tasks, and Your List as a JSON file.</div>
+      </div>
+    </div>
+    <div class="data-option" onclick="openImportPicker()">
+      <div class="data-option-icon">📥</div>
+      <div class="data-option-body">
+        <div class="data-option-title">Import Character</div>
+        <div class="data-option-desc">Load a previously exported JSON file to restore or transfer character data.</div>
+      </div>
+    </div>
+    <div class="data-option" onclick="exportAllData()">
+      <div class="data-option-icon">💾</div>
+      <div class="data-option-body">
+        <div class="data-option-title">Export All Characters</div>
+        <div class="data-option-desc">Download every character's data as a single backup JSON file.</div>
+      </div>
+    </div>`;
+  modal.classList.add('open');
+}
+
+function closeDataModal() { document.getElementById('modal-data').classList.remove('open'); }
+
+
+function exportCharData() {
+  const data = getAllCharData(currentChar);
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `wow-tracker-${currentChar.toLowerCase().replace(/\s+/g,'-')}-${getWeekKey()}.json`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function exportAllData() {
+  const all = { version: '1.0', exported: new Date().toISOString(), characters: {} };
+  characters.forEach(c => { all.characters[c] = getAllCharData(c); });
+  const blob = new Blob([JSON.stringify(all, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `wow-tracker-all-characters-${getWeekKey()}.json`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function openImportPicker() {
+  document.getElementById('import-file-input').value = '';
+  document.getElementById('import-file-input').click();
+}
+
+function handleImportFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try { showImportPreview(JSON.parse(e.target.result)); }
+    catch { alert('Invalid file — could not parse JSON.'); }
+  };
+  reader.readAsText(file);
+}
+
+function showImportPreview(data) {
+  const content  = document.getElementById('data-modal-content');
+  const btns     = document.getElementById('data-modal-btns');
+  document.getElementById('data-modal-title').textContent = 'Import Preview';
+
+  const isAllChars = !!data.characters;
+  const entries    = isAllChars ? Object.entries(data.characters) : [[data.character, data]];
+  const exported   = new Date(data.exported).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+
+  const charList = entries.map(([charName, d]) => {
+    const weekCount     = Object.keys(d.weeklyDone || {}).length;
+    const customCount   = (d.customTasks || []).length;
+    const yourListCount = (d.yourList || []).length;
+    const exists        = characters.includes(charName);
+    return `<div style="display:flex;gap:0.5rem;align-items:baseline;margin-bottom:3px;flex-wrap:wrap;">
+      <span style="font-family:'Cinzel',serif;font-size:12px;color:var(--light-pale);">${charName}</span>
+      <span style="font-size:12px;color:var(--text-muted);">${weekCount} week${weekCount!==1?'s':''} · ${customCount} custom · ${yourListCount} list items</span>
+      ${exists
+        ? '<span style="font-size:11px;color:#e07068;font-style:italic;">overwrites existing</span>'
+        : '<span style="font-size:11px;color:var(--success-bright);font-style:italic;">new character</span>'}
+    </div>`;
+  }).join('');
+
+  content.innerHTML = `
+    <div class="import-preview">
+      <strong>Exported:</strong> ${exported}<br>
+      <strong>Characters:</strong>
+      <div style="margin-top:0.4rem;">${charList}</div>
+    </div>
+    <div class="import-warning">⚠ Existing data for matching characters will be overwritten. This cannot be undone.</div>`;
+
+  window._pendingImport = data;
+  btns.innerHTML = `
+    <button class="btn-cancel" onclick="openExportImport()">← Back</button>
+    <button class="btn-primary" onclick="confirmImport()">✓ Confirm Import</button>`;
+}
+
+function confirmImport() {
+  const data = window._pendingImport;
+  if (!data) return;
+  const prefix     = 'wow_mn_';
+  const isAllChars = !!data.characters;
+  const entries    = isAllChars ? Object.entries(data.characters) : [[data.character, data]];
+
+  entries.forEach(([charName, d]) => {
+    if (!characters.includes(charName)) {
+      characters.push(charName);
+      localStorage.setItem('wow_midnight_chars', JSON.stringify(characters));
+    }
+    Object.entries(d.weeklyDone || {}).forEach(([week, done]) => {
+      localStorage.setItem(`${prefix}${charName}_${week}`, JSON.stringify(done));
+    });
+    if (d.hidden)      localStorage.setItem(`${prefix}hidden_${charName}`,   JSON.stringify(d.hidden));
+    if (d.customTasks) localStorage.setItem(`${prefix}custom_${charName}`,   JSON.stringify(d.customTasks));
+    if (d.yourList)    localStorage.setItem(`${prefix}yourlist_${charName}`, JSON.stringify(d.yourList));
+    if (d.notes)       localStorage.setItem(`${prefix}notes_${charName}`,    JSON.stringify(d.notes));
+  });
+
+  window._pendingImport = null;
+  closeDataModal(); renderChars(); render();
+  alert(`Import complete — ${entries.length} character${entries.length!==1?'s':''} restored.`);
+}
+
+/* ═══════════════════════════════════════════
+   CLASS DATA
+═══════════════════════════════════════════ */
+const CLASSES = [
+  { id: 'death-knight',  name: 'Death Knight',  color: '#C41E3A', icon: '💀' },
+  { id: 'demon-hunter',  name: 'Demon Hunter',  color: '#A330C9', icon: '🔱' },
+  { id: 'druid',         name: 'Druid',         color: '#FF7C0A', icon: '🌿' },
+  { id: 'evoker',        name: 'Evoker',         color: '#33937F', icon: '🐉' },
+  { id: 'hunter',        name: 'Hunter',        color: '#AAD372', icon: '🏹' },
+  { id: 'mage',          name: 'Mage',          color: '#3FC7EB', icon: '❄️' },
+  { id: 'monk',          name: 'Monk',          color: '#00FF98', icon: '👊' },
+  { id: 'paladin',       name: 'Paladin',       color: '#F48CBA', icon: '⚔️' },
+  { id: 'priest',        name: 'Priest',        color: '#FFFFFF', icon: '✨' },
+  { id: 'rogue',         name: 'Rogue',         color: '#FFF468', icon: '🗡️' },
+  { id: 'shaman',        name: 'Shaman',        color: '#0070DD', icon: '⚡' },
+  { id: 'warlock',       name: 'Warlock',       color: '#8788EE', icon: '🔥' },
+  { id: 'warrior',       name: 'Warrior',       color: '#C69B3A', icon: '🛡️' },
+];
+
+function classKey(charName)  { return 'wow_mn_class_' + charName; }
+function loadCharClass(name) { return localStorage.getItem(classKey(name)) || ''; }
+function saveCharClass(name, cls) {
+  if (cls) localStorage.setItem(classKey(name), cls);
+  else     localStorage.removeItem(classKey(name));
+}
+
+let _modalSelectedClass = '';
+
+function renderClassPicker(selectedId) {
+  _modalSelectedClass = selectedId || '';
+  const container = document.getElementById('class-picker');
+  if (!container) return;
+  container.innerHTML = CLASSES.map(c => `
+    <button onclick="selectClass('${c.id}')" style="
+      font-family:'Cinzel',serif; font-size:11px; letter-spacing:0.06em;
+      padding:4px 9px; border-radius:4px; cursor:pointer;
+      border: 1.5px solid ${_modalSelectedClass === c.id ? c.color : 'rgba(255,255,255,0.1)'};
+      background: ${_modalSelectedClass === c.id ? c.color + '22' : 'transparent'};
+      color: ${_modalSelectedClass === c.id ? c.color : 'var(--text-secondary)'};
+      transition: all 0.15s;
+    ">${c.icon} ${c.name}</button>
+  `).join('') +
+  `<button onclick="selectClass('')" style="
+    font-family:'Cinzel',serif; font-size:11px; letter-spacing:0.06em;
+    padding:4px 9px; border-radius:4px; cursor:pointer;
+    border: 1.5px solid ${!_modalSelectedClass ? 'var(--border-bright)' : 'var(--border)'};
+    background: transparent; color: var(--text-muted); transition: all 0.15s;
+  ">None</button>`;
+}
+
+function selectClass(id) {
+  _modalSelectedClass = id;
+  renderClassPicker(id);
+}
+
+function renderClassLinksBar() {
+  const bar = document.getElementById('class-links-bar');
+  if (!bar) return;
+  const cls = loadCharClass(currentChar);
+  if (!cls) { bar.style.display = 'none'; return; }
+  const def = CLASSES.find(c => c.id === cls);
+  if (!def) { bar.style.display = 'none'; return; }
+
+  const slug  = cls; // e.g. 'death-knight'
+  const name  = def.name.toLowerCase().replace(/\s+/g, '-'); // same as slug
+  const icyUrl    = `https://www.icy-veins.com/wow/${slug}-guide`;
+  const murlokUrl = `https://murlok.io/${slug}`;
+  const wowheadUrl= `https://www.wowhead.com/guides/classes#${cls.replace(/-/g, '')}`;
+  const blizzUrl  = `https://worldofwarcraft.blizzard.com/en-us/game/classes/${slug}`;
+
+  bar.style.display = 'flex';
+  bar.style.cssText = `
+    display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;
+    padding:0.6rem 0.9rem; margin-bottom:1.25rem;
+    background:var(--bg-panel); border:1px solid var(--border);
+    border-radius:8px; font-size:13px;
+  `;
+  bar.innerHTML = `
+    <span style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.06em;color:${def.color};flex-shrink:0;">
+      ${def.icon} ${def.name}
+    </span>
+    <span style="color:var(--border-bright);font-size:11px;">Resources:</span>
+    <a href="${icyUrl}" target="_blank" rel="noopener" style="
+      font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.07em;
+      padding:3px 10px; border-radius:4px; text-decoration:none;
+      border:1px solid rgba(160,125,224,0.4); color:var(--void-glow);
+      background:rgba(124,92,191,0.1); transition:all 0.2s;
+    " onmouseover="this.style.background='rgba(124,92,191,0.2)'" onmouseout="this.style.background='rgba(124,92,191,0.1)'">
+      📖 Icy Veins
+    </a>
+    <a href="${murlokUrl}" target="_blank" rel="noopener" style="
+      font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.07em;
+      padding:3px 10px; border-radius:4px; text-decoration:none;
+      border:1px solid rgba(201,168,76,0.4); color:var(--light-gold);
+      background:rgba(201,168,76,0.08); transition:all 0.2s;
+    " onmouseover="this.style.background='rgba(201,168,76,0.15)'" onmouseout="this.style.background='rgba(201,168,76,0.08)'">
+      📊 Murlok.io
+    </a>
+    <a href="${wowheadUrl}" target="_blank" rel="noopener" style="
+      font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.07em;
+      padding:3px 10px; border-radius:4px; text-decoration:none;
+      border:1px solid rgba(74,140,92,0.4); color:var(--success-bright);
+      background:rgba(74,140,92,0.08); transition:all 0.2s;
+    " onmouseover="this.style.background='rgba(74,140,92,0.15)'" onmouseout="this.style.background='rgba(74,140,92,0.08)'">
+      🔍 Wowhead
+    </a>
+    <a href="${blizzUrl}" target="_blank" rel="noopener" style="
+      font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.07em;
+      padding:3px 10px; border-radius:4px; text-decoration:none;
+      border:1px solid rgba(90,80,112,0.4); color:#8878aa;
+      background:rgba(90,80,112,0.08); transition:all 0.2s;
+    " onmouseover="this.style.background='rgba(90,80,112,0.15)'" onmouseout="this.style.background='rgba(90,80,112,0.08)'">
+      🌐 Blizzard
+    </a>`;
+}
+function toggleTheme() {
+  isLightMode = !isLightMode;
+  document.body.classList.toggle('light-mode', isLightMode);
+  localStorage.setItem('wow_mn_theme', isLightMode ? 'light' : 'dark');
+  const btn = document.getElementById('btn-theme');
+  btn.textContent = isLightMode ? '🌙 Dark' : '☀️ Light';
+}
+
+/* ═══════════════════════════════════════════
+   COMPACT MODE
+═══════════════════════════════════════════ */
+function toggleCompact() {
+  isCompact = !isCompact;
+  document.body.classList.toggle('compact-mode', isCompact);
+  localStorage.setItem('wow_mn_compact', isCompact);
+  const btn = document.getElementById('btn-compact');
+  btn.textContent = isCompact ? '⊞ Full' : '⊟ Compact';
+  btn.style.color       = isCompact ? 'var(--void-glow)' : '';
+  btn.style.borderColor = isCompact ? 'var(--void-purple)' : '';
+}
+
+/* ═══════════════════════════════════════════
+   WHAT'S NEXT
+═══════════════════════════════════════════ */
+function whatsNext() {
+  const done     = loadDone();
+  const yourList = new Set(loadYourList());
+  const hidden   = loadHidden();
+
+  // Gather all uncompleted tasks from Your List
+  const candidates = [];
+  SECTIONS.forEach(sec => {
+    sec.tasks.forEach(t => {
+      if (yourList.has(t.id) && !done[t.id] && !hidden[t.id]) {
+        candidates.push({ id: t.id, type: 'section' });
+      }
+    });
+  });
+  loadCustomTasks().forEach(t => {
+    const key = 'custom_' + t.id;
+    if (yourList.has(key) && !done[key]) {
+      candidates.push({ id: key, type: 'custom' });
+    }
+  });
+
+  if (candidates.length === 0) {
+    // Fall back to any uncompleted task if Your List is empty or all done
+    SECTIONS.forEach(sec => {
+      sec.tasks.forEach(t => {
+        if (!done[t.id] && !hidden[t.id]) candidates.push({ id: t.id, type: 'section' });
+      });
+    });
+  }
+
+  if (candidates.length === 0) {
+    alert('Everything is done! Great work this week. 🎉');
+    _confetti.celebrate();
+    return;
+  }
+
+  // Pick a random candidate
+  const pick = candidates[Math.floor(Math.random() * candidates.length)];
+
+  // Switch to the right view to reveal it
+  if (!activeFilters.has('all')) {
+    activeFilters = new Set(['all']);
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.toggle('active', b.getAttribute('data-filter') === 'all');
+    });
+    render();
+  }
+
+  // Find the task element and scroll + highlight it
+  // Tasks render with onclick containing the id — find by that
+  setTimeout(() => {
+    const taskEl = [...document.querySelectorAll('.task')].find(el => {
+      const oc = el.getAttribute('onclick') || '';
+      return oc.includes(`'${pick.id}'`) || oc.includes(`"${pick.id}"`);
+    });
+    if (taskEl) {
+      // Ensure section is expanded
+      const body = taskEl.closest('.section-body');
+      if (body && body.classList.contains('hidden')) {
+        const header = body.previousElementSibling;
+        if (header) header.click();
+      }
+      taskEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      taskEl.classList.remove('whats-next-highlight');
+      void taskEl.offsetWidth; // force reflow to restart animation
+      taskEl.classList.add('whats-next-highlight');
+      taskEl.addEventListener('animationend', () => {
+        taskEl.classList.remove('whats-next-highlight');
+      }, { once: true });
+    }
+  }, 100);
+}
+
+/* ═══════════════════════════════════════════
+   TASK NOTES
+═══════════════════════════════════════════ */
+function toggleNote(e, id) {
+  e.stopPropagation();
+  const area = document.getElementById('note-area-' + id);
+  if (!area) return;
+  const isOpen = area.classList.toggle('open');
+  if (isOpen) {
+    const input = area.querySelector('.task-note-input');
+    if (input) setTimeout(() => input.focus(), 50);
+  }
+}
+
+function saveNote(id) {
+  const input = document.getElementById('note-input-' + id);
+  if (!input) return;
+  const notes = loadNotes();
+  const val   = input.value.trim();
+  if (val) notes[id] = val; else delete notes[id];
+  saveNotes(notes);
+  // Update toggle button appearance without full re-render
+  const btn = document.getElementById('note-btn-' + id);
+  if (btn) btn.classList.toggle('has-note', !!val);
+  // Flash saved indicator
+  const saved = document.getElementById('note-saved-' + id);
+  if (saved) {
+    saved.classList.add('show');
+    setTimeout(() => saved.classList.remove('show'), 1500);
+  }
+}
+
+function noteHtml(id, notes) {
+  const val = notes[id] || '';
+  return `
+    <div class="task-note-area${val ? ' open' : ''}" id="note-area-${id}" onclick="event.stopPropagation()">
+      <textarea class="task-note-input" id="note-input-${id}"
+        placeholder="Add a personal note… e.g. 'Use Voidcore on trinket slot' or 'Skip, already capped'"
+        oninput="saveNote('${id}')"
+        onblur="saveNote('${id}')"
+      >${escHtml(val)}</textarea>
+      <div class="task-note-saved" id="note-saved-${id}">✓ Saved</div>
+    </div>`;
+}
+
+function noteBtnHtml(id, notes) {
+  const hasNote = !!(notes[id]);
+  return `<button class="task-note-toggle${hasNote ? ' has-note' : ''}" id="note-btn-${id}" title="${hasNote ? 'Edit note' : 'Add note'}" onclick="toggleNote(event,'${id}')">📝</button>`;
+}
 
 /* ── INIT ── */
-renderChars(); render(); updateCountdown(); setInterval(updateCountdown, 1000);
+renderChars(); renderClassLinksBar(); render(); updateCountdown(); setInterval(updateCountdown, 1000);
+
+// Sync toolbar button labels to persisted state
+document.getElementById('btn-theme').textContent   = isLightMode ? '🌙 Dark'   : '☀️ Light';
+document.getElementById('btn-compact').textContent  = isCompact   ? '⊞ Full'   : '⊟ Compact';
+if (isCompact) {
+  document.getElementById('btn-compact').style.color       = 'var(--void-glow)';
+  document.getElementById('btn-compact').style.borderColor = 'var(--void-purple)';
+}
+</script>
+
+<!-- SUMMARY MODAL -->
+<div class="modal-overlay" id="modal-summary">
+  <div class="modal" style="width:520px;max-width:95vw;">
+    <h3 id="summary-title">Weekly Summary</h3>
+    <div id="summary-content"></div>
+    <div class="modal-btns" style="margin-top:1.25rem;">
+      <button class="btn-cancel" onclick="closeSummary()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT/IMPORT MODAL -->
+<div class="modal-overlay" id="modal-data">
+  <div class="modal" style="width:480px;max-width:95vw;">
+    <h3 id="data-modal-title">Character Data</h3>
+    <div id="data-modal-content"></div>
+    <div class="modal-btns" style="margin-top:1.25rem;" id="data-modal-btns"></div>
+  </div>
+</div>
+
+<input type="file" id="import-file-input" accept=".json" style="display:none;" onchange="handleImportFile(event)">
+
+
+<script>
+/* Deferred modal overlay close listeners — must run after DOM is ready */
+document.addEventListener('DOMContentLoaded', function() {
+  ['modal','modal-custom','modal-summary','modal-data'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('click', function(e) {
+      if (e.target === el) el.classList.remove('open');
+    });
+  });
+});
 </script>
 </body>
 </html>
