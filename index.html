@@ -37,6 +37,7 @@
     <button class="btn-reset-all" onclick="resetAll()">↺ Reset Week</button>
     <button class="btn-reset-all" id="btn-reveal" onclick="toggleRevealHidden()" style="display:none;">👁 Show Hidden</button>
     <button class="btn-reset-all" id="btn-edit-yourlist" onclick="startEditingYourList()" style="display:none;">⭐ Edit List</button>
+    <button class="btn-reset-all" id="btn-yourlist-allchars" onclick="applyYourListToAll()" style="display:none;">⭐ Apply to All</button>
   </div>
 
   <div class="char-bar">
@@ -900,6 +901,10 @@ function render() {
   editBtn.style.display = showEditBtn ? '' : 'none';
   editBtn.textContent = editingYourList ? '✓ Done Editing' : '⭐ Edit List';
 
+  // Show Apply to All only on Your List tab when not editing and list has items
+  const applyBtn = document.getElementById('btn-yourlist-allchars');
+  applyBtn.style.display = (activeFilters.has('yourlist') && !editingYourList && loadYourList().length > 0) ? '' : 'none';
+
   renderCustomSection();
 }
 
@@ -967,6 +972,17 @@ function toggleYourListTask(id) {
 function clearYourList() {
   if (!confirm('Clear all tasks from Your List?')) return;
   saveYourList([]);
+  render();
+}
+
+function applyYourListToAll() {
+  if (characters.length <= 1) { alert('You only have one character.'); return; }
+  const others = characters.filter(c => c !== currentChar);
+  if (!confirm(`Copy Your List from "${currentChar}" to all other characters (${others.join(', ')})?`)) return;
+  const list = loadYourList();
+  others.forEach(c => {
+    localStorage.setItem('wow_mn_yourlist_' + c, JSON.stringify(list));
+  });
   render();
 }
 function resetAll() {
