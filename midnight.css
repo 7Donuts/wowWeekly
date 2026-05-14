@@ -625,11 +625,107 @@ footer {
   font-style: italic; margin-top: 2.5rem;
 }
 
-@media (max-width: 600px) {
-  .reset-bar { flex-direction: column; align-items: flex-start; }
-  .progress-wrap { width: 100%; }
-  .progress-bar-track { flex: 1; }
+@media (max-width: 768px) {
+  /* ── RESET BAR ── */
+  .reset-bar {
+    padding: 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .reset-bar-top {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .reset-info {
+    flex: 1 1 100%;
+    font-size: 14px;
+  }
+
+  .reset-countdown {
+    font-size: 13px;
+  }
+
+  .progress-wrap {
+    flex: 1 1 100%;
+    gap: 0.4rem;
+  }
+
+  .progress-bar-track {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+  }
+
+  /* spacer div — collapse on mobile */
+  .reset-bar-top > div[style*="flex:1"] {
+    display: none;
+  }
+
+  .reset-bar-btns {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    justify-content: flex-start;
+  }
+
+  .btn-reset-all {
+    font-size: 11px;
+    padding: 0.35rem 0.55rem;
+    flex: 1 1 auto;
+    min-width: 0;
+    text-align: center;
+  }
+
+  /* hide invisible buttons so they don't take up space */
+  .btn-reset-all[style*="visibility:hidden"] {
+    display: none !important;
+  }
+
+  /* ── HISTORY BOTTOM ROW ── */
+  .reset-bar-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .inline-history {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .inline-history-inner {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .inline-history-stats {
+    gap: 0.3rem;
+  }
+
+  .inline-hist-stat {
+    min-width: 58px;
+    padding: 0.25rem 0.4rem;
+  }
+
+  .inline-hist-stat-val {
+    font-size: 13px;
+  }
+
+  .inline-history-bars {
+    height: 24px;
+  }
+
+  .hist-bar-track {
+    width: 8px;
+    height: 20px;
+  }
+
+  /* ── GENERAL ── */
   h1 { font-size: 2.2rem; }
+  .wrapper { padding: 0.75rem; }
+  .char-bar { gap: 0.4rem; }
 }
 
 /* Your List tab icon */
