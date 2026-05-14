@@ -3,15 +3,98 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WoW Midnight — Patch Notes & Hotfixes</title>
+<title>WoW Midnight — Tracker Changelog</title>
 <link rel="stylesheet" href="midnight.css">
 <style>
-  .pn-wrapper {
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 2rem 1.5rem 4rem;
-    position: relative;
-    z-index: 1;
+  /* Changelog-specific styles */
+  .cl-version {
+    margin-bottom: 2rem;
+  }
+
+  .cl-version-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 1rem;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    user-select: none;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .cl-version-header:hover { border-color: var(--border-bright); background: var(--bg-card); }
+  .cl-version-header.open { border-bottom-color: transparent; background: var(--bg-card); }
+
+  .cl-version-tag {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--light-pale);
+    letter-spacing: 0.06em;
+  }
+
+  .cl-version-date {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .cl-version-summary {
+    margin-left: auto;
+    font-size: 11px;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.05em;
+  }
+
+  .cl-body {
+    border: 1px solid var(--border-bright);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    background: var(--bg-card);
+    overflow: hidden;
+  }
+  .cl-body.hidden { display: none; }
+
+  .cl-entry {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .cl-entry:last-child { border-bottom: none; }
+
+  .cl-badge {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    padding: 2px 7px;
+    border-radius: 3px;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 3px;
+    text-transform: uppercase;
+  }
+  .badge-new      { background: rgba(74,140,92,0.15);  color: var(--success-bright); border-color: rgba(74,140,92,0.3); }
+  .badge-fix      { background: rgba(192,83,74,0.15);  color: #e07068;               border-color: rgba(192,83,74,0.3); }
+  .badge-improve  { background: rgba(124,92,191,0.15); color: var(--void-glow);      border-color: rgba(124,92,191,0.3); }
+  .badge-content  { background: rgba(201,168,76,0.12); color: var(--light-gold);     border-color: rgba(201,168,76,0.3); }
+
+  .cl-text {
+    flex: 1;
+    font-size: 15px;
+    color: var(--text-primary);
+    line-height: 1.45;
+  }
+
+  .cl-text span {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-style: italic;
+    display: block;
+    margin-top: 1px;
   }
 
   .back-link {
@@ -20,8 +103,8 @@
     gap: 0.4rem;
     font-family: 'Cinzel', serif;
     font-size: 11px;
-    letter-spacing: 0.08em;
-    color: var(--text-secondary);
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
     text-decoration: none;
     border: 1px solid var(--border);
     padding: 0.4rem 0.9rem;
@@ -29,398 +112,174 @@
     margin-bottom: 2rem;
     transition: all 0.2s;
   }
-  .back-link:hover { color: var(--light-pale); border-color: var(--border-bright); background: var(--bg-card); }
-
-  .pn-filter-bar {
-    display: flex;
-    gap: 0.4rem;
-    flex-wrap: wrap;
-    margin-bottom: 1.5rem;
+  .back-link:hover {
+    color: var(--light-pale);
+    border-color: var(--border-bright);
+    background: var(--bg-card);
   }
-  .pn-filter-btn {
-    font-family: 'Cinzel', serif;
-    font-size: 11px;
-    letter-spacing: 0.06em;
-    padding: 0.35rem 0.85rem;
-    border-radius: 4px;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .pn-filter-btn:hover { border-color: var(--border-bright); color: var(--text-primary); }
-  .pn-filter-btn.active { background: var(--void-purple); border-color: var(--void-purple); color: white; }
-
-  .pn-patch {
-    margin-bottom: 1.5rem;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-  }
-  .pn-patch-header {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.85rem 1.1rem;
-    background: var(--bg-panel);
-    cursor: pointer;
-    user-select: none;
-    border-bottom: 1px solid var(--border);
-    transition: background 0.15s;
-  }
-  .pn-patch-header:hover { background: var(--bg-card); }
-  .pn-patch-header.open { border-bottom-color: var(--border-bright); }
-
-  .pn-patch-tag {
-    font-family: 'Cinzel', serif;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--light-gold);
-    white-space: nowrap;
-  }
-  .pn-patch-date {
-    font-size: 12px;
-    color: var(--text-muted);
-    font-style: italic;
-    white-space: nowrap;
-  }
-  .pn-patch-summary {
-    flex: 1;
-    font-size: 14px;
-    color: var(--text-secondary);
-    font-style: italic;
-  }
-  .pn-badge-row {
-    display: flex;
-    gap: 0.3rem;
-    flex-shrink: 0;
-  }
-  .pn-count-badge {
-    font-family: 'Cinzel', serif;
-    font-size: 10px;
-    letter-spacing: 0.05em;
-    padding: 2px 7px;
-    border-radius: 3px;
-    white-space: nowrap;
-  }
-  .pnc-fix     { background: rgba(234,88,68,0.12);  color: #e85844; border: 1px solid rgba(234,88,68,0.2); }
-  .pnc-buff    { background: rgba(106,191,128,0.1); color: var(--success-bright); border: 1px solid rgba(106,191,128,0.2); }
-  .pnc-nerf    { background: rgba(201,168,76,0.1);  color: var(--light-gold); border: 1px solid rgba(201,168,76,0.2); }
-  .pnc-class   { background: rgba(160,125,224,0.1); color: var(--void-glow); border: 1px solid rgba(160,125,224,0.2); }
-  .pnc-content { background: rgba(74,143,92,0.1);   color: #7ecf94; border: 1px solid rgba(74,143,92,0.2); }
-
-  .pn-body { padding: 0.75rem 0; }
-  .pn-body.hidden { display: none; }
-
-  .pn-entry {
-    display: flex;
-    gap: 0.75rem;
-    align-items: flex-start;
-    padding: 0.55rem 1.1rem;
-    border-bottom: 1px solid var(--border);
-    transition: background 0.12s;
-  }
-  .pn-entry:last-child { border-bottom: none; }
-  .pn-entry:hover { background: var(--bg-card); }
-
-  .pn-entry-badge {
-    font-family: 'Cinzel', serif;
-    font-size: 10px;
-    letter-spacing: 0.04em;
-    padding: 2px 8px;
-    border-radius: 3px;
-    flex-shrink: 0;
-    margin-top: 2px;
-    min-width: 52px;
-    text-align: center;
-  }
-  .pnb-fix      { background: rgba(234,88,68,0.12);  color: #e85844; border: 1px solid rgba(234,88,68,0.2); }
-  .pnb-buff     { background: rgba(106,191,128,0.1); color: var(--success-bright); border: 1px solid rgba(106,191,128,0.2); }
-  .pnb-nerf     { background: rgba(201,168,76,0.12); color: var(--light-gold); border: 1px solid rgba(201,168,76,0.25); }
-  .pnb-class    { background: rgba(160,125,224,0.1); color: var(--void-glow); border: 1px solid rgba(160,125,224,0.2); }
-  .pnb-content  { background: rgba(74,143,92,0.1);   color: #7ecf94; border: 1px solid rgba(74,143,92,0.2); }
-  .pnb-system   { background: rgba(90,80,112,0.2);   color: var(--text-secondary); border: 1px solid var(--border); }
-
-  .pn-entry-text {
-    font-size: 15px;
-    color: var(--text-primary);
-    line-height: 1.5;
-    flex: 1;
-  }
-  .pn-entry-text .detail {
-    display: block;
-    font-size: 13px;
-    color: var(--text-secondary);
-    font-style: italic;
-    margin-top: 2px;
-  }
-  .pn-entry-tag {
-    font-family: 'Cinzel', serif;
-    font-size: 10px;
-    letter-spacing: 0.04em;
-    color: var(--text-muted);
-    white-space: nowrap;
-    flex-shrink: 0;
-    padding-top: 3px;
-  }
-
-  .pn-empty {
-    text-align: center;
-    padding: 3rem 1rem;
-    color: var(--text-muted);
-    font-style: italic;
-  }
-
-  .pn-source-note {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 13px;
-    color: var(--text-muted);
-    font-style: italic;
-    margin-bottom: 1.5rem;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--border);
-    border-radius: 5px;
-    background: var(--bg-panel);
-  }
-
-  .chevron { transition: transform 0.2s; display: inline-block; color: var(--text-muted); }
 </style>
 </head>
 <body>
-<div class="pn-wrapper">
+<div class="wrapper">
 
-  <header style="text-align:center;padding:2rem 0 1.75rem;border-bottom:1px solid var(--border);margin-bottom:2rem;">
+  <header>
     <div class="header-eyebrow">World of Warcraft</div>
-    <h1>Midnight<br><span>Patch Notes &amp; Hotfixes</span></h1>
-    <p class="subtitle">Curated changes for Patch 12.0.x — Lingering Shadows, Season 1</p>
-    <div class="patch-badge">Patch 12.0.5 · Last Updated May 14, 2026</div>
-    <div class="credit-bar" style="display:flex;justify-content:center;align-items:center;gap:0.5rem;margin-top:0.9rem;font-size:14px;color:var(--text-muted);">
+    <h1>Midnight<br><span>Tracker Changelog</span></h1>
+    <p class="subtitle">A record of every update, fix, and addition to the Weekly Tracker.</p>
+    <div class="credit-bar">
       Curated &amp; maintained by <span class="credit-name">Seven</span>
       <span style="color:var(--border-bright);margin:0 0.4rem;">·</span>
       <a href="index.html" class="byline-link">⬅ Back to Tracker</a>
-      <span style="color:var(--border-bright);margin:0 0.4rem;">·</span>
-      <a href="changelog.html" class="byline-link">📋 Tracker Changelog</a>
     </div>
   </header>
 
   <a href="index.html" class="back-link">← Back to Weekly Tracker</a>
 
-  <div class="pn-source-note">
-    🔗 Sources: <a href="https://us.battle.net/support/en/article/000035597" target="_blank" style="color:var(--void-glow);">Blizzard Hotfix Blog</a>
-    &nbsp;·&nbsp;
-    <a href="https://www.wowhead.com/news/wow-hotfixes" target="_blank" style="color:var(--void-glow);">Wowhead Hotfix Tracker</a>
-    &nbsp;·&nbsp; Entries curated for PvE, class, and content relevance. Not all system/UI hotfixes listed.
-  </div>
+  <div id="changelog"></div>
 
-  <div class="pn-filter-bar" id="filter-bar"></div>
-
-  <div id="patchnotes-container"></div>
-
-  <footer style="border-top:1px solid var(--border);padding-top:1.5rem;text-align:center;font-size:14px;color:var(--text-muted);font-style:italic;margin-top:2.5rem;">
-    WoW Midnight Patch Notes &nbsp;·&nbsp; Curated by Seven &nbsp;·&nbsp; Patch 12.0.5 · May 2026
+  <footer>
+    WoW Midnight Weekly Tracker &nbsp;·&nbsp; Curated by Seven &nbsp;·&nbsp; Patch 12.0.5 · May 2026
   </footer>
 </div>
 
 <script>
-/* ═══════════════════════════════════════════════════════════
-   PATCH NOTES DATA — Patch 12.0.x, Lingering Shadows
-   Sources: Blizzard Hotfix Blog, Wowhead
-   Types: fix | buff | nerf | class | content | system
-   Tags: used for filtering (e.g. class name, 'dungeons', 'pvp', 'world')
-═══════════════════════════════════════════════════════════ */
-const PATCHES = [
+const VERSIONS = [
   {
-    version: '12.0.5',
-    date: 'May 6, 2026',
-    summary: 'Season 1 content patch — Voidforge, Ritual Sites, Bazaar Quests, Prey',
+    version: 'v1.4',
+    date: 'May 14, 2026',
+    summary: 'Dashboard redesign, inline history, alt overview',
     entries: [
-      { type: 'content', text: 'Voidforge system added — Nebulous Voidcores can now be spent for bonus loot rolls on Delves and Ritual Sites.', detail: 'Cores drop from Nightmare Prey and Bountiful Delves.', tag: 'content' },
-      { type: 'content', text: 'Ritual Sites added — 1–5 player instanced content replacing Bountiful Delves as the primary solo/small-group activity.', detail: 'Counts toward Great Vault World row. Tiered difficulty with escalating rewards.', tag: 'content' },
-      { type: 'content', text: 'Nightmare Prey weekly quest added — complete 3 hunts for Vault World row credit and Voidcore drops.', detail: 'Enabled via Astalor Bloodsworn in Murder Row, Silvermoon.', tag: 'content' },
-      { type: 'content', text: 'Bazaar Quest system added — weekly quests available from The Bazaar NPCs in Silvermoon.', detail: 'Rewards range from Crests to Pinnacle Caches depending on quest tier.', tag: 'content' },
-      { type: 'content', text: 'Abyss Anglers activity added — deep-sea spearfishing off the Zul\'Aman coast.', detail: 'Earn Angler Pearls for cosmetics, housing, pets. Upgradeable diving gear unlocks deeper zones.', tag: 'content' },
-      { type: 'content', text: 'Abundance weekly quest added — accumulate 20,000 points in cavern events for Overflowing Abundant Satchel + Amani Tribe rep.', detail: 'Use Shards of Dundun (up to 8 per week) to empower runs for bonus rewards.', tag: 'content' },
-      { type: 'buff', text: 'Great Vault World row now accepts Ritual Site completions in addition to Delves and World Activities.', detail: '', tag: 'systems' },
-      { type: 'buff', text: 'Nebulous Voidcore weekly cap increased from 4 to 6.', detail: 'Applies to all sources including Nightmare Prey and Bountiful Delves.', tag: 'systems' },
+      { type: 'new',     text: 'Inline weekly history strip — embedded in the reset bar, no modal required', detail: 'Sparkline bars for up to 12 weeks (current + 11 past). Each bar is color-coded by completion tier. Current week pulses. Hover any bar for exact date and done/total.' },
+      { type: 'new',     text: 'History stat boxes — Weeks Tracked, Streak 🔥, Best Week, Avg Completion shown inline alongside the sparkline', detail: 'Replaces the former History modal breakout window. All stats update automatically when switching characters.' },
+      { type: 'new',     text: 'Auto-snapshot on week rollover — all characters are snapshotted silently when a new reset week is detected on page load', detail: 'Stored per-character under wow_mn_history_{char}. Capped at 52 entries (~1 year). No action required from the user.' },
+      { type: 'new',     text: 'All Alts tab inside Summary modal — shows every character\'s weekly completion at a glance', detail: 'Class icon, class color border, streak flame, and done/total progress bar per alt. Click any row to switch to that character.' },
+      { type: 'improve', text: 'Reset bar restructured into two rows — info/progress/buttons on top, history strip on bottom', detail: 'Buttons reordered: Light · Compact · What\'s Next? · Summary · Reset Week · Data. Buttons are now right-aligned to the frame edge.' },
+      { type: 'improve', text: 'Button layout stabilized — no more reflow when label text changes (e.g. Compact → Full)', detail: 'Conditional buttons (Show Hidden, Edit List, Apply to All) now use visibility:hidden instead of display:none so they hold their space.' },
+      { type: 'remove',  text: 'Alts toolbar button removed — functionality merged into Summary modal All Alts tab', detail: '' },
+      { type: 'remove',  text: 'History toolbar button removed — replaced by inline history strip in reset bar', detail: '' },
+      { type: 'remove',  text: 'Patch Notes page and toolbar link removed', detail: 'Live RSS feed could not load in browser due to Content Security Policy restrictions.' },
     ]
   },
   {
-    version: '12.0.5 Hotfix',
-    date: 'May 9, 2026',
-    summary: 'Voidforge tuning, class fixes, Ritual Site adjustments',
+    version: 'v1.3',
+    date: 'May 14, 2026',
+    summary: 'Class system, UX fixes',
     entries: [
-      { type: 'fix', text: 'Ritual Sites — fixed an issue where Tier 3 difficulty could be accessed before Tier 2 was completed on a fresh character.', detail: '', tag: 'content' },
-      { type: 'fix', text: 'Voidforge — Nebulous Voidcore rolls now correctly award loot at the expected item level for the selected content tier.', detail: 'Previously could cap at Veteran quality regardless of Delve tier.', tag: 'content' },
-      { type: 'nerf', text: 'Abundance — Empowered run bonus reduced by 15%.', detail: 'Feedback indicated Shards of Dundun provided too strong a time-to-reward advantage over non-empowered runs.', tag: 'content' },
-      { type: 'buff', text: 'Death Knight — Frost: Obliterate damage increased by 8%.', detail: '', tag: 'Death Knight' },
-      { type: 'nerf', text: 'Evoker — Devastation: Eternity Surge cooldown increased from 24s to 30s at base.', detail: 'Tuning adjustment following AoE output analysis.', tag: 'Evoker' },
-      { type: 'buff', text: 'Monk — Windwalker: Rising Sun Kick now reduces the cooldown of Serenity by 0.5 seconds (was 0.25s).', detail: '', tag: 'Monk' },
-      { type: 'fix', text: 'Abyss Anglers — Angler Pearl rewards no longer occasionally fail to appear in the loot window on kills.', detail: '', tag: 'content' },
-      { type: 'fix', text: 'Prey System — fixed rare case where a tracked Prey would despawn mid-combat without awarding credit.', detail: '', tag: 'content' },
+      { type: 'new',     text: 'Class selection on character create/edit — all 13 WoW classes with official colors', detail: 'Class color dot appears on the character button in the char bar for quick identification.' },
+      { type: 'new',     text: 'Class resource quick-links bar — appears below char bar when a class is set', detail: 'Links to Icy Veins, Murlok.io, Wowhead, and Blizzard class pages. All URLs corrected to proper guide pages.' },
+      { type: 'fix',     text: 'Icy Veins class links corrected — singular /wow/mage-guide not /mage-guides', detail: '' },
+      { type: 'fix',     text: 'Murlok.io links corrected — murlok.io/death-knight, murlok.io/mage etc.', detail: 'Previously linked to murlok.io root.' },
+      { type: 'fix',     text: 'Wowhead class links corrected — wowhead.com/guides/classes#deathknight anchor format', detail: 'Hyphens stripped from class name for the anchor hash.' },
+      { type: 'fix',     text: 'Weekly reset countdown no longer shifts layout as timer ticks', detail: 'Switched to Courier New monospace font so all digits occupy equal width. reset-info section locked to min-width to prevent reflow.' },
+      { type: 'fix',     text: 'Checkbox restricted to checkbox area only — clicking task name, description, or tags no longer toggles completion', detail: 'Task card is now cursor:default. Only the checkbox square is interactive.' },
     ]
   },
   {
-    version: '12.0.5 Hotfix',
+    version: 'v1.2',
+    date: 'May 14, 2026',
+    summary: 'New features',
+    entries: [
+      { type: 'new',     text: 'Task Notes — 📝 button on every task to jot personal reminders', detail: 'Notes are per-character, auto-save as you type, never reset weekly, included in export/import, and hidden in compact mode. A gold 📝 indicates a task has a note.' },
+      { type: 'new',     text: 'Dark / Light mode toggle — ☀️ Light button in toolbar', detail: 'Switches to a soft lavender light theme. Preference saved to localStorage and persists across sessions.' },
+      { type: 'new',     text: 'Compact mode — ⊟ Compact button hides task descriptions and tags', detail: 'Shows roughly 2–3x more tasks on screen. Button turns purple when active. State persists across sessions.' },
+      { type: 'new',     text: '🎲 What\'s Next? — randomly highlights an uncompleted task from Your List', detail: 'Scrolls to and pulses the task with a gold glow. Falls back to any uncompleted task if Your List is empty. Fires full celebration if everything is done.' },
+      { type: 'new',     text: 'Confetti engine — particle burst on task completion', detail: 'Bursts from the task position on check. Fires a full-screen multi-point celebration when the last task for the week is completed. Void purples, golds, and pale whites. No external libraries.' },
+      { type: 'new',     text: 'Weekly Summary modal — 📊 button shows per-section progress bars', detail: 'Each section shows done/total with a fill bar. Completed sections turn green. Overall progress shown at the bottom with percentage.' },
+      { type: 'new',     text: 'Export / Import character data — ⇅ Data button', detail: 'Export current character or all characters as JSON. Import restores progress, custom tasks, hidden tasks, notes, and Your List. Preview shown before confirming overwrite.' },
+      { type: 'new',     text: 'Apply Your List to all characters', detail: 'One-click copies current character\'s Your List to every other character.' },
+      { type: 'improve', text: 'Font sizes increased across the board and tracker widened to 1400px', detail: 'Body base 17→19px, task names 15→17px, section titles 14→16px, tabs 11→13px, tags 10→12px. Fills a 1920px monitor with comfortable margins.' },
+      { type: 'improve', text: 'Section header borders always visible (border-bright)', detail: 'Previously only appeared on hover. Hover now lightens background instead.' },
+      { type: 'fix',     text: 'Notes appear in Your List view — previously only showed on master list', detail: '' },
+    ]
+  },
+  {
+    version: 'v1.1',
     date: 'May 13, 2026',
-    summary: 'Raid tuning, PvP fixes, Stormarion Assault adjustment',
+    summary: 'Launch day updates',
     entries: [
-      { type: 'nerf', text: 'The Sundered Sanctum — Solariel the Fallen: Void Cascade cast time reduced (10→8 seconds) but damage increased by 20%.', detail: 'The longer cast was allowing groups to consistently interrupt without cooldown coordination.', tag: 'raid' },
-      { type: 'buff', text: 'The Sundered Sanctum — Mythic: Kael\'thas Reborn: Pyroblast Overload now has a 0.5s wind-up indicator added.', detail: 'Accessibility improvement following community feedback.', tag: 'raid' },
-      { type: 'fix', text: 'Stormarion Assault — Stand Your Ground weekly quest now correctly awards the Victorious Stormarion Pinnacle Cache on completion.', detail: 'Was awarding a Champion-quality cache instead for some players.', tag: 'content' },
-      { type: 'buff', text: 'Paladin — Holy: Holy Light healing increased by 6% in PvE.', detail: '', tag: 'Paladin' },
-      { type: 'buff', text: 'Shaman — Restoration: Riptide initial heal increased by 10%.', detail: 'Brought in line with similar instant cast healing effects.', tag: 'Shaman' },
-      { type: 'nerf', text: 'Warlock — Affliction: Seed of Corruption no longer benefits from the Soul Rot talent multiplier in PvP combat.', detail: '', tag: 'Warlock' },
-      { type: 'fix', text: 'PvP — Fixed an issue where Deepwind Dunk brawl could end prematurely if the score was tied at 5:00.', detail: '', tag: 'pvp' },
-      { type: 'fix', text: 'Saltheril\'s Soiree — Fortify the Runestones quest now correctly awards Silvermoon Court reputation to characters who completed the intro scenario prior to Patch 12.0.4.', detail: '', tag: 'content' },
-      { type: 'system', text: 'Weekly reset countdown timer no longer causes layout reflow as seconds tick — now uses monospaced rendering.', detail: 'UI polish pass.', tag: 'systems' },
+      { type: 'content', text: 'Tracker fully rebuilt from real Patch 12.0.5 data sourced from Icy Veins and Wowhead', detail: 'Guide last updated May 4, 2026. All speculative content removed. No raid content by design.' },
+      { type: 'content', text: 'Voidforge, Void Assaults, Ritual Sites, Bazaar Quests, Prey, Saltheril\'s Soiree, Stormarion Assault, Legends of the Haranir, and Abundance all added as confirmed 12.0.5 content', detail: '' },
+      { type: 'new',     text: 'Void Assaults split into three separate tabs: Void Assaults, Ritual Sites, Voidforge', detail: 'Each independently filterable and combinable in multi-select mode.' },
+      { type: 'new',     text: 'Event Calendar tab — 50+ upcoming world events with real Wowhead links', detail: 'All links use verified event IDs (e.g. /event=479/darkmoon-faire). Covers May 2026 through mid-2027.' },
+      { type: 'new',     text: 'Multi-select category tabs — hold multiple filters at once', detail: 'All tab clears selections. Deselecting the last active category falls back to All.' },
+      { type: 'new',     text: '⭐ Your List — personal curated task list built from the master list', detail: 'Select any tasks from any category. Stored per character. Edit mode shows ⭐/☆ selection state. Completed tasks sort to bottom.' },
+      { type: 'new',     text: 'Your List defaults to first character on tab click', detail: '' },
+      { type: 'new',     text: '✦ Custom tab — add personal tasks with name and optional description', detail: 'Persist per character, never auto-reset. Clicking a character name defaults to Custom view if they have tasks.' },
+      { type: 'new',     text: 'Hide individual tasks — 🚫 button on hover, stored per character', detail: '👁 Show Hidden button appears when any tasks or sections are hidden.' },
+      { type: 'new',     text: 'Hide entire sections from the All view', detail: 'Hidden sections collapse to a slim stub. Reveal with the global Show Hidden toggle.' },
+      { type: 'new',     text: 'Character rename — ✏️ button migrates all localStorage data to new name', detail: 'All weekly progress, custom tasks, hidden tasks, Your List, and notes migrate automatically.' },
+      { type: 'new',     text: 'Multi-character support with independent weekly progress per character', detail: '' },
+      { type: 'new',     text: 'Weekly auto-reset every Tuesday at 15:00 UTC with live countdown timer', detail: '' },
+      { type: 'new',     text: 'Priority dividers — Do First / Important / Optional in All view', detail: '' },
+      { type: 'new',     text: 'WoW UI icons replace emoji for all 13 section types', detail: 'Embedded as base64 PNGs — no external image files required.' },
+      { type: 'new',     text: 'Shared midnight.css extracted for use across tracker and changelog', detail: 'One CSS file to update for both pages.' },
+      { type: 'new',     text: 'Changelog page created and linked from tracker header', detail: '' },
+      { type: 'new',     text: 'index.html exported directly — no rename step required for GitHub Pages', detail: '' },
+      { type: 'improve', text: '"Pick up quest" wording changed to "Complete quest" across all tasks', detail: '' },
+      { type: 'fix',     text: 'Modals showing on page load — missing .modal-overlay CSS selector', detail: '' },
+      { type: 'fix',     text: 'Sections not rendering on initial load — init call dropped during edit', detail: '' },
+      { type: 'fix',     text: 'addEventListener errors — modal elements referenced before DOM was ready', detail: 'Moved all overlay listeners into a DOMContentLoaded block.' },
+      { type: 'fix',     text: 'Bazaar icon missing from midnight.css after stylesheet extraction', detail: '' },
+      { type: 'fix',     text: 'Mythic-Store removed from sources credit in footer', detail: '' },
     ]
   },
   {
-    version: '12.0.4',
-    date: 'Apr 15, 2026',
-    summary: 'Mythic+ Season 1 adjustments, housing phase 2 additions',
+    version: 'v1.0',
+    date: 'May 13, 2026',
+    summary: 'Initial release',
     entries: [
-      { type: 'content', text: 'Housing Phase 2: 40+ new decor items added from Crafting, Prey, and Ritual Site rewards.', detail: 'Includes void-themed furniture from Legends of the Haranir relic scenarios.', tag: 'content' },
-      { type: 'fix', text: 'Mythic+ — Fixed an issue where Sunken Sanctum of Quel\'Thalas dungeon could become blocked on the second encounter if a player died during the door-open animation.', detail: '', tag: 'dungeons' },
-      { type: 'buff', text: 'Mythic+ — Affixes: Fortified base health modifier reduced from 20% to 15% at +7 and above.', detail: 'Response to feedback that tank burden was disproportionate on Fortified weeks.', tag: 'dungeons' },
-      { type: 'nerf', text: 'Demon Hunter — Havoc: Essence Break now increases Chaos Strike and Blade Dance damage by 80% (was 100%).', detail: 'DH was substantially ahead on funnel damage profiles in M+ environments.', tag: 'Demon Hunter' },
-      { type: 'buff', text: 'Mage — Arcane: Arcane Barrage now generates 1 Arcane Charge when it strikes 3 or more targets.', detail: '', tag: 'Mage' },
-      { type: 'buff', text: 'Druid — Balance: Starlord buff duration increased from 15s to 18s.', detail: '', tag: 'Druid' },
-      { type: 'fix', text: 'Great Vault — Fixed edge case where completing a Ritual Site at exactly the weekly reset window could fail to award vault slot credit.', detail: '', tag: 'systems' },
-    ]
-  },
-  {
-    version: '12.0.3',
-    date: 'Mar 25, 2026',
-    summary: 'Legends of the Haranir scenario tuning, broad class pass',
-    entries: [
-      { type: 'buff', text: 'Warrior — Arms: Mortal Strike now deals 10% more damage when the target is below 35% health.', detail: '', tag: 'Warrior' },
-      { type: 'buff', text: 'Hunter — Beast Mastery: Kill Command cooldown reduced by 1s.', detail: '', tag: 'Hunter' },
-      { type: 'nerf', text: 'Rogue — Subtlety: Shadow Dance maximum charges reduced from 3 to 2 in PvE.', detail: 'Output was significantly ahead of the expected DPS curve in single-target fights.', tag: 'Rogue' },
-      { type: 'fix', text: 'Legends of the Haranir — Players can now correctly abandon and re-accept the Lost Legends weekly without losing relic scenario progress.', detail: '', tag: 'content' },
-      { type: 'content', text: 'Legends of the Haranir — Two additional relic scenarios added (Vethara\'s Compass, Shard of the Sunwell Restored), bringing total to 9 available relics.', detail: '', tag: 'content' },
-      { type: 'buff', text: 'Priest — Discipline: Atonement healing from Penance increased by 12%.', detail: '', tag: 'Priest' },
-      { type: 'system', text: 'Adventure Guide now correctly displays Season 1 activity recommendations for characters below item level 610.', detail: '', tag: 'systems' },
-    ]
-  },
-  {
-    version: '12.0',
-    date: 'Feb 11, 2026',
-    summary: 'Midnight launch — Quel\'Thalas, Blood Elves, Silvermoon',
-    entries: [
-      { type: 'content', text: 'World of Warcraft: Midnight launches. Quel\'Thalas and four new zones available: Eversong Woods, The Voidstorm, Harandar, and Zul\'Aman Depths.', detail: '', tag: 'content' },
-      { type: 'content', text: 'New raid: The Sundered Sanctum — 8 boss raid across two wings, available in Normal/Heroic/Mythic and LFR.', detail: 'LFR launches 2 weeks post-release. Mythic available Day 1 for Hall of Fame.', tag: 'raid' },
-      { type: 'content', text: 'New Mythic+ Season 1: 8 dungeons (4 new, 4 returning). Affix pool revised — Tyrannical and Fortified remain; Afflicted and Incorporeal removed.', detail: 'New affixes: Sundered (void-themed spawn mechanic) and Echoing (damage reflection on missed interrupts).', tag: 'dungeons' },
-      { type: 'content', text: 'Delve system updated to Midnight content. Tier 1–11 available. Delver\'s Journey campaign expands with 4 new chapters.', detail: '', tag: 'content' },
-      { type: 'content', text: 'Silvermoon Court — new major faction. Earn rep via Saltheril\'s Soiree, crafting orders, and daily Bazaar quests.', detail: 'Quartermaster sells cosmetics, housing, mounts, and recipes.', tag: 'content' },
-      { type: 'content', text: 'Housing system launches — personal plots available in Eversong Woods and Silvermoon District. Phase 1 includes 200+ decor items.', detail: 'Plots purchased via Silvermoon Court reputation.', tag: 'content' },
-      { type: 'system', text: 'Great Vault redesigned — 3 rows: Raid (1/3/6 kills), Mythic+ (1/4/8 keys), World (2/4/6 world activities). Reward quality scales with content difficulty.', detail: '', tag: 'systems' },
+      { type: 'new', text: 'Initial tracker built with dark fantasy Midnight aesthetic', detail: 'Single self-contained HTML file. No server required — open in any browser.' },
+      { type: 'new', text: 'Checkbox tasks with localStorage persistence per character per week', detail: 'Checks survive browser closes and reset automatically each Tuesday.' },
+      { type: 'new', text: 'Collapsible sections with section-level done/total counts', detail: '' },
+      { type: 'new', text: 'Progress bar showing completion for current view and character', detail: '' },
+      { type: 'new', text: 'Curated by Seven — header credit, patch badge, and Changelog link', detail: 'Patch 12.0.5 · Lingering Shadows · Season 1.' },
     ]
   },
 ];
 
-/* ═══════════════════════════════════════════
-   FILTER STATE
-═══════════════════════════════════════════ */
-const ALL_TYPES = ['fix','buff','nerf','class','content','system'];
-let activeType = 'all';
-
-const TYPE_LABELS = {
-  all: 'All', fix: 'Bug Fixes', buff: 'Buffs', nerf: 'Nerfs',
-  content: 'Content', class: 'Class', system: 'System',
-};
-
-// Gather unique class tags
-const allTags = new Set();
-PATCHES.forEach(p => p.entries.forEach(e => { if (e.tag) allTags.add(e.tag); }));
-const CLASS_TAGS = [...allTags].filter(t =>
-  !['content','systems','raid','dungeons','pvp','world'].includes(t)
-).sort();
-
-const TYPE_BADGE = {
-  fix:     ['pnb-fix',     'Fix'],
-  buff:    ['pnb-buff',    'Buff'],
-  nerf:    ['pnb-nerf',    'Nerf'],
-  class:   ['pnb-class',   'Class'],
-  content: ['pnb-content', 'Content'],
-  system:  ['pnb-system',  'System'],
-};
-const COUNT_BADGE = {
-  fix:     'pnc-fix', buff: 'pnc-buff', nerf: 'pnc-nerf',
-  class:   'pnc-class', content: 'pnc-content', system: 'pnc-system',
-};
-
-function countTypes(entries) {
-  const counts = {};
-  entries.forEach(e => { counts[e.type] = (counts[e.type]||0)+1; });
-  return counts;
+function toggleVersion(idx) {
+  const body = document.getElementById('cl-body-' + idx);
+  const hdr  = document.getElementById('cl-hdr-' + idx);
+  const chev = document.getElementById('cl-chev-' + idx);
+  const isHidden = body.classList.contains('hidden');
+  body.classList.toggle('hidden', !isHidden);
+  hdr.classList.toggle('open', isHidden);
+  chev.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
 }
 
-function renderFilterBar() {
-  const bar = document.getElementById('filter-bar');
-  const filters = ['all','fix','buff','nerf','content','system', ...CLASS_TAGS];
-  bar.innerHTML = filters.map(f => {
-    const label = TYPE_LABELS[f] || f;
-    return `<button class="pn-filter-btn${activeType===f?' active':''}" onclick="setFilter('${f}')">${label}</button>`;
-  }).join('');
-}
+const BADGE = {
+  new:     ['badge-new',     'New'],
+  fix:     ['badge-fix',     'Fix'],
+  improve: ['badge-improve', 'Improved'],
+  content: ['badge-content', 'Content'],
+  remove:  ['badge-fix',     'Removed'],
+};
 
-function setFilter(f) {
-  activeType = f;
-  renderFilterBar();
-  renderPatchNotes();
-}
-
-function renderPatchNotes() {
-  const container = document.getElementById('patchnotes-container');
-
-  const visiblePatches = PATCHES.map(p => ({
-    ...p,
-    entries: p.entries.filter(e => {
-      if (activeType === 'all') return true;
-      // Match by type or tag
-      return e.type === activeType || e.tag === activeType ||
-             (activeType === 'class' && CLASS_TAGS.includes(e.tag));
-    })
-  })).filter(p => p.entries.length > 0);
-
-  if (visiblePatches.length === 0) {
-    container.innerHTML = '<div class="pn-empty">No entries match the selected filter.</div>';
-    return;
-  }
-
-  container.innerHTML = visiblePatches.map((p, i) => {
+function render() {
+  const container = document.getElementById('changelog');
+  container.innerHTML = VERSIONS.map((v, i) => {
     const open = i === 0;
-    const counts = countTypes(p.entries);
-    const badgeHtml = Object.entries(counts).map(([type, n]) =>
-      `<span class="pn-count-badge ${COUNT_BADGE[type]||'pnc-fix'}">${n} ${type}</span>`
-    ).join('');
-
     return `
-      <div class="pn-patch">
-        <div class="pn-patch-header${open?' open':''}" id="pnh-${i}" onclick="togglePatch(${i})">
+      <div class="cl-version">
+        <div class="cl-version-header${open?' open':''}" id="cl-hdr-${i}" onclick="toggleVersion(${i})">
+          <div class="section-icon icon-optional" style="font-size:12px;">📋</div>
           <div>
-            <div class="pn-patch-tag">${p.version}</div>
-            <div class="pn-patch-date">${p.date}</div>
+            <div class="cl-version-tag">${v.version}</div>
+            <div class="cl-version-date">${v.date}</div>
           </div>
-          <div class="pn-patch-summary">${p.summary}</div>
-          <div class="pn-badge-row">${badgeHtml}</div>
-          <span class="chevron" id="pnchev-${i}" style="transform:rotate(${open?'0':'-90'}deg)">▼</span>
+          <div class="cl-version-summary" style="color:var(--text-muted);">${v.summary}</div>
+          <span class="chevron" id="cl-chev-${i}" style="transform:rotate(${open?'0':'-90'}deg);margin-left:0.5rem;">▼</span>
         </div>
-        <div class="pn-body${open?'':' hidden'}" id="pnb-${i}">
-          ${p.entries.map(e => {
-            const [badgeCls, badgeLabel] = TYPE_BADGE[e.type] || ['pnb-system','Note'];
+        <div class="cl-body${open?'':' hidden'}" id="cl-body-${i}">
+          ${v.entries.map(e => {
+            const [cls, label] = BADGE[e.type] || ['badge-new','New'];
             return `
-            <div class="pn-entry">
-              <span class="pn-entry-badge ${badgeCls}">${badgeLabel}</span>
-              <div class="pn-entry-text">
+            <div class="cl-entry">
+              <span class="cl-badge ${cls}">${label}</span>
+              <div class="cl-text">
                 ${e.text}
-                ${e.detail ? `<span class="detail">${e.detail}</span>` : ''}
+                ${e.detail ? `<span>${e.detail}</span>` : ''}
               </div>
-              ${e.tag ? `<span class="pn-entry-tag">${e.tag}</span>` : ''}
             </div>`;
           }).join('')}
         </div>
@@ -428,18 +287,7 @@ function renderPatchNotes() {
   }).join('');
 }
 
-function togglePatch(i) {
-  const body = document.getElementById('pnb-' + i);
-  const hdr  = document.getElementById('pnh-' + i);
-  const chev = document.getElementById('pnchev-' + i);
-  const isHidden = body.classList.contains('hidden');
-  body.classList.toggle('hidden', !isHidden);
-  hdr.classList.toggle('open', isHidden);
-  chev.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
-}
-
-renderFilterBar();
-renderPatchNotes();
+render();
 </script>
 </body>
 </html>

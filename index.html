@@ -24,29 +24,34 @@
   </header>
 
   <div class="reset-bar">
-    <div class="reset-info">
-      <span style="color:var(--light-gold)">⏳</span>
-      <span>Weekly reset in:</span>
-      <span class="reset-countdown" id="countdown">calculating…</span>
-    </div>
-    <div class="progress-wrap">
-      <div class="progress-bar-track">
-        <div class="progress-bar-fill" id="prog-fill" style="width:0%"></div>
+    <div class="reset-bar-top">
+      <div class="reset-info">
+        <span style="color:var(--light-gold)">⏳</span>
+        <span>Weekly reset in:</span>
+        <span class="reset-countdown" id="countdown">calculating…</span>
       </div>
-      <span id="prog-label" style="color:var(--text-secondary);font-size:13px;">0 / 0 done</span>
+      <div class="progress-wrap">
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="prog-fill" style="width:0%"></div>
+        </div>
+        <span id="prog-label" style="color:var(--text-secondary);font-size:13px;">0 / 0 done</span>
+      </div>
+      <div style="flex:1;"></div>
+      <div class="reset-bar-btns">
+        <button class="btn-reset-all" id="btn-theme" onclick="toggleTheme()" title="Toggle dark/light mode">☀️ Light</button>
+        <button class="btn-reset-all" id="btn-compact" onclick="toggleCompact()" title="Toggle compact view">⊟ Compact</button>
+        <button class="btn-reset-all" id="btn-whats-next" onclick="whatsNext()" title="Randomly pick an uncompleted task from Your List">🎲 What's Next?</button>
+        <button class="btn-reset-all" onclick="openSummary()">📊 Summary</button>
+        <button class="btn-reset-all" onclick="resetAll()">↺ Reset Week</button>
+        <button class="btn-reset-all" onclick="openExportImport()">⇅ Data</button>
+        <button class="btn-reset-all" id="btn-reveal" onclick="toggleRevealHidden()" style="visibility:hidden;">👁 Show Hidden</button>
+        <button class="btn-reset-all" id="btn-edit-yourlist" onclick="startEditingYourList()" style="visibility:hidden;">⭐ Edit List</button>
+        <button class="btn-reset-all" id="btn-yourlist-allchars" onclick="applyYourListToAll()" style="visibility:hidden;">⭐ Apply to All</button>
+      </div>
     </div>
-    <button class="btn-reset-all" onclick="resetAll()">↺ Reset Week</button>
-    <button class="btn-reset-all" onclick="openSummary()">📊 Summary</button>
-    <button class="btn-reset-all" onclick="openExportImport()">⇅ Data</button>
-    <button class="btn-reset-all" id="btn-whats-next" onclick="whatsNext()" title="Randomly pick an uncompleted task from Your List">🎲 What's Next?</button>
-    <button class="btn-reset-all" id="btn-theme" onclick="toggleTheme()" title="Toggle dark/light mode">☀️ Light</button>
-    <button class="btn-reset-all" id="btn-compact" onclick="toggleCompact()" title="Toggle compact view">⊟ Compact</button>
-    <button class="btn-reset-all" id="btn-reveal" onclick="toggleRevealHidden()" style="display:none;">👁 Show Hidden</button>
-    <button class="btn-reset-all" id="btn-edit-yourlist" onclick="startEditingYourList()" style="display:none;">⭐ Edit List</button>
-    <button class="btn-reset-all" id="btn-yourlist-allchars" onclick="applyYourListToAll()" style="display:none;">⭐ Apply to All</button>
-    <button class="btn-reset-all" onclick="openAltDashboard()" title="Alt efficiency overview">👥 Alts</button>
-    <button class="btn-reset-all" onclick="openWeeklyHistory()" title="View weekly completion history">📅 History</button>
-    <a class="btn-reset-all" href="patchnotes.html" style="text-decoration:none;" title="Latest hotfixes &amp; patch notes">🔧 Patch Notes</a>
+    <div class="reset-bar-bottom">
+      <div id="inline-history" class="inline-history"></div>
+    </div>
   </div>
 
   <div class="char-bar">
@@ -745,7 +750,7 @@ function render() {
   // ── YOUR LIST VIEW ──────────────────────────────────────
   if (activeFilters.has('yourlist') && !editingYourList) {
     const editBtn = document.getElementById('btn-edit-yourlist');
-    editBtn.style.display = '';
+    editBtn.style.visibility = 'visible';
     editBtn.textContent = '⭐ Edit List';
 
     // Gather all tasks from SECTIONS that are in the list
@@ -837,7 +842,7 @@ function render() {
     const pct = totalVisible ? Math.round((totalDone / totalVisible) * 100) : 0;
     document.getElementById('prog-fill').style.width = pct + '%';
     document.getElementById('prog-label').textContent = totalDone + ' / ' + totalVisible + ' done';
-    document.getElementById('btn-reveal').style.display = 'none';
+    document.getElementById('btn-reveal').style.visibility = 'hidden';
     return;
   }
 
@@ -945,18 +950,18 @@ function render() {
 
   // Show/update the reveal hidden button
   const revealBtn = document.getElementById('btn-reveal');
-  revealBtn.style.display = (anyHidden || revealHidden) ? '' : 'none';
+  revealBtn.style.visibility = (anyHidden || revealHidden) ? 'visible' : 'hidden';
   revealBtn.textContent = revealHidden ? '🚫 Hide Hidden' : '👁 Show Hidden';
 
   // Show Edit List button only when on Your List tab or editing
   const editBtn = document.getElementById('btn-edit-yourlist');
   const showEditBtn = activeFilters.has('yourlist') || editingYourList;
-  editBtn.style.display = showEditBtn ? '' : 'none';
+  editBtn.style.visibility = showEditBtn ? 'visible' : 'hidden';
   editBtn.textContent = editingYourList ? '✓ Done Editing' : '⭐ Edit List';
 
   // Show Apply to All only on Your List tab when not editing and list has items
   const applyBtn = document.getElementById('btn-yourlist-allchars');
-  applyBtn.style.display = (activeFilters.has('yourlist') && !editingYourList && loadYourList().length > 0) ? '' : 'none';
+  applyBtn.style.visibility = (activeFilters.has('yourlist') && !editingYourList && loadYourList().length > 0) ? 'visible' : 'hidden';
 
   renderCustomSection();
 }
@@ -1332,6 +1337,7 @@ function switchChar(name) {
   renderChars();
   renderClassLinksBar();
   render();
+  renderInlineHistory();
 }
 function deleteChar(name) {
   if (!confirm('Remove ' + name + ' and all saved data?')) return;
@@ -1589,64 +1595,124 @@ function saveCustomTask() {
 
 
 /* ═══════════════════════════════════════════
-   WEEKLY SUMMARY
+   WEEKLY SUMMARY  (with All Alts tab)
 ═══════════════════════════════════════════ */
 function openSummary() {
-  const done    = loadDone();
-  const hidden  = loadHidden();
+  document.getElementById('modal-summary').classList.add('open');
+  renderSummaryTab('current');
+}
+
+function renderSummaryTab(tab) {
   const content = document.getElementById('summary-content');
-  document.getElementById('summary-title').textContent = `Weekly Summary — ${currentChar}`;
+  const week    = getWeekKey();
+  const d       = new Date(week + 'T15:00:00Z');
+  const weekLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 
-  const d = new Date();
-  const rd = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-  while (rd.getUTCDay() !== 2) rd.setUTCDate(rd.getUTCDate() - 1);
-  const weekLabel = rd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
-
-  let rows = [], grandTotal = 0, grandDone = 0;
-
-  SECTIONS.forEach(sec => {
-    const visible = sec.tasks.filter(t => !hidden[t.id]);
-    if (!visible.length) return;
-    const secDone = visible.filter(t => done[t.id]).length;
-    grandTotal += visible.length;
-    grandDone  += secDone;
-    rows.push({ title: sec.title, icon: sec.icon, iconClass: sec.iconClass, done: secDone, total: visible.length });
-  });
-
-  const customTasks = loadCustomTasks();
-  if (customTasks.length) {
-    const cDone = customTasks.filter(t => done['custom_' + t.id]).length;
-    grandTotal += customTasks.length;
-    grandDone  += cDone;
-    rows.push({ title: 'Custom Tasks', icon: '✦', iconClass: 'icon-optional', done: cDone, total: customTasks.length });
-  }
-
-  const pct = grandTotal ? Math.round((grandDone / grandTotal) * 100) : 0;
-
-  content.innerHTML = `
-    <div class="summary-week">Reset week of ${weekLabel}</div>
-    ${rows.map(r => {
-      const p = r.total ? Math.round((r.done / r.total) * 100) : 0;
-      const complete = r.done === r.total && r.total > 0;
-      return `
-      <div class="summary-section">
-        <div class="section-icon ${r.iconClass}" style="width:22px;height:22px;font-size:11px;flex-shrink:0;">${r.icon}</div>
-        <span class="summary-label" title="${r.title}">${r.title}</span>
-        <div class="summary-bar-track">
-          <div class="summary-bar-fill${complete?' complete':''}" style="width:${p}%"></div>
-        </div>
-        <span class="summary-count" style="${complete?'color:var(--success-bright)':''}">${r.done}/${r.total}</span>
-      </div>`;
-    }).join('')}
-    <div class="summary-total">
-      <span class="summary-label">Overall Progress</span>
-      <div class="summary-bar-track">
-        <div class="summary-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,var(--light-gold),var(--void-glow))"></div>
-      </div>
-      <span class="summary-count" style="color:var(--light-gold);font-size:12px;">${grandDone}/${grandTotal} &nbsp;${pct}%</span>
+  const tabBar = `
+    <div class="summary-tabs">
+      <button class="summary-tab${tab==='current'?' active':''}" onclick="renderSummaryTab('current')">📊 ${currentChar}</button>
+      <button class="summary-tab${tab==='alts'?' active':''}" onclick="renderSummaryTab('alts')">👥 All Alts</button>
     </div>`;
 
-  document.getElementById('modal-summary').classList.add('open');
+  if (tab === 'current') {
+    document.getElementById('summary-title').textContent = `Weekly Summary`;
+    const done   = loadDone();
+    const hidden = loadHidden();
+    let rows = [], grandTotal = 0, grandDone = 0;
+    SECTIONS.forEach(sec => {
+      const visible = sec.tasks.filter(t => !hidden[t.id]);
+      if (!visible.length) return;
+      const secDone = visible.filter(t => done[t.id]).length;
+      grandTotal += visible.length;
+      grandDone  += secDone;
+      rows.push({ title: sec.title, icon: sec.icon, iconClass: sec.iconClass, done: secDone, total: visible.length });
+    });
+    const customTasks = loadCustomTasks();
+    if (customTasks.length) {
+      const cDone = customTasks.filter(t => done['custom_' + t.id]).length;
+      grandTotal += customTasks.length;
+      grandDone  += cDone;
+      rows.push({ title: 'Custom Tasks', icon: '✦', iconClass: 'icon-optional', done: cDone, total: customTasks.length });
+    }
+    const pct = grandTotal ? Math.round((grandDone / grandTotal) * 100) : 0;
+    content.innerHTML = tabBar + `
+      <div class="summary-week">Reset week of ${weekLabel}</div>
+      ${rows.map(r => {
+        const p = r.total ? Math.round((r.done / r.total) * 100) : 0;
+        const complete = r.done === r.total && r.total > 0;
+        return `
+        <div class="summary-section">
+          <div class="section-icon ${r.iconClass}" style="width:22px;height:22px;font-size:11px;flex-shrink:0;">${r.icon}</div>
+          <span class="summary-label" title="${r.title}">${r.title}</span>
+          <div class="summary-bar-track">
+            <div class="summary-bar-fill${complete?' complete':''}" style="width:${p}%"></div>
+          </div>
+          <span class="summary-count" style="${complete?'color:var(--success-bright)':''}">${r.done}/${r.total}</span>
+        </div>`;
+      }).join('')}
+      <div class="summary-total">
+        <span class="summary-label">Overall Progress</span>
+        <div class="summary-bar-track">
+          <div class="summary-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,var(--light-gold),var(--void-glow))"></div>
+        </div>
+        <span class="summary-count" style="color:var(--light-gold);font-size:12px;">${grandDone}/${grandTotal} &nbsp;${pct}%</span>
+      </div>`;
+
+  } else {
+    // All alts tab
+    document.getElementById('summary-title').textContent = `Weekly Summary`;
+    const altRows = characters.map(c => {
+      const done   = JSON.parse(localStorage.getItem('wow_mn_' + c + '_' + week) || '{}');
+      const hidden = JSON.parse(localStorage.getItem('wow_mn_hidden_' + c) || '{}');
+      const custom = JSON.parse(localStorage.getItem('wow_mn_custom_' + c) || '[]');
+      const cls    = localStorage.getItem('wow_mn_class_' + c) || '';
+      let total = 0, completed = 0;
+      SECTIONS.forEach(sec => {
+        sec.tasks.filter(t => !hidden[t.id]).forEach(t => { total++; if (done[t.id]) completed++; });
+      });
+      custom.forEach(t => { total++; if (done['custom_' + t.id]) completed++; });
+      const pct    = total ? Math.round((completed / total) * 100) : 0;
+      const clsDef = cls ? CLASSES.find(x => x.id === cls) : null;
+      const history = loadHistory(c);
+      let streak = 0;
+      for (const e of history) { if (e.done === e.total && e.total > 0) streak++; else break; }
+      return { name: c, done: completed, total, pct, clsDef, streak };
+    });
+
+    content.innerHTML = tabBar + `
+      <div class="summary-week">Week of ${weekLabel} · ${altRows.filter(r=>r.pct===100).length}/${altRows.length} fully complete</div>
+      ${altRows.map(r => {
+        const barColor = r.pct === 100 ? 'var(--success-bright)'
+          : r.pct >= 60 ? 'var(--void-glow)'
+          : r.pct >= 30 ? 'var(--light-gold)'
+          : 'var(--void-purple)';
+        const clsColor = r.clsDef ? r.clsDef.color : 'var(--border-bright)';
+        return `
+        <div class="alt-row${r.name === currentChar ? ' alt-row-active' : ''}" onclick="closeSummary();switchChar('${r.name}')">
+          <div class="alt-row-left">
+            ${r.clsDef
+              ? `<img src="${r.clsDef.icon}" style="width:18px;height:18px;flex-shrink:0;border-radius:2px;">`
+              : `<div style="width:18px;height:18px;border-radius:2px;background:var(--bg-panel);border:1px solid var(--border);flex-shrink:0;"></div>`}
+            <div class="alt-row-name" style="border-left:3px solid ${clsColor};">
+              ${r.name}${r.name === currentChar ? ' <span style="color:var(--text-muted);font-size:10px;">(active)</span>' : ''}
+            </div>
+          </div>
+          <div class="alt-row-right">
+            ${r.streak > 0 ? `<span class="alt-streak" title="${r.streak} week streak">🔥 ${r.streak}</span>` : ''}
+            <div class="alt-progress-wrap">
+              <div class="alt-progress-track">
+                <div class="alt-progress-fill" style="width:${r.pct}%;background:${barColor};"></div>
+              </div>
+              <span class="alt-progress-label" style="color:${r.pct===100?'var(--success-bright)':'var(--text-secondary)'};">${r.done}/${r.total}</span>
+            </div>
+            <span class="alt-pct" style="color:${barColor};">${r.pct}%</span>
+          </div>
+        </div>`;
+      }).join('')}
+      <div style="margin-top:0.75rem;font-family:'Cinzel',serif;font-size:11px;color:var(--text-muted);text-align:right;">
+        Click any row to switch character
+      </div>`;
+  }
 }
 
 function closeSummary() { document.getElementById('modal-summary').classList.remove('open'); }
@@ -2090,181 +2156,86 @@ function noteBtnHtml(id, notes) {
 })();
 
 /* ═══════════════════════════════════════════
-   ALT EFFICIENCY DASHBOARD
+   INLINE HISTORY BAR
+   Renders a compact per-week sparkline strip
+   in the lower-right of the reset bar.
 ═══════════════════════════════════════════ */
-function openAltDashboard() {
-  const modal   = document.getElementById('modal-alt-dashboard');
-  const content = document.getElementById('alt-dashboard-content');
-  const week    = getWeekKey();
+function renderInlineHistory() {
+  const el = document.getElementById('inline-history');
+  if (!el) return;
 
-  // Build data for all characters
-  const rows = characters.map(c => {
-    const done   = JSON.parse(localStorage.getItem('wow_mn_' + c + '_' + week) || '{}');
-    const hidden = JSON.parse(localStorage.getItem('wow_mn_hidden_' + c) || '{}');
-    const custom = JSON.parse(localStorage.getItem('wow_mn_custom_' + c) || '[]');
-    const cls    = localStorage.getItem('wow_mn_class_' + c) || '';
-    let total = 0, completed = 0;
-    SECTIONS.forEach(sec => {
-      sec.tasks.filter(t => !hidden[t.id]).forEach(t => {
-        total++;
-        if (done[t.id]) completed++;
-      });
-    });
-    custom.forEach(t => { total++; if (done['custom_' + t.id]) completed++; });
-    const pct = total ? Math.round((completed / total) * 100) : 0;
-    const clsDef = cls ? CLASSES.find(x => x.id === cls) : null;
-    // Streak from history
-    const history = loadHistory(c);
-    let streak = 0;
-    for (const e of history) {
-      if (e.done === e.total && e.total > 0) streak++; else break;
-    }
-    return { name: c, done: completed, total, pct, clsDef, streak };
-  });
-
-  const weekLabel = (() => {
-    const d = new Date(week + 'T15:00:00Z');
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
-  })();
-
-  content.innerHTML = `
-    <div style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.1em;color:var(--text-muted);text-transform:uppercase;margin-bottom:1.1rem;">
-      Week of ${weekLabel}
-    </div>
-    ${rows.map(r => {
-      const barColor = r.pct === 100
-        ? 'var(--success-bright)'
-        : r.pct >= 60
-          ? 'var(--void-glow)'
-          : r.pct >= 30
-            ? 'var(--light-gold)'
-            : 'var(--void-purple)';
-      const clsColor = r.clsDef ? r.clsDef.color : 'var(--border-bright)';
-      return `
-      <div class="alt-row${r.name === currentChar ? ' alt-row-active' : ''}" onclick="closeAltDashboard();switchChar('${r.name}')">
-        <div class="alt-row-left">
-          ${r.clsDef
-            ? `<img src="${r.clsDef.icon}" style="width:20px;height:20px;flex-shrink:0;image-rendering:auto;border-radius:3px;">`
-            : `<div style="width:20px;height:20px;border-radius:3px;background:var(--bg-panel);border:1px solid var(--border);flex-shrink:0;"></div>`}
-          <div class="alt-row-name" style="border-left:3px solid ${clsColor};">${r.name}${r.name === currentChar ? ' <span style="color:var(--text-muted);font-size:10px;">(active)</span>' : ''}</div>
-        </div>
-        <div class="alt-row-right">
-          ${r.streak > 0 ? `<span class="alt-streak" title="${r.streak} week${r.streak!==1?'s':''} in a row fully completed">🔥 ${r.streak}</span>` : ''}
-          <div class="alt-progress-wrap">
-            <div class="alt-progress-track">
-              <div class="alt-progress-fill" style="width:${r.pct}%;background:${barColor};"></div>
-            </div>
-            <span class="alt-progress-label" style="color:${r.pct===100?'var(--success-bright)':'var(--text-secondary)'};">${r.done}/${r.total}</span>
-          </div>
-          <span class="alt-pct" style="color:${barColor};">${r.pct}%</span>
-        </div>
-      </div>`;
-    }).join('')}
-    <div style="margin-top:1.1rem;padding-top:0.9rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-      <span style="font-family:'Cinzel',serif;font-size:11px;color:var(--text-muted);">Click any row to switch character</span>
-      <span style="font-family:'Cinzel',serif;font-size:11px;color:var(--text-muted);">${rows.filter(r=>r.pct===100).length}/${rows.length} fully complete</span>
-    </div>`;
-
-  modal.classList.add('open');
-}
-function closeAltDashboard() { document.getElementById('modal-alt-dashboard').classList.remove('open'); }
-
-/* ═══════════════════════════════════════════
-   WEEKLY HISTORY
-═══════════════════════════════════════════ */
-function openWeeklyHistory() {
-  const modal   = document.getElementById('modal-weekly-history');
-  const content = document.getElementById('weekly-history-content');
-  document.getElementById('weekly-history-title').textContent = `Weekly History — ${currentChar}`;
-
-  const history = loadHistory(currentChar);
-
-  // Also show current week (live, not yet snapshotted)
+  const history    = loadHistory(currentChar);
   const currentWeek = getWeekKey();
-  const doneCur   = loadDone();
-  const hiddenCur = loadHidden();
-  const customCur = loadCustomTasks();
+  const doneCur    = loadDone();
+  const hiddenCur  = loadHidden();
+  const customCur  = loadCustomTasks();
   let curTotal = 0, curDone = 0;
   SECTIONS.forEach(sec => {
-    sec.tasks.filter(t => !hiddenCur[t.id]).forEach(t => {
-      curTotal++;
-      if (doneCur[t.id]) curDone++;
-    });
+    sec.tasks.filter(t => !hiddenCur[t.id]).forEach(t => { curTotal++; if (doneCur[t.id]) curDone++; });
   });
   customCur.forEach(t => { curTotal++; if (doneCur['custom_' + t.id]) curDone++; });
 
-  // Build full list: current week first, then history
+  // Build display weeks: current + up to 11 past = 12 bars max
   const allWeeks = [];
-  if (curTotal > 0) allWeeks.push({ week: currentWeek, done: curDone, total: curTotal, isCurrent: true });
-  history.forEach(e => { if (e.week !== currentWeek) allWeeks.push(e); });
+  if (curTotal > 0) allWeeks.push({ done: curDone, total: curTotal, isCurrent: true, week: currentWeek });
+  history.filter(e => e.week !== currentWeek).slice(0, 11).forEach(e => allWeeks.push(e));
 
   if (allWeeks.length === 0) {
-    content.innerHTML = `
-      <div style="text-align:center;padding:2rem;color:var(--text-muted);font-style:italic;">
-        No history yet.<br>
-        <span style="font-size:14px;">Complete tasks and reset the week to start tracking history.</span>
-      </div>`;
-    modal.classList.add('open');
+    el.innerHTML = '<span style="font-family:\'Cinzel\',serif;font-size:11px;color:var(--text-muted);font-style:italic;">No history yet</span>';
     return;
   }
 
-  // Calculate streak
+  // Streak count from history (past completed weeks)
   let streak = 0;
-  for (const e of history) {
-    if (e.done === e.total && e.total > 0) streak++; else break;
-  }
+  for (const e of history) { if (e.done === e.total && e.total > 0) streak++; else break; }
 
-  // Best week
   const best = [...allWeeks].sort((a, b) => (b.done/b.total) - (a.done/a.total))[0];
 
-  content.innerHTML = `
-    <div class="history-stats-row">
-      <div class="history-stat">
-        <div class="history-stat-val">${allWeeks.length}</div>
-        <div class="history-stat-label">Weeks Tracked</div>
+  const bars = allWeeks.map(e => {
+    const pct  = e.total ? Math.round((e.done / e.total) * 100) : 0;
+    const full = e.done === e.total && e.total > 0;
+    const color = full ? 'var(--success-bright)'
+      : pct >= 60 ? 'var(--void-glow)'
+      : pct >= 30 ? 'var(--light-gold)'
+      : 'var(--void-purple)';
+    const d     = new Date(e.week + 'T15:00:00Z');
+    const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+    const title = `${label}: ${e.done}/${e.total} (${pct}%)${full?' ⭐':''}`;
+    return `<div class="hist-bar-wrap" title="${title}">
+      <div class="hist-bar-track">
+        <div class="hist-bar-fill${e.isCurrent?' hist-bar-now':''}" style="height:${Math.max(4,pct)}%;background:${color};"></div>
       </div>
-      <div class="history-stat">
-        <div class="history-stat-val" style="color:var(--light-gold);">🔥 ${streak}</div>
-        <div class="history-stat-label">Current Streak</div>
-      </div>
-      <div class="history-stat">
-        <div class="history-stat-val" style="color:var(--success-bright);">${best ? Math.round((best.done/best.total)*100) : 0}%</div>
-        <div class="history-stat-label">Best Week</div>
-      </div>
-      <div class="history-stat">
-        <div class="history-stat-val">${Math.round(allWeeks.reduce((s,e)=>s+(e.done/e.total),0)/allWeeks.length*100)}%</div>
-        <div class="history-stat-label">Avg Completion</div>
-      </div>
-    </div>
-    <div class="history-weeks">
-      ${allWeeks.map((e, i) => {
-        const pct = e.total ? Math.round((e.done/e.total)*100) : 0;
-        const d = new Date(e.week + 'T15:00:00Z');
-        const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
-        const full = e.done === e.total && e.total > 0;
-        const barColor = full ? 'var(--success-bright)' : pct >= 60 ? 'var(--void-glow)' : pct >= 30 ? 'var(--light-gold)' : 'var(--void-purple)';
-        return `
-        <div class="history-week-row">
-          <div class="history-week-label">
-            ${e.isCurrent ? '<span style="font-size:10px;color:var(--void-glow);font-family:\'Cinzel\',serif;letter-spacing:0.05em;">NOW</span>' : ''}
-            <span style="color:${e.isCurrent?'var(--text-primary)':'var(--text-secondary)'};">${label}</span>
-          </div>
-          <div class="history-bar-track">
-            <div class="history-bar-fill" style="width:${pct}%;background:${barColor};${e.isCurrent?'opacity:0.8;':''}" ${e.isCurrent?'class="history-bar-pulse"':''}></div>
-          </div>
-          <span class="history-count" style="color:${full?'var(--success-bright)':'var(--text-secondary)'};">${e.done}/${e.total}</span>
-          <span class="history-pct" style="color:${barColor};">${pct}%</span>
-          ${full ? '<span title="Perfect week!">⭐</span>' : '<span style="opacity:0;"> ⭐</span>'}
-        </div>`;
-      }).join('')}
+      ${e.isCurrent ? '<div class="hist-bar-dot"></div>' : ''}
     </div>`;
+  }).join('');
 
-  modal.classList.add('open');
+  el.innerHTML = `
+    <div class="inline-history-inner">
+      <div class="inline-history-label">History</div>
+      <div class="inline-history-bars">${bars}</div>
+      <div class="inline-history-stats">
+        <div class="inline-hist-stat">
+          <div class="inline-hist-stat-val">${allWeeks.length}</div>
+          <div class="inline-hist-stat-label">Weeks</div>
+        </div>
+        <div class="inline-hist-stat">
+          <div class="inline-hist-stat-val" style="color:var(--light-gold);">🔥 ${streak}</div>
+          <div class="inline-hist-stat-label">Streak</div>
+        </div>
+        <div class="inline-hist-stat">
+          <div class="inline-hist-stat-val" style="color:var(--success-bright);">${best ? Math.round((best.done/best.total)*100) : 0}%</div>
+          <div class="inline-hist-stat-label">Best Week</div>
+        </div>
+        <div class="inline-hist-stat">
+          <div class="inline-hist-stat-val">${Math.round(allWeeks.reduce((s,e) => s + (e.done/e.total), 0) / allWeeks.length * 100)}%</div>
+          <div class="inline-hist-stat-label">Avg</div>
+        </div>
+      </div>
+    </div>`;
 }
-function closeWeeklyHistory() { document.getElementById('modal-weekly-history').classList.remove('open'); }
 
 /* ── INIT ── */
-renderChars(); renderClassLinksBar(); render(); updateCountdown(); setInterval(updateCountdown, 1000);
+renderChars(); renderClassLinksBar(); render(); renderInlineHistory(); updateCountdown(); setInterval(updateCountdown, 1000);
 
 // Sync toolbar button labels to persisted state
 document.getElementById('btn-theme').textContent   = isLightMode ? '🌙 Dark'   : '☀️ Light';
@@ -2277,7 +2248,7 @@ if (isCompact) {
 
 <!-- SUMMARY MODAL -->
 <div class="modal-overlay" id="modal-summary">
-  <div class="modal" style="width:520px;max-width:95vw;">
+  <div class="modal" style="width:600px;max-width:95vw;">
     <h3 id="summary-title">Weekly Summary</h3>
     <div id="summary-content"></div>
     <div class="modal-btns" style="margin-top:1.25rem;">
@@ -2297,33 +2268,11 @@ if (isCompact) {
 
 <input type="file" id="import-file-input" accept=".json" style="display:none;" onchange="handleImportFile(event)">
 
-<!-- ALT EFFICIENCY DASHBOARD MODAL -->
-<div class="modal-overlay" id="modal-alt-dashboard">
-  <div class="modal" style="width:560px;max-width:95vw;">
-    <h3>👥 Alt Efficiency Dashboard</h3>
-    <div id="alt-dashboard-content"></div>
-    <div class="modal-btns" style="margin-top:1.25rem;">
-      <button class="btn-cancel" onclick="closeAltDashboard()">Close</button>
-    </div>
-  </div>
-</div>
-
-<!-- WEEKLY HISTORY MODAL -->
-<div class="modal-overlay" id="modal-weekly-history">
-  <div class="modal" style="width:520px;max-width:95vw;">
-    <h3 id="weekly-history-title">Weekly History</h3>
-    <div id="weekly-history-content"></div>
-    <div class="modal-btns" style="margin-top:1.25rem;">
-      <button class="btn-cancel" onclick="closeWeeklyHistory()">Close</button>
-    </div>
-  </div>
-</div>
-
 
 <script>
 /* Deferred modal overlay close listeners — must run after DOM is ready */
 document.addEventListener('DOMContentLoaded', function() {
-  ['modal','modal-custom','modal-summary','modal-data','modal-alt-dashboard','modal-weekly-history'].forEach(function(id) {
+  ['modal','modal-custom','modal-summary','modal-data'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener('click', function(e) {
       if (e.target === el) el.classList.remove('open');
