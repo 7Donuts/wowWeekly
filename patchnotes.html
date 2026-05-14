@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="midnight.css">
 <style>
   .pn-wrapper {
-    max-width: 860px;
+    max-width: 1400px;
     margin: 0 auto;
     padding: 2rem 1.5rem 4rem;
     position: relative;
@@ -187,6 +187,162 @@
   }
 
   .chevron { transition: transform 0.2s; display: inline-block; color: var(--text-muted); }
+
+  /* ── LIVE FEED ── */
+  .live-feed-section {
+    margin-bottom: 2rem;
+    border: 1px solid var(--border-bright);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .live-feed-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.1rem;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .live-feed-header:hover { background: var(--bg-card); }
+  .live-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--success-bright);
+    border: 1px solid rgba(106,191,128,0.3);
+    background: rgba(106,191,128,0.08);
+    padding: 2px 8px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .live-indicator::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--success-bright);
+    animation: livePulse 2s ease-in-out infinite;
+  }
+  .live-indicator.loading { color: var(--text-muted); border-color: var(--border); background: transparent; }
+  .live-indicator.loading::before { background: var(--text-muted); animation: none; }
+  .live-indicator.error { color: #e85844; border-color: rgba(234,88,68,0.3); background: rgba(234,88,68,0.06); }
+  .live-indicator.error::before { background: #e85844; animation: none; }
+  @keyframes livePulse {
+    0%,100% { opacity: 1; } 50% { opacity: 0.3; }
+  }
+  .live-feed-title {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    color: var(--light-gold);
+    font-weight: 700;
+  }
+  .live-feed-meta {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+  .live-feed-timestamp {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+  .live-feed-body { padding: 0.5rem 0; }
+  .live-feed-body.hidden { display: none; }
+
+  .rss-item {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    padding: 0.65rem 1.1rem;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.12s;
+  }
+  .rss-item:last-child { border-bottom: none; }
+  .rss-item:hover { background: var(--bg-card); }
+  .rss-item-date {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: 68px;
+    padding-top: 3px;
+  }
+  .rss-item-body { flex: 1; }
+  .rss-item-title {
+    font-size: 15px;
+    color: var(--text-primary);
+    line-height: 1.4;
+  }
+  .rss-item-title a {
+    color: var(--void-glow);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .rss-item-title a:hover { color: var(--light-pale); text-decoration: underline; }
+  .rss-item-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-style: italic;
+    margin-top: 2px;
+    line-height: 1.4;
+    /* Clamp to 2 lines */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .rss-loading {
+    padding: 1.5rem 1.1rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-style: italic;
+    font-size: 14px;
+  }
+  .rss-error {
+    padding: 1rem 1.1rem;
+    color: #e85844;
+    font-size: 14px;
+    font-style: italic;
+  }
+  .rss-tag {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    padding: 2px 7px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    background: rgba(160,125,224,0.1);
+    color: var(--void-glow);
+    border: 1px solid rgba(160,125,224,0.2);
+    white-space: nowrap;
+  }
+  .live-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 1.75rem 0 1.25rem;
+    color: var(--text-muted);
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .live-divider::before, .live-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
 </style>
 </head>
 <body>
@@ -214,6 +370,22 @@
     <a href="https://www.wowhead.com/news/wow-hotfixes" target="_blank" style="color:var(--void-glow);">Wowhead Hotfix Tracker</a>
     &nbsp;·&nbsp; Entries curated for PvE, class, and content relevance. Not all system/UI hotfixes listed.
   </div>
+
+  <!-- LIVE WOWHEAD RSS FEED -->
+  <div class="live-feed-section">
+    <div class="live-feed-header" onclick="toggleLiveFeed()">
+      <span class="live-indicator loading" id="live-indicator">Loading</span>
+      <span class="live-feed-title">Live: Wowhead News Feed</span>
+      <span class="live-feed-meta" id="live-feed-meta">Fetching latest articles…</span>
+      <span class="live-feed-timestamp" id="live-feed-timestamp"></span>
+      <span class="chevron" id="live-chev" style="transform:rotate(0deg)">▼</span>
+    </div>
+    <div class="live-feed-body" id="live-feed-body">
+      <div class="rss-loading" id="rss-loading">⟳ Fetching Wowhead RSS feed…</div>
+    </div>
+  </div>
+
+  <div class="live-divider">Curated Patch Notes — Patch 12.0.x</div>
 
   <div class="pn-filter-bar" id="filter-bar"></div>
 
@@ -438,8 +610,161 @@ function togglePatch(i) {
   chev.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
 }
 
+/* ═══════════════════════════════════════════
+   LIVE RSS FEED — Wowhead News
+   Uses rss2json.com JSONP (script tag injection)
+   — no fetch(), no CORS, no AbortSignal issues.
+═══════════════════════════════════════════ */
+const WOWHEAD_RSS = 'https://www.wowhead.com/news/rss/wow';
+
+const HOTFIX_KEYWORDS = ['hotfix','patch','hot fix','class tuning','tuning','bug fix','nerf','buff','notes'];
+
+let liveFeedOpen = true;
+
+function toggleLiveFeed() {
+  liveFeedOpen = !liveFeedOpen;
+  document.getElementById('live-feed-body').classList.toggle('hidden', !liveFeedOpen);
+  document.getElementById('live-chev').style.transform = liveFeedOpen ? 'rotate(0deg)' : 'rotate(-90deg)';
+}
+
+function setLiveIndicator(state, text) {
+  const el = document.getElementById('live-indicator');
+  el.className = 'live-indicator' + (state !== 'live' ? ' ' + state : '');
+  el.textContent = text;
+}
+
+function formatRssDate(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch { return dateStr; }
+}
+
+function stripHtml(html) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || '';
+}
+
+function classifyItem(title, desc) {
+  const text = (title + ' ' + desc).toLowerCase();
+  if (HOTFIX_KEYWORDS.some(k => text.includes(k))) return 'hotfix';
+  if (text.includes('patch note')) return 'patch';
+  if (text.includes('ptr') || text.includes('public test')) return 'ptr';
+  if (text.includes('blue post') || text.includes('blizzard')) return 'blizzard';
+  return null;
+}
+
+const TAG_STYLE = {
+  hotfix:  'background:rgba(234,88,68,0.1);color:#e85844;border-color:rgba(234,88,68,0.25);',
+  patch:   'background:rgba(201,168,76,0.1);color:var(--light-gold);border-color:rgba(201,168,76,0.25);',
+  ptr:     'background:rgba(160,125,224,0.1);color:var(--void-glow);border-color:rgba(160,125,224,0.2);',
+  blizzard:'background:rgba(74,143,92,0.1);color:#7ecf94;border-color:rgba(74,143,92,0.2);',
+};
+
+function renderRssItems(items) {
+  const body    = document.getElementById('live-feed-body');
+  const loading = document.getElementById('rss-loading');
+  if (loading) loading.remove();
+
+  if (!items || items.length === 0) {
+    body.innerHTML = '<div class="rss-error">No items returned from feed.</div>';
+    return;
+  }
+
+  body.innerHTML = items.slice(0, 20).map(item => {
+    const tag      = classifyItem(item.title, item.desc);
+    const tagStyle = tag ? TAG_STYLE[tag] || '' : '';
+    const tagLabel = tag ? tag.charAt(0).toUpperCase() + tag.slice(1) : null;
+    const desc     = stripHtml(item.desc || '').trim();
+    const descShort = desc.length > 200 ? desc.slice(0, 200) + '…' : desc;
+    return `
+    <div class="rss-item">
+      <div class="rss-item-date">${formatRssDate(item.pubDate)}</div>
+      <div class="rss-item-body">
+        <div class="rss-item-title">
+          <a href="${item.link}" target="_blank" rel="noopener">${item.title}</a>
+        </div>
+        ${descShort ? `<div class="rss-item-desc">${descShort}</div>` : ''}
+      </div>
+      ${tagLabel ? `<span class="rss-tag" style="${tagStyle}">${tagLabel}</span>` : ''}
+    </div>`;
+  }).join('');
+
+  document.getElementById('live-feed-timestamp').textContent =
+    'Updated ' + new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
+
+function rssFeedError(msg) {
+  setLiveIndicator('error', 'Unavailable');
+  document.getElementById('live-feed-meta').textContent = 'Could not load feed — check Wowhead directly';
+  document.getElementById('live-feed-body').innerHTML = `
+    <div class="rss-error">
+      Feed unavailable — ${msg}.<br>
+      <a href="https://www.wowhead.com/news" target="_blank" style="color:var(--void-glow);">Browse Wowhead News ↗</a>
+      &nbsp;·&nbsp;
+      <a href="https://www.wowhead.com/news/wow-hotfixes" target="_blank" style="color:var(--void-glow);">Hotfix Tracker ↗</a>
+    </div>`;
+}
+
+// JSONP callback — rss2json.com calls this global function with the parsed data
+window._wowRssCb = function(data) {
+  clearTimeout(window._wowRssTimer);
+  const s = document.getElementById('_wowRssScript');
+  if (s) s.remove();
+
+  if (!data || data.status !== 'ok') {
+    rssFeedError('service returned: ' + (data && data.status || 'unknown'));
+    return;
+  }
+
+  const items = (data.items || []).map(i => ({
+    title:   i.title           || 'Untitled',
+    link:    i.link            || i.guid || '#',
+    desc:    i.description     || i.content || '',
+    pubDate: i.pubDate         || '',
+  }));
+
+  setLiveIndicator('live', 'Live');
+  document.getElementById('live-feed-meta').textContent =
+    items.length + ' articles from Wowhead — click any title to read on Wowhead';
+  renderRssItems(items);
+};
+
+function fetchWowheadFeed() {
+  setLiveIndicator('loading', 'Loading');
+  document.getElementById('live-feed-meta').textContent = 'Fetching latest articles…';
+
+  // Timeout fallback if the script tag never fires
+  window._wowRssTimer = setTimeout(function() {
+    const s = document.getElementById('_wowRssScript');
+    if (s) s.remove();
+    rssFeedError('request timed out');
+  }, 12000);
+
+  const script = document.createElement('script');
+  script.id  = '_wowRssScript';
+  script.src = 'https://api.rss2json.com/v1/api.json'
+    + '?rss_url=' + encodeURIComponent(WOWHEAD_RSS)
+    + '&count=25'
+    + '&callback=_wowRssCb';
+  script.onerror = function() {
+    clearTimeout(window._wowRssTimer);
+    script.remove();
+    // Check if this looks like a CSP block (common in sandboxed iframes/previews)
+    const inIframe = window.self !== window.top;
+    const msg = inIframe
+      ? 'blocked by sandbox CSP — open this file directly in a browser to load live data'
+      : 'script blocked by browser or network';
+    rssFeedError(msg);
+  };
+  document.head.appendChild(script);
+}
+
 renderFilterBar();
 renderPatchNotes();
+fetchWowheadFeed();
 </script>
 </body>
 </html>
