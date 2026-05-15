@@ -1,4 +1,4 @@
-/* ═══════════════════════════════════════════════════════════
+/* -----------------------------------------------------------
    WORLD EVENT DATA  —  Patch 12.0.5 · May 2026 – May 2027
    Single source of truth for both the inline event display
    (index.html) and the full Event Calendar (events.html).
@@ -9,7 +9,7 @@
    Dates are parsed as UTC midnight for consistent comparison.
    The index page uses only name/url/start/end.
    events.html uses name/url/start/end/desc/tags.
-═══════════════════════════════════════════════════════════ */
+----------------------------------------------------------- */
 const EVENTS = [
   { name: 'Pet Battle Bonus Event',       url: 'https://www.wowhead.com/event=565/pet-battle-bonus-event',
     start: '2026-05-19', end: '2026-05-26',

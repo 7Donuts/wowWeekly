@@ -1,9 +1,9 @@
-/* ═══════════════════════════════════════════
+/* -------------------------------------------
    STORAGE — namespaced localStorage abstraction
    All keys follow the prefix "wow_mn_" to avoid
    collisions. Change the schema here and it
    propagates to every page that loads this file.
-═══════════════════════════════════════════ */
+------------------------------------------- */
 function getWeekKey() {
   const now = new Date();
   const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 15, 0, 0));

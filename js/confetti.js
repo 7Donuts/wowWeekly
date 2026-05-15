@@ -1,12 +1,11 @@
-/* ═══════════════════════════════════════════
+/* -------------------------------------------
    CONFETTI ENGINE
    Self-contained particle system using the
    <canvas id="confetti-canvas"> element.
    API: _confetti.burst(x, y, count, big)
         _confetti.celebrate()
    Requires: confetti-canvas element in DOM.
-═══════════════════════════════════════════ */
-═══════════════════════════════════════════ */
+------------------------------------------- */
 const _confetti = (() => {
   const canvas  = document.getElementById('confetti-canvas');
   const ctx     = canvas.getContext('2d');

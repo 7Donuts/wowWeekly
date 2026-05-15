@@ -1,4 +1,4 @@
-/* ═══════════════════════════════════════════════════════════
+/* -----------------------------------------------------------
    TASK DATA  —  Patch 12.0.5 Lingering Shadows  (May 2026)
    Sources: Icy Veins weekly to-do list, Icy Veins world
    events guide, Mythic-Store weekly checklist.
@@ -10,7 +10,7 @@
      - Remove or set priority:3 for outdated content
      - tag-new marks 12.0.5-introduced content
      - BEGINNER_STAGES task IDs must match task ids in SECTIONS
-═══════════════════════════════════════════════════════════ */
+----------------------------------------------------------- */
 const SECTIONS = [
 
   // ── PRIORITY 1  (Do First) ─────────────────────────────
