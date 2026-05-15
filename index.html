@@ -46,12 +46,14 @@
         <button class="btn-reset-all" onclick="openExportImport()">⇅ Data</button>
         <div class="btn-conditional-group">
           <button class="btn-reset-all" id="btn-reveal" onclick="toggleRevealHidden()" style="display:none;">👁 Show Hidden</button>
-          <button class="btn-reset-all" id="btn-edit-yourlist" onclick="startEditingYourList()" style="display:none;">⭐ Edit List</button>
-          <button class="btn-reset-all" id="btn-yourlist-allchars" onclick="applyYourListToAll()" style="display:none;">⭐ Apply to All</button>
+          <button class="btn-reset-all" id="btn-edit-yourlist" onclick="startEditingYourList()">⭐ Edit List</button>
         </div>
       </div>
     </div>
     <div class="reset-bar-bottom">
+      <div class="reset-bar-bottom-left">
+        <div id="inline-event" class="inline-event"></div>
+      </div>
       <div id="inline-history" class="inline-history"></div>
     </div>
   </div>
@@ -78,11 +80,11 @@
     <button class="tab-btn" data-filter="housing" onclick="setFilter('housing',this)">Housing</button>
     <button class="tab-btn" data-filter="pvp" onclick="setFilter('pvp',this)">PvP</button>
     <button class="tab-btn" data-filter="optional" onclick="setFilter('optional',this)">Optional</button>
-    <button class="tab-btn" data-filter="world-events" onclick="setFilter('world-events',this)">Event Calendar</button>
     <button class="tab-btn tab-custom" data-filter="custom" onclick="setFilter('custom',this)">✦ Custom</button>
   </div>
 
   <div class="search-bar-wrap">
+    <button class="btn-view-toggle" id="btn-yourlist-view" onclick="toggleYourListView()" title="Toggle grouped / flat list">⊞ Grouped</button>
     <div class="search-bar-inner">
       <span class="search-icon">🔍</span>
       <input type="text" id="task-search" class="task-search-input"
@@ -127,6 +129,24 @@
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeCustomModal()">Cancel</button>
       <button class="btn-primary" onclick="saveCustomTask()">Add Task</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-beginner">
+  <div class="modal" style="width:560px;max-width:96vw;">
+    <h3>🧭 Starter Guide</h3>
+    <p style="font-size:14px;color:var(--text-secondary);font-style:italic;margin-bottom:1.25rem;line-height:1.5;">
+      Pick the stage that best describes where your character is right now. Your List will be populated with the most efficient solo-friendly tasks for that stage — no raids required.
+    </p>
+
+    <div id="beginner-stages" style="display:flex;flex-direction:column;gap:0.6rem;margin-bottom:1.25rem;"></div>
+
+    <div style="font-size:12px;color:var(--text-muted);font-style:italic;margin-bottom:1rem;">
+      ⚠ This will replace your current list. You can always edit it afterward.
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeBeginnerModal()">Cancel</button>
     </div>
   </div>
 </div>
@@ -390,12 +410,19 @@ const SECTIONS = [
     categories: ['delve'],
     priority: 2,
     tasks: [
-      { id: 'd1', goal: {max:4, label:'delves'}, name: 'Complete at least one T11 Delve (or highest tier manageable)',
-        desc: 'Icy Veins weekly goal. T11 provides optimal rewards. Counts toward Great Vault World row.',
-        tags: ['tag-delve'] },
-      { id: 'd2', name: 'Complete a Bountiful Delve for Nebulous Voidcore drop chance',
-        desc: 'Bountiful Delves are eligible Voidforge bonus roll sources.',
-        tags: ['tag-delve', 'tag-void'] },
+      { id: 'd1', name: 'Use Trovehunter\'s Bounty in highest tier Delve possible',
+        desc: 'Trovehunter\'s Bounty reveals the Hidden Trove inside a Delve. Always use it at your highest manageable tier — Champion gear at T1–T7, Hero gear at T8+. One use per week.',
+        tags: ['tag-delve', 'tag-gold'] },
+      { id: 'd_bountiful', goal: {max:4, label:'delves', milestones:[
+          {at:1, note:'1 / 4 Bountiful Delves done'},
+          {at:2, note:'2 / 4 Bountiful Delves done'},
+          {at:3, note:'3 / 4 Bountiful Delves done'},
+          {at:4, note:'✓ Weekly Bountiful Delve goal complete'},
+        ]},
+        name: 'Complete Bountiful Delves (up to 4 per week)',
+        desc: 'Bountiful Delves reward end-of-run caches and are eligible Voidforge bonus roll sources. Set your current max tier below — gear quality scales with tier.',
+        tags: ['tag-delve', 'tag-void'],
+        tierSelector: true },
       { id: 'd3', name: 'Collect Delve weekly cache reward',
         desc: 'Check for any active weekly Delve quest associated with your current tier.',
         tags: ['tag-delve', 'tag-gold'] },
@@ -410,12 +437,28 @@ const SECTIONS = [
     categories: ['prey'],
     priority: 2,
     tasks: [
-      { id: 'pr1', goal: {max:3, label:'hunts'}, name: 'Complete three Nightmare Prey hunts (weekly quest)',
-        desc: 'Icy Veins weekly goal. Nightmare difficulty also drops Nebulous Voidcores for bonus rolls.',
+      { id: 'pr_norm', goal: {max:2, label:'hunts', milestones:[
+          {at:1, note:'1 / 2 Normal hunts done'},
+          {at:2, note:'✓ Both Normal hunts complete'},
+        ]},
+        name: 'Normal Prey Hunts (2 per week)',
+        desc: 'Rewards Adventurer-level gear (ilvl 220–237). Twice-weekly lockout. Enable via Astalor Bloodsworn in Murder Row, Silvermoon.',
         tags: ['tag-world'] },
-      { id: 'pr2', name: 'Track additional Prey for Great Vault World row credit',
-        desc: 'Each dispatch contributes to the World row alongside Delves and Ritual Sites.',
-        tags: ['tag-world', 'tag-vault'] },
+      { id: 'pr_hard', goal: {max:2, label:'hunts', milestones:[
+          {at:1, note:'1 / 2 Hard hunts done'},
+          {at:2, note:'✓ Both Hard hunts complete'},
+        ]},
+        name: 'Hard Prey Hunts (2 per week)',
+        desc: 'Rewards Veteran-level gear (ilvl 233–250). Twice-weekly lockout. Harder targets may require a partner.',
+        tags: ['tag-world'] },
+      { id: 'pr_nm', goal: {max:3, label:'hunts', milestones:[
+          {at:1, note:'1 / 3 Nightmare hunts done'},
+          {at:2, note:'2 / 3 Nightmare hunts done'},
+          {at:3, note:'✓ Weekly Prey quest complete'},
+        ]},
+        name: 'Nightmare Prey Hunts (weekly quest — 3 kills)',
+        desc: 'Rewards Champion-level gear (ilvl 246–263). Also drops Nebulous Voidcores for bonus rolls. Core Icy Veins weekly priority.',
+        tags: ['tag-world', 'tag-void'] },
       { id: 'pr3', name: 'Check Prey target list for transmog / mount / housing drops',
         desc: 'Specific Prey targets drop unique achievements, transmog, mounts, and housing decor.',
         tags: ['tag-world', 'tag-optional'] },
@@ -444,6 +487,12 @@ const SECTIONS = [
     categories: ['world'],
     priority: 2,
     tasks: [
+      { id: 'we0a', name: 'Complete World Quests (daily)',
+        desc: 'World Quests reward Adventurer-level gear (ilvl 220–237), gold, and rep. Check your map each day — they rotate frequently and are the lowest barrier gearing activity available at max level.',
+        tags: ['tag-world', 'tag-gold'] },
+      { id: 'we0b', name: 'Kill Rare Elites (as encountered)',
+        desc: 'Rare mobs reward Adventurer-level gear (ilvl 220–237) on kill. Not on a strict lockout — kill rares as you encounter them while doing world content. Higher-threat rares may require a small group.',
+        tags: ['tag-world', 'tag-gold'] },
       { id: 'we1', name: 'World Bosses — kill each available boss once',
         desc: 'One kill per boss per week. Four world bosses total across the four Midnight zones. Rewards Champion-quality loot.',
         tags: ['tag-world', 'tag-gold'] },
@@ -481,6 +530,9 @@ const SECTIONS = [
         tags: ['tag-gold'] },
       { id: 'cu4', name: 'Open Relic Coffers with accumulated Key shards (from Bazaar caches)',
         desc: 'Relic Coffer Key shards drop from Ranger\'s Cache rewards. Combine to open Coffers for additional loot.',
+        tags: ['tag-gold'] },
+      { id: 'cu5', name: 'Craft or empower gear with Dawncrest (if holding 80+)',
+        desc: 'Dawncrest comes in three tiers — Adventurer (ilvl 220–237), Veteran (ilvl 233–250), and Hero (ilvl 259–276). Spend 80 of the appropriate Dawncrest at a crafter or workbench to empower a crafted piece to that tier. Don\'t sit on 80+ — it\'s dead value.',
         tags: ['tag-gold'] },
     ]
   },
@@ -544,240 +596,6 @@ const SECTIONS = [
     ]
   },
 
-  {
-    id: 'events',
-    icon: '', iconClass: 'icon-worldevents',
-    title: 'Upcoming World Events',
-    meta: 'Rotating limited-time events — source: Wowhead World Events',
-    categories: ['world-events'],
-    priority: 3,
-    tasks: [
-      { id: 'ev1',
-        name: '<a href="https://www.wowhead.com/event=565/pet-battle-bonus-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Pet Battle Bonus Event</a> — May 19–26',
-        desc: 'Bonus pet battle experience and a weekly quest rewarding a Sack of Pet Supplies. Good week to level battle pets.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev2',
-        name: '<a href="https://www.wowhead.com/event=1559/delves-bonus-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Delves Bonus Event</a> — May 19–26',
-        desc: 'Bonus rewards from Delves this week. Weekly quest rewards extra loot. Combine with your normal Delve progression.',
-        tags: ['tag-optional', 'tag-delve', 'tag-world'] },
-      { id: 'ev3',
-        name: '<a href="https://www.wowhead.com/event=1240/pvp-brawl-deepwind-dunk" target="_blank" style="color:var(--void-glow);text-decoration:none;">PvP Brawl: Deepwind Dunk</a> — May 19–26',
-        desc: 'Wacky basketball-style PvP brawl in Deepwind Gorge. Fun distraction with a weekly quest reward.',
-        tags: ['tag-optional', 'tag-pvp'] },
-      { id: 'ev4',
-        name: '<a href="https://www.wowhead.com/event=648/glowcap-festival" target="_blank" style="color:var(--void-glow);text-decoration:none;">Glowcap Festival</a> — May 27–28',
-        desc: 'Short micro-holiday in Zangarmarsh celebrating the Sporeggar. Collect Glowcaps and earn reputation.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev5',
-        name: '<a href="https://www.wowhead.com/event=1802/midnight-dungeon-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Midnight Dungeon Event</a> — May 26 – Jun 2',
-        desc: 'Bonus rewards from Midnight dungeons. Weekly quest from the Adventure Guide rewards a piece of gear.',
-        tags: ['tag-optional', 'tag-mythic', 'tag-world'] },
-      { id: 'ev6',
-        name: '<a href="https://www.wowhead.com/event=1233/pvp-brawl-shado-pan-showdown" target="_blank" style="color:var(--void-glow);text-decoration:none;">PvP Brawl: Shado-Pan Showdown</a> — May 26 – Jun 2',
-        desc: '1v1 PvP brawl in a Shado-Pan arena. Weekly quest reward.',
-        tags: ['tag-optional', 'tag-pvp'] },
-      { id: 'ev7',
-        name: '<a href="https://www.wowhead.com/event=479/darkmoon-faire" target="_blank" style="color:var(--void-glow);text-decoration:none;">Darkmoon Faire</a> — Jun 6–13',
-        desc: 'Monthly carnival on Darkmoon Island. Profession skill-up quests (+5 skill each), Darkmoon Prize Tickets for mounts/toys/heirlooms, and the Darkmoon Races. Visit before it closes.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev8',
-        name: '<a href="https://www.wowhead.com/event=642/thousand-boat-bash" target="_blank" style="color:var(--void-glow);text-decoration:none;">Thousand Boat Bash</a> — Jun 6–9',
-        desc: 'Micro-holiday on the seas of Azeroth. Ride boats and celebrate.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev9',
-        name: '<a href="https://www.wowhead.com/event=1263/timewalking-dungeon-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Timewalking Dungeon Event</a> — Jun 2–9',
-        desc: 'Weekly quest rewards a cache of loot. Timewalking dungeons scale you down to old content with current stats. Good for Timewalking badges and mounts.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev9b',
-        name: '<a href="https://www.wowhead.com/event=1669/timewalking-dungeon-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Timewalking Dungeon Event</a> — Jun 23–30',
-        desc: 'Second June Timewalking window. Weekly quest cache reward.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev10',
-        name: '<a href="https://www.wowhead.com/event=561/arena-skirmish-bonus-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Arena Skirmish Bonus Event</a> — Jun 9–16',
-        desc: 'Bonus Honor from unrated Arena Skirmishes. Weekly quest rewards a piece of PvP gear.',
-        tags: ['tag-optional', 'tag-pvp'] },
-      { id: 'ev10b',
-        name: '<a href="https://www.wowhead.com/event=1047/pvp-brawl-cooking-impossible" target="_blank" style="color:var(--void-glow);text-decoration:none;">PvP Brawl: Cooking Impossible</a> — Jun 9–16',
-        desc: 'Cooking-themed PvP brawl. Weekly quest reward.',
-        tags: ['tag-optional', 'tag-pvp'] },
-      { id: 'ev11',
-        name: '<a href="https://www.wowhead.com/event=592/world-quest-bonus-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">World Quest Bonus Event</a> — Jun 16–23',
-        desc: 'Bonus reputation and rewards from World Quests. Weekly quest from the Adventure Guide rewards a cache. Good week to grind Renown.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev12',
-        name: '<a href="https://www.wowhead.com/event=1170/pvp-brawl-temple-of-hotmogu" target="_blank" style="color:var(--void-glow);text-decoration:none;">PvP Brawl: Temple of Hotmogu</a> — Jun 16–23',
-        desc: 'Hold the orb, score points, try not to get destroyed. Weekly PvP brawl quest reward.',
-        tags: ['tag-optional', 'tag-pvp'] },
-      { id: 'ev13',
-        name: '<a href="https://www.wowhead.com/event=341/midsummer-fire-festival" target="_blank" style="color:var(--void-glow);text-decoration:none;">Midsummer Fire Festival</a> — Jun 21 – Jul 5',
-        desc: 'Seasonal holiday. Honor the flames across Azeroth for Burning Blossoms — spend them on cosmetics, pets, and the Frostscythe of Lord Ahune transmog. Ahune boss drops the Icebound Frostbrood Vanquisher mount.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev14',
-        name: '<a href="https://www.wowhead.com/event=1793/darkspear-dash" target="_blank" style="color:var(--void-glow);text-decoration:none;">Darkspear Dash</a> — Jun 27–29',
-        desc: 'Racing micro-holiday on the Echo Isles. Troll-themed obstacle course.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev15',
-        name: '<a href="https://www.wowhead.com/event=563/battleground-bonus-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Battleground Bonus Event</a> — Jun 30 – Jul 7',
-        desc: 'Bonus Honor from random Battlegrounds. Weekly quest rewards Conquest.',
-        tags: ['tag-optional', 'tag-pvp'] },
-      { id: 'ev15b',
-        name: '<a href="https://www.wowhead.com/event=1120/pvp-brawl-classic-ashran" target="_blank" style="color:var(--void-glow);text-decoration:none;">PvP Brawl: Classic Ashran</a> — Jun 30 – Jul 7',
-        desc: 'Large-scale PvP brawl in the Ashran zone. Weekly quest reward.',
-        tags: ['tag-optional', 'tag-pvp'] },
-      { id: 'ev16',
-        name: '<a href="https://www.wowhead.com/event=62/fireworks-spectacular" target="_blank" style="color:var(--void-glow);text-decoration:none;">Fireworks Spectacular</a> — Jul 4–5',
-        desc: 'Independence Day micro-holiday. Fireworks displays in major cities.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev17',
-        name: '<a href="https://www.wowhead.com/event=1054/luminous-luminaries" target="_blank" style="color:var(--void-glow);text-decoration:none;">Luminous Luminaries</a> — Jul 13–14',
-        desc: 'Micro-holiday. Collect glowing lanterns across Azeroth.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev18',
-        name: '<a href="https://www.wowhead.com/event=1703/timewalking-dungeon-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Timewalking Dungeon Event</a> — Jul 14–21',
-        desc: 'Timewalking window. Weekly quest cache reward.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev18b',
-        name: '<a href="https://www.wowhead.com/event=1704/timewalking-dungeon-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Timewalking Dungeon Event</a> — Jul 14–22',
-        desc: 'Second concurrent Timewalking window. Weekly quest cache reward.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev18c',
-        name: '<a href="https://www.wowhead.com/event=702/pvp-brawl-deep-six" target="_blank" style="color:var(--void-glow);text-decoration:none;">PvP Brawl: Deep Six</a> — Jul 14–21',
-        desc: 'Six-player free-for-all PvP brawl. Weekly quest reward.',
-        tags: ['tag-optional', 'tag-pvp'] },
-      { id: 'ev19',
-        name: '<a href="https://www.wowhead.com/event=666/pvp-brawl-arathi-blizzard" target="_blank" style="color:var(--void-glow);text-decoration:none;">PvP Brawl: Arathi Blizzard</a> — Jul 21–28',
-        desc: 'Arathi Basin in a blizzard — reduced visibility, chaotic fun. Weekly quest reward.',
-        tags: ['tag-optional', 'tag-pvp'] },
-      { id: 'ev20',
-        name: '<a href="https://www.wowhead.com/event=692/auction-house-dance-party" target="_blank" style="color:var(--void-glow);text-decoration:none;">Auction House Dance Party</a> — Jul 22–23',
-        desc: 'The Auction House in Ironforge/Orgrimmar becomes a dance floor. Micro-holiday with no rewards but maximum vibes.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev20b',
-        name: '<a href="https://www.wowhead.com/event=667/pvp-brawl-packed-house" target="_blank" style="color:var(--void-glow);text-decoration:none;">PvP Brawl: Packed House</a> — Jul 7–14',
-        desc: 'Battleground brawl with a packed roster. Weekly quest reward.',
-        tags: ['tag-optional', 'tag-pvp'] },
-      { id: 'ev21',
-        name: '<a href="https://www.wowhead.com/event=691/trial-of-style" target="_blank" style="color:var(--void-glow);text-decoration:none;">Trial of Style</a> — Aug 1–8',
-        desc: 'Transmog competition event. Build a themed outfit and get judged by other players. Rewards Trial of Style Tokens for cosmetic gear.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev22',
-        name: '<a href="https://www.wowhead.com/event=1508/timewalking-dungeon-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Timewalking Dungeon Event</a> — Aug 4–11',
-        desc: 'Timewalking window. Weekly quest cache reward.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev23',
-        name: '<a href="https://www.wowhead.com/event=1053/free-t-shirt-day" target="_blank" style="color:var(--void-glow);text-decoration:none;">Free T-Shirt Day</a> — Aug 16–17',
-        desc: 'Blizzard anniversary micro-holiday. Grab a free in-game t-shirt toy.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev24',
-        name: '<a href="https://www.wowhead.com/event=1429/northrend-cup" target="_blank" style="color:var(--void-glow);text-decoration:none;">Northrend Cup</a> — Aug 25 – Sep 8',
-        desc: 'Dragonriding race circuit across Northrend zones. Earn Riders of Azeroth Badges for cosmetic rewards.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev25',
-        name: '<a href="https://www.wowhead.com/event=559/outland-timewalking-dungeon-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Outland Timewalking</a> — Aug 25 – Sep 1',
-        desc: 'Timewalking through Burning Crusade dungeons. Weekly quest cache. Good for TBC-era mounts from badge vendor.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev26',
-        name: '<a href="https://www.wowhead.com/event=562/northrend-timewalking-dungeon-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Northrend Timewalking</a> — Sep 15–22',
-        desc: 'Timewalking through Wrath of the Lich King dungeons. Badge vendor sells Reins of the Ironbound Proto-Drake.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev27',
-        name: '<a href="https://www.wowhead.com/event=398/pirates-day" target="_blank" style="color:var(--void-glow);text-decoration:none;">Pirates\' Day</a> — Sep 19–20',
-        desc: 'One-day micro-holiday in Booty Bay. Dress as a pirate, drink grog.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev28',
-        name: '<a href="https://www.wowhead.com/event=372/brewfest" target="_blank" style="color:var(--void-glow);text-decoration:none;">Brewfest</a> — Sep 20 – Oct 6',
-        desc: 'Seasonal holiday. Ram racing, Coren Direbrew boss (drops mounts and trinkets), and Brewfest Tokens for cosmetic rewards and heirlooms.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev29',
-        name: '<a href="https://www.wowhead.com/event=321/harvest-festival" target="_blank" style="color:var(--void-glow);text-decoration:none;">Harvest Festival</a> — Sep 21–28',
-        desc: 'Quiet lore holiday honoring fallen heroes. Visit Uther\'s tomb or Grom Hellscream\'s monument for a buff.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev30',
-        name: '<a href="https://www.wowhead.com/event=587/cataclysm-timewalking-dungeon-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Cataclysm Timewalking</a> — Oct 6–13',
-        desc: 'Timewalking through Cataclysm dungeons. Badge vendor and weekly cache reward.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev31',
-        name: '<a href="https://www.wowhead.com/event=696/the-great-gnomeregan-run" target="_blank" style="color:var(--void-glow);text-decoration:none;">The Great Gnomeregan Run</a> — Oct 10–12',
-        desc: 'Gnome and Goblin charity race. No combat, just running in costume for fun cosmetic rewards.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev32',
-        name: '<a href="https://www.wowhead.com/event=324/hallows-end" target="_blank" style="color:var(--void-glow);text-decoration:none;">Hallow\'s End</a> — Oct 18 – Nov 1',
-        desc: 'Halloween event. The Headless Horseman boss drops mounts and rings. Trick or Treat for Tricky Treats → buy masks, wands, pets. Meta-achievement rewards the Hallowed title.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev33',
-        name: '<a href="https://www.wowhead.com/event=643/timewalking-dungeon-event" target="_blank" style="color:var(--void-glow);text-decoration:none;">Timewalking Dungeon Event</a> — Oct 27 – Nov 3',
-        desc: 'Timewalking window overlapping Hallow\'s End. Stack the weekly cache with holiday rewards.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev34',
-        name: '<a href="https://www.wowhead.com/event=409/day-of-the-dead" target="_blank" style="color:var(--void-glow);text-decoration:none;">Day of the Dead</a> — Nov 1–3',
-        desc: 'Short holiday at graveyards. Dance with the dead for the Macabre Marionette pet and holiday food buff.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev35',
-        name: '<a href="https://www.wowhead.com/event=694/moonkin-festival" target="_blank" style="color:var(--void-glow);text-decoration:none;">Moonkin Festival</a> — Nov 12–13',
-        desc: 'Micro-holiday celebrating boomkins. Dance with owlkin across Azeroth.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev36',
-        name: '<a href="https://www.wowhead.com/event=1808/wows-22nd-anniversary" target="_blank" style="color:var(--void-glow);text-decoration:none;">WoW\'s 22nd Anniversary</a> — Nov 17 – Dec 8',
-        desc: 'Annual anniversary event. Rewards anniversary-themed pets, a toy, and anniversary tokens.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev37',
-        name: '<a href="https://www.wowhead.com/event=404/pilgrims-bounty" target="_blank" style="color:var(--void-glow);text-decoration:none;">Pilgrim\'s Bounty</a> — Nov 22–29',
-        desc: 'Thanksgiving-themed event. Cooking skill-up quests, the Plump Turkey pet, and the Pilgrim title meta-achievement.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev38',
-        name: '<a href="https://www.wowhead.com/event=1052/wanderers-festival" target="_blank" style="color:var(--void-glow);text-decoration:none;">Wanderer\'s Festival</a> — Dec 7–8',
-        desc: 'Micro-holiday in Pandaria. Join the Wanderer\'s Festival on the Timeless Isle for pets and buffs.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev39',
-        name: '<a href="https://www.wowhead.com/event=141/feast-of-winter-veil" target="_blank" style="color:var(--void-glow);text-decoration:none;">Feast of Winter Veil</a> — Dec 15 – Jan 2',
-        desc: 'Christmas event. Father Winter gifts under the tree on Dec 25th. Metzen the Reindeer rescue quest, Stolen Treats dailies, and cosmetic rewards including Winter Veil hats and the Gaudy Winter Veil Sweater.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev40',
-        name: '<a href="https://www.wowhead.com/event=658/fireworks-celebration" target="_blank" style="color:var(--void-glow);text-decoration:none;">Fireworks Celebration</a> — Dec 31 – Jan 1',
-        desc: 'New Year\'s Eve micro-holiday. Fireworks in Booty Bay and major cities at midnight.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev41',
-        name: '<a href="https://www.wowhead.com/event=638/call-of-the-scarab" target="_blank" style="color:var(--void-glow);text-decoration:none;">Call of the Scarab</a> — Jan 21–24',
-        desc: 'Faction-based micro-holiday commemorating the opening of AQ. Contribute resources for faction bragging rights.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev42',
-        name: '<a href="https://www.wowhead.com/event=327/lunar-festival" target="_blank" style="color:var(--void-glow);text-decoration:none;">Lunar Festival</a> — Feb 2–16',
-        desc: 'Chinese New Year-inspired event. Visit Elders across Azeroth for Coins of Ancestry → buy cosmetics, the Lunar Festival Fireworks, and the Elder title.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev43',
-        name: '<a href="https://www.wowhead.com/event=423/love-is-in-the-air" target="_blank" style="color:var(--void-glow);text-decoration:none;">Love is in the Air</a> — Feb 8–22',
-        desc: 'Valentine\'s event. Apothecary Hummel boss drops the Toxic Wasteling pet and Big Love Rocket mount. Daily charm quests for Love Tokens → cosmetics and the Peddlefeet pet.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev44',
-        name: '<a href="https://www.wowhead.com/event=634/hatching-of-the-hippogryphs" target="_blank" style="color:var(--void-glow);text-decoration:none;">Hatching of the Hippogryphs</a> — Feb 23–24',
-        desc: 'Micro-holiday in Feralas. Watch hippogryph eggs hatch and earn a temporary baby hippogryph companion.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev45',
-        name: '<a href="https://www.wowhead.com/event=1395/kalimdor-cup" target="_blank" style="color:var(--void-glow);text-decoration:none;">Kalimdor Cup</a> — Feb 23 – Mar 9',
-        desc: 'Dragonriding race circuit across Kalimdor. Riders of Azeroth Badges for cosmetic rewards.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev46',
-        name: '<a href="https://www.wowhead.com/event=644/ungoro-madness" target="_blank" style="color:var(--void-glow);text-decoration:none;">Un\'Goro Madness</a> — Mar 17–20 (2027)',
-        desc: 'Micro-holiday in Un\'Goro Crater. Dinosaurs rampage, chaos ensues.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev47',
-        name: '<a href="https://www.wowhead.com/event=181/noblegarden" target="_blank" style="color:var(--void-glow);text-decoration:none;">Noblegarden</a> — Mar 29 – Apr 5 (2027)',
-        desc: 'Easter event. Hunt Noblegarden Eggs for Chocolates → buy the Swift Springstrider mount, dresses, and the Mystical Spring Bouquet. The Noblegarden meta-achievement rewards the Noble title.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev48',
-        name: '<a href="https://www.wowhead.com/event=647/march-of-the-tadpoles" target="_blank" style="color:var(--void-glow);text-decoration:none;">March of the Tadpoles</a> — Apr 5–6 (2027)',
-        desc: 'Micro-holiday in Pandaria. Escort Jinyu tadpoles to safety.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev49',
-        name: '<a href="https://www.wowhead.com/event=635/volunteer-guard-day" target="_blank" style="color:var(--void-glow);text-decoration:none;">Volunteer Guard Day</a> — Apr 28–29 (2027)',
-        desc: 'Micro-holiday. Stand around as an honorary city guard. Truly the peak of WoW content.',
-        tags: ['tag-optional', 'tag-world'] },
-      { id: 'ev50',
-        name: '<a href="https://www.wowhead.com/event=1400/eastern-kingdoms-cup" target="_blank" style="color:var(--void-glow);text-decoration:none;">Eastern Kingdoms Cup</a> — Aug 24 – Sep 7 (2027)',
-        desc: 'Dragonriding race circuit across Eastern Kingdoms. Riders of Azeroth Badges for cosmetic rewards.',
-        tags: ['tag-optional', 'tag-world'] },
-    ]
-  },
 ];
 
 /* ═══════════════════════════════════════════
@@ -842,10 +660,38 @@ function goalsKey()          { return 'wow_mn_goals_' + currentChar + '_' + getW
 function loadGoals()         { return JSON.parse(localStorage.getItem(goalsKey()) || '{}'); }
 function saveGoals(g)        { localStorage.setItem(goalsKey(), JSON.stringify(g)); }
 
+/* ── CHAR PREFS (non-weekly, per-character settings) ── */
+function charPrefsKey()      { return 'wow_mn_prefs_' + currentChar; }
+function loadCharPrefs()     { return JSON.parse(localStorage.getItem(charPrefsKey()) || '{}'); }
+function saveCharPref(k, v)  { const p = loadCharPrefs(); p[k] = v; localStorage.setItem(charPrefsKey(), JSON.stringify(p)); }
+function getCharPref(k, def) { return loadCharPrefs()[k] ?? def; }
+
+/* ── DELVE TIER SELECTOR ── */
+function renderTierSelector(taskId) {
+  const cur = getCharPref('delveTier', 7);
+  const gearLabel = cur >= 8 ? 'Hero (ilvl 259–276)' : 'Champion (ilvl 246–263)';
+  const gearColor = cur >= 8 ? 'var(--void-glow)' : 'var(--light-gold)';
+  let btns = '';
+  for (let t = 1; t <= 11; t++) {
+    btns += '<button class="tier-btn' + (cur === t ? ' active' : '') + '" onclick="setDelveTier(' + t + ',\'' + taskId + '\')">T' + t + '</button>';
+  }
+  return '<div class="tier-selector" onclick="event.stopPropagation()">'
+    + '<span class="tier-label">Your max Delve tier:</span>'
+    + '<div class="tier-btns">' + btns + '</div>'
+    + '<span class="tier-gear-label" style="color:' + gearColor + ';">→ ' + gearLabel + '</span>'
+    + '</div>';
+}
+
+function setDelveTier(tier, taskId) {
+  saveCharPref('delveTier', tier);
+  render();
+}
+
 let revealHidden    = false;
 let editingYourList = false;
 let isCompact       = localStorage.getItem('wow_mn_compact') === 'true';
 let isLightMode     = localStorage.getItem('wow_mn_theme') === 'light';
+let yourListGrouped = localStorage.getItem('wow_mn_yl_grouped') !== 'false'; // default grouped
 let searchQuery     = '';
 
 function onSearchInput(val) {
@@ -902,32 +748,207 @@ function updateSearchResultCount(matched, total) {
   el.className = 'search-result-count has-results';
 }
 
+/* ── SECTION TASK HTML (main list + edit mode) — pure string concat, no nested backticks ── */
+function sectionTaskHtml(t, done, hidden, yourList, goals, bossKills, notes) {
+  const id = t.id;
+  const goalDef = t.goal;
+  const goalVal = goalDef ? (goals[id] || 0) : null;
+
+  let milestoneNote = '';
+  if (goalDef && goalDef.milestones) {
+    const passed = goalDef.milestones.filter(m => goalVal >= m.at);
+    if (passed.length) milestoneNote = passed[passed.length - 1].note;
+  }
+
+  let goalHtml = '';
+  if (goalDef && !editingYourList) {
+    goalHtml = '<div class="goal-tracker" onclick="event.stopPropagation()">'
+      + '<button class="goal-btn" onclick="adjustGoal(\'' + id + '\',' + goalDef.max + ',-1)">−</button>'
+      + '<span class="goal-val ' + (goalVal >= goalDef.max ? 'goal-complete' : '') + '">' + goalVal
+      + '<span class="goal-max"> / ' + goalDef.max + '</span></span>'
+      + '<button class="goal-btn" onclick="adjustGoal(\'' + id + '\',' + goalDef.max + ',1)">+</button>'
+      + '<span class="goal-label">' + goalDef.label + '</span>'
+      + '</div>';
+  }
+
+  let bossHtml = '';
+  if (t.bosses && !editingYourList) {
+    bossHtml = '<div class="boss-bubbles">';
+    if (t.diff) bossHtml += '<span class="diff-badge diff-' + t.diff.toLowerCase() + '">' + t.diff + '</span>';
+    t.bosses.forEach(function(b) {
+      const killed = !!(bossKills || {})[id + '_' + b.id];
+      bossHtml += '<button class="boss-bubble' + (killed ? ' killed' : '') + '"'
+        + ' title="' + b.name + ' — click to mark killed"'
+        + ' onclick="event.stopPropagation();toggleBoss(\'' + id + '\',\'' + b.id + '\')"'
+        + ' oncontextmenu="event.preventDefault();window.open(\'' + b.url + '\',\'_blank\')">'
+        + b.name + '</button>';
+    });
+    bossHtml += '</div>';
+  }
+
+  let tagsHtml = '';
+  if (t.tags && t.tags.length) {
+    tagsHtml = '<div class="task-tags">'
+      + t.tags.map(function(tg) { return '<span class="tag ' + tg + '">' + tagLabel(tg) + '</span>'; }).join('')
+      + '</div>';
+  }
+
+  const hn = highlightMatch(t.name, searchQuery);
+  const hd = t.desc ? highlightMatch(t.desc, searchQuery) : '';
+  const inList = yourList.has(id);
+  const isDone = !!done[id];
+  const isHidden = !!hidden[id];
+
+  const checkClick = editingYourList
+    ? 'toggleYourListTask(\'' + id + '\')'
+    : 'toggle(\'' + id + '\',this)';
+
+  let rightCol = '';
+  if (editingYourList) {
+    rightCol = '<span style="flex-shrink:0;font-size:13px;color:' + (inList ? 'var(--light-gold)' : 'var(--text-muted)') + ';">'
+      + (inList ? '⭐' : '☆') + '</span>';
+  } else {
+    rightCol = '<div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">'
+      + noteBtnHtml(id, notes)
+      + '<button class="task-hide" title="' + (isHidden ? 'Unhide task' : 'Hide task') + '" onclick="toggleHideTask(event,\'' + id + '\')">' + (isHidden ? '👁' : '🚫') + '</button>'
+      + '</div>';
+  }
+
+  return '<div class="task' + (isDone ? ' done' : '') + (isHidden ? ' task-hidden' : '') + (inList ? ' in-yourlist' : '') + '">'
+    + '<div class="task-check" onclick="event.stopPropagation();' + checkClick + '" style="cursor:pointer;"></div>'
+    + '<div class="task-body">'
+    + '<div class="task-name">' + hn + '</div>'
+    + (hd ? '<div class="task-desc">' + hd + '</div>' : '')
+    + (milestoneNote ? '<div class="milestone-note">' + milestoneNote + '</div>' : '')
+    + tagsHtml
+    + (t.tierSelector && !editingYourList ? renderTierSelector(id) : '')
+    + bossHtml
+    + (!editingYourList ? noteHtml(id, notes) : '')
+    + '</div>'
+    + rightCol
+    + goalHtml
+    + '</div>';
+}
+
+/* ── YOUR LIST EDIT-MODE TASK (remove toggle, shown on yourlist tab while editing) ── */
+function ylEditTaskHtml(t) {
+  const id = t.id;
+  return '<div class="task yl-task yl-edit-task" data-id="' + id + '">'
+    + '<div class="task-body" style="flex:1;">'
+    + '<div class="task-name">' + (t.name || '') + '</div>'
+    + (t.sectionTitle ? '<div style="font-size:12px;color:var(--text-muted);font-style:italic;margin-top:2px;">' + (t.sectionIcon || '') + ' ' + t.sectionTitle + '</div>' : '')
+    + '</div>'
+    + '<button onclick="removeFromYourList(\'' + id + '\')" title="Remove from Your List" style="'
+    + 'flex-shrink:0;background:transparent;border:1px solid rgba(192,83,74,0.35);border-radius:4px;'
+    + 'color:#e07068;font-size:13px;padding:3px 8px;cursor:pointer;transition:all 0.15s;white-space:nowrap;"'
+    + ' onmouseover="this.style.background=\'rgba(192,83,74,0.12)\'" onmouseout="this.style.background=\'transparent\'">'
+    + '✕ Remove</button>'
+    + '</div>';
+}
+
+function removeFromYourList(id) {
+  const list = loadYourList();
+  const idx  = list.indexOf(id);
+  if (idx !== -1) { list.splice(idx, 1); saveYourList(list); }
+  render();
+}
+
+/* ── YOUR LIST TASK HTML HELPER (shared by grouped + flat views) ── */
+function ylTaskHtml(t, done, goals, notes, bossKills) {
+  const id = t.id;
+  const goalDef = t.goal;
+  const goalVal = goalDef ? (goals[id] || 0) : null;
+
+  let milestoneNote = '';
+  if (goalDef && goalDef.milestones) {
+    const passed = goalDef.milestones.filter(m => goalVal >= m.at);
+    if (passed.length) milestoneNote = passed[passed.length - 1].note;
+  }
+
+  let goalHtml = '';
+  if (goalDef) {
+    goalHtml = '<div class="goal-tracker" onclick="event.stopPropagation()">'
+      + '<button class="goal-btn" onclick="adjustGoal(\'' + id + '\',' + goalDef.max + ',-1)">−</button>'
+      + '<span class="goal-val ' + (goalVal >= goalDef.max ? 'goal-complete' : '') + '">' + goalVal
+      + '<span class="goal-max"> / ' + goalDef.max + '</span></span>'
+      + '<button class="goal-btn" onclick="adjustGoal(\'' + id + '\',' + goalDef.max + ',1)">+</button>'
+      + '<span class="goal-label">' + goalDef.label + '</span>'
+      + '</div>';
+  }
+
+  let bossHtml = '';
+  if (t.bosses) {
+    bossHtml = '<div class="boss-bubbles">';
+    if (t.diff) bossHtml += '<span class="diff-badge diff-' + t.diff.toLowerCase() + '">' + t.diff + '</span>';
+    t.bosses.forEach(function(b) {
+      const killed = !!(bossKills || {})[id + '_' + b.id];
+      bossHtml += '<button class="boss-bubble' + (killed ? ' killed' : '') + '"'
+        + ' onclick="event.stopPropagation();toggleBoss(\'' + id + '\',\'' + b.id + '\')"'
+        + ' oncontextmenu="event.preventDefault();window.open(\'' + b.url + '\',\'_blank\')">'
+        + b.name + '</button>';
+    });
+    bossHtml += '</div>';
+  }
+
+  let sectionTag = '';
+  if (t.sectionTitle && !yourListGrouped) {
+    sectionTag = '<div class="task-tags" style="margin-top:0.35rem;">'
+      + '<span class="tag" style="background:rgba(201,168,76,0.1);color:var(--light-gold);border-color:rgba(201,168,76,0.25);font-size:10px;">' + t.sectionIcon + ' ' + t.sectionTitle + '</span>'
+      + '</div>';
+  }
+
+  const hn = highlightMatch(t.name, searchQuery);
+  const hd = t.desc ? highlightMatch(t.desc, searchQuery) : '';
+
+  return '<div class="task yl-task' + (done[id] ? ' done' : '') + '" draggable="true" data-id="' + id + '"'
+    + ' ondragstart="ylDragStart(event)" ondragover="ylDragOver(event)" ondrop="ylDrop(event)" ondragend="ylDragEnd(event)">'
+    + '<div class="yl-drag-handle" onclick="event.stopPropagation()" title="Drag to reorder">⠿</div>'
+    + '<div class="task-check" onclick="event.stopPropagation();toggle(\'' + id + '\',this)" style="cursor:pointer;"></div>'
+    + '<div class="task-body">'
+    + '<div class="task-name">' + hn + '</div>'
+    + (hd ? '<div class="task-desc">' + hd + '</div>' : '')
+    + (milestoneNote ? '<div class="milestone-note">' + milestoneNote + '</div>' : '')
+    + (t.tierSelector ? renderTierSelector(id) : '')
+    + bossHtml
+    + sectionTag
+    + noteHtml(id, notes)
+    + '</div>'
+    + '<div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">' + noteBtnHtml(id, notes) + '</div>'
+    + goalHtml
+    + '</div>';
+}
+
 function render() {
   const done      = loadDone();
   const hidden    = loadHidden();
   const yourList  = new Set(loadYourList());
   const notes     = loadNotes();
   const bossKills = loadBossKills();
+  const goals     = loadGoals();
   const container = document.getElementById('sections-container');
   container.innerHTML = '';
   let totalVisible = 0, totalDone = 0, lastPriority = null;
   let anyHidden = false;
 
-  // ── YOUR LIST VIEW ──────────────────────────────────────
-  if (activeFilters.has('yourlist') && !editingYourList) {
+  // ── YOUR LIST VIEW (normal + edit-on-yourlist) ──────────────
+  if (activeFilters.has('yourlist')) {
     const editBtn = document.getElementById('btn-edit-yourlist');
-    editBtn.style.display = '';
-    editBtn.textContent = '⭐ Edit List';
+    editBtn.textContent = editingYourList ? '✓ Done' : '⭐ Edit List';
+
+    // Render the edit bar inside the yourlist view when editing
+    if (editingYourList) {
+      container.appendChild(buildEditBar());
+    }
 
     // Gather all tasks from SECTIONS that are in the list
     const selected = [];
     SECTIONS.forEach(sec => {
       sec.tasks.forEach(t => {
-        if (yourList.has(t.id)) selected.push({ ...t, sectionTitle: sec.title, sectionIcon: sec.icon });
+        if (yourList.has(t.id)) selected.push({ ...t, sectionTitle: sec.title, sectionIcon: sec.icon, sectionIconClass: sec.iconClass });
       });
     });
     loadCustomTasks().forEach(t => {
-      if (yourList.has('custom_' + t.id)) selected.push({ ...t, id: 'custom_' + t.id, sectionTitle: 'Custom', sectionIcon: '✦' });
+      if (yourList.has('custom_' + t.id)) selected.push({ ...t, id: 'custom_' + t.id, sectionTitle: 'Custom', sectionIcon: '✦', sectionIconClass: 'icon-custom' });
     });
 
     // Apply search filter
@@ -940,25 +961,73 @@ function render() {
     const filteredSelected = selected.filter(matchesSearch);
 
     if (filteredSelected.length === 0) {
-      container.innerHTML = selected.length === 0
-        ? `<div class="yourlist-empty">
-            <div style="font-size:2rem;margin-bottom:0.5rem;">⭐</div>
-            Your list is empty.<br>
-            <span style="font-size:13px;margin-top:0.4rem;display:block;">Click <strong style="font-style:normal;color:var(--light-gold);">⭐ Edit List</strong> in the toolbar above to pick tasks from the master list.</span>
-          </div>`
-        : `<div class="yourlist-empty">
-            <div style="font-size:2rem;margin-bottom:0.5rem;">🔍</div>
-            No tasks match <strong style="color:var(--void-glow);">"${searchQuery}"</strong>
-          </div>`;
-    } else {
-      // Apply saved order, then sort done to bottom
+      if (editingYourList) {
+        // Empty list in edit mode — show helpful prompt
+        const emptyEl = document.createElement('div');
+        emptyEl.className = 'yourlist-empty';
+        emptyEl.innerHTML = '<div style="font-size:2rem;margin-bottom:0.5rem;">⭐</div>'
+          + 'Your list is empty.<br>'
+          + '<span style="font-size:13px;margin-top:0.4rem;display:block;">Switch to the <strong style="font-style:normal;color:var(--light-gold);">All</strong> tab to pick tasks to add.</span>';
+        container.appendChild(emptyEl);
+      } else {
+        container.innerHTML = selected.length === 0
+          ? '<div class="yourlist-empty"><div style="font-size:2rem;margin-bottom:0.5rem;">⭐</div>Your list is empty.<br><span style="font-size:13px;margin-top:0.4rem;display:block;">Click <strong style="font-style:normal;color:var(--light-gold);">⭐ Edit List</strong> in the toolbar above to pick tasks from the master list.</span></div>'
+          : '<div class="yourlist-empty"><div style="font-size:2rem;margin-bottom:0.5rem;">🔍</div>No tasks match <strong style="color:var(--void-glow);">"' + searchQuery + '"</strong></div>';
+      }
+    } else if (yourListGrouped) {
+      // ── GROUPED VIEW ─────────────────────────────────────
       const order = loadYourListOrder();
-      const goals = loadGoals();
+
+      const sectionGroups = [];
+      SECTIONS.forEach(sec => {
+        const secTasks = sec.tasks
+          .filter(t => yourList.has(t.id) && matchesSearch({ ...t, sectionTitle: sec.title }))
+          .map(t => ({ ...t, sectionTitle: sec.title, sectionIcon: sec.icon, sectionId: sec.id, sectionIconClass: sec.iconClass }));
+        if (secTasks.length) sectionGroups.push({ sec, tasks: secTasks });
+      });
+      const customSelected = loadCustomTasks()
+        .filter(t => yourList.has('custom_' + t.id) && matchesSearch({ ...t, id: 'custom_' + t.id, sectionTitle: 'Custom' }))
+        .map(t => ({ ...t, id: 'custom_' + t.id, sectionTitle: 'Custom', sectionIcon: '✦', sectionId: 'custom', sectionIconClass: 'icon-custom' }));
+      if (customSelected.length) sectionGroups.push({ sec: { title: 'Custom', icon: '✦', iconClass: 'icon-custom', id: 'custom' }, tasks: customSelected });
+
+      totalVisible = filteredSelected.length;
+      totalDone    = filteredSelected.filter(t => done[t.id]).length;
+
+      sectionGroups.forEach(({ sec, tasks }) => {
+        const sortedTasks = [...tasks].sort((a, b) => {
+          const ai = order.indexOf(a.id), bi = order.indexOf(b.id);
+          const aPos = ai === -1 ? 999 : ai;
+          const bPos = bi === -1 ? 999 : bi;
+          const aDone = done[a.id] ? 1 : 0, bDone = done[b.id] ? 1 : 0;
+          if (aDone !== bDone) return aDone - bDone;
+          return aPos - bPos;
+        });
+
+        const secDone = sortedTasks.filter(t => done[t.id]).length;
+        const wrap = document.createElement('div');
+        wrap.className = 'yl-section-group';
+        const ylHeader = document.createElement('div');
+        ylHeader.className = 'yl-section-header';
+        ylHeader.innerHTML = '<div class="section-icon ' + sec.iconClass + '" style="width:22px;height:22px;font-size:13px;">' + sec.icon + '</div>'
+          + '<span class="yl-section-title">' + sec.title + '</span>'
+          + '<span class="yl-section-count"><span style="color:var(--success-bright)">' + secDone + '</span> / ' + sortedTasks.length + '</span>';
+        wrap.appendChild(ylHeader);
+
+        const body = document.createElement('div');
+        body.className = 'section-body yl-section-body';
+        body.dataset.secId = sec.id;
+        body.innerHTML = sortedTasks.map(t => editingYourList ? ylEditTaskHtml(t) : ylTaskHtml(t, done, goals, notes, bossKills)).join('');
+        wrap.appendChild(body);
+        container.appendChild(wrap);
+      });
+
+    } else {
+      // ── FLAT VIEW ─────────────────────────────────────────
+      const order = loadYourListOrder();
       const sorted = [...filteredSelected].sort((a, b) => {
         const ai = order.indexOf(a.id), bi = order.indexOf(b.id);
         const aPos = ai === -1 ? 999 : ai;
         const bPos = bi === -1 ? 999 : bi;
-        // done always last
         const aDone = done[a.id] ? 1 : 0, bDone = done[b.id] ? 1 : 0;
         if (aDone !== bDone) return aDone - bDone;
         return aPos - bPos;
@@ -971,50 +1040,7 @@ function render() {
       body.className = 'section-body';
       body.id = 'yourlist-body';
       body.style.cssText = 'border-radius:8px;border:1px solid var(--border-bright);';
-
-      body.innerHTML = sorted.map(t => {
-        const goalDef  = t.goal;
-        const goalVal  = goalDef ? (goals[t.id] || 0) : null;
-
-        // Find active milestone note
-        let milestoneNote = '';
-        if (goalDef && goalDef.milestones) {
-          const passed = goalDef.milestones.filter(m => goalVal >= m.at);
-          if (passed.length) milestoneNote = passed[passed.length - 1].note;
-        }
-
-        const goalHtml = goalDef ? `
-          <div class="goal-tracker" onclick="event.stopPropagation()">
-            <button class="goal-btn" onclick="adjustGoal('${t.id}',${goalDef.max},-1)">−</button>
-            <span class="goal-val ${goalVal >= goalDef.max ? 'goal-complete' : ''}">${goalVal}<span class="goal-max"> / ${goalDef.max}</span></span>
-            <button class="goal-btn" onclick="adjustGoal('${t.id}',${goalDef.max},1)">+</button>
-            <span class="goal-label">${goalDef.label}</span>
-          </div>` : '';
-        return `
-          <div class="task yl-task${done[t.id]?' done':''}" draggable="true" data-id="${t.id}"
-               ondragstart="ylDragStart(event)"
-               ondragover="ylDragOver(event)"
-               ondrop="ylDrop(event)"
-               ondragend="ylDragEnd(event)">
-            <div class="yl-drag-handle" onclick="event.stopPropagation()" title="Drag to reorder">⠿</div>
-            <div class="task-check" onclick="event.stopPropagation();toggle('${t.id}',this)" style="cursor:pointer;"></div>
-            <div class="task-body">
-              <div class="task-name">${highlightMatch(t.name, searchQuery)}</div>
-              ${t.desc?`<div class="task-desc">${highlightMatch(t.desc, searchQuery)}</div>`:''}
-              ${milestoneNote ? `<div class="milestone-note">${milestoneNote}</div>` : ''}
-              <div class="task-tags" style="margin-top:0.35rem;">
-                <span class="tag" style="background:rgba(201,168,76,0.1);color:var(--light-gold);border-color:rgba(201,168,76,0.25);font-size:10px;">${t.sectionIcon} ${t.sectionTitle}</span>
-                ${t.tags&&t.tags.length?t.tags.map(tg=>`<span class="tag ${tg}">${tagLabel(tg)}</span>`).join(''):''}
-              </div>
-              ${noteHtml(t.id, notes)}
-            </div>
-            <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">
-              ${noteBtnHtml(t.id, notes)}
-            </div>
-            ${goalHtml}
-          </div>`;
-      }).join('');
-
+      body.innerHTML = sorted.map(t => editingYourList ? ylEditTaskHtml(t) : ylTaskHtml(t, done, goals, notes, bossKills)).join('');
       container.appendChild(body);
     }
 
@@ -1023,23 +1049,45 @@ function render() {
     document.getElementById('prog-label').textContent = totalDone + ' / ' + totalVisible + ' done';
     document.getElementById('btn-reveal').style.display = 'none';
     updateSearchResultCount(filteredSelected.length, selected.length);
+
+    // Update toolbar buttons
+    const _viewBtn = document.getElementById('btn-yourlist-view');
+    _viewBtn.textContent = yourListGrouped ? '☰ Flat List' : '⊞ Grouped';
+    _viewBtn.title = yourListGrouped ? 'Switch to flat list' : 'Switch to grouped by category';
     return;
   }
 
-  // ── EDIT YOUR LIST MODE — show all tasks with selection highlight ──
-  if (editingYourList) {
-    const editBar = document.createElement('div');
-    editBar.className = 'yourlist-edit-bar';
-    editBar.innerHTML = `
-      <span>Click any task to add or remove it from <strong>Your List</strong>. Selected tasks are highlighted.</span>
-      <div style="display:flex;gap:0.5rem;">
-        <button class="btn-cancel" style="font-family:\'Cinzel\',serif;font-size:11px;padding:0.4rem 0.9rem;cursor:pointer;" onclick="clearYourList()">Clear All</button>
-        <button class="btn-primary" style="font-size:11px;padding:0.4rem 0.9rem;" onclick="doneEditingYourList()">✓ Done</button>
-      </div>`;
-    container.appendChild(editBar);
-  }
+/* ── BUILD EDIT BAR (shared by yourlist + master list paths) ── */
+function buildEditBar() {
+  const editBar = document.createElement('div');
+  editBar.className = 'yourlist-edit-bar';
+  const charOpts = characters.filter(c => c !== currentChar)
+    .map(c => '<option value="' + c + '">' + c + '</option>').join('');
+  const copyHtml = characters.length > 1
+    ? '<select id="copy-to-select" style="font-family:\'Cinzel\',serif;font-size:11px;padding:0.35rem 0.5rem;background:var(--bg-panel);border:1px solid var(--border-bright);border-radius:4px;color:var(--text-secondary);cursor:pointer;margin-right:2px;">'
+      + '<option value="">Copy to…</option>'
+      + '<option value="__all__">All characters</option>'
+      + charOpts
+      + '</select>'
+      + '<button class="btn-cancel" style="font-family:\'Cinzel\',serif;font-size:11px;padding:0.4rem 0.9rem;cursor:pointer;" onclick="copyListToSelected()">Copy</button>'
+    : '';
+  editBar.innerHTML = '<span>Tap a task to add or remove it from <strong>Your List</strong>.</span>'
+    + '<div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">'
+    + '<button class="btn-cancel" style="font-family:\'Cinzel\',serif;font-size:11px;padding:0.4rem 0.9rem;cursor:pointer;" onclick="openBeginnerPreset()">🧭 Starter Guide</button>'
+    + copyHtml
+    + '<button class="btn-cancel" style="font-family:\'Cinzel\',serif;font-size:11px;padding:0.4rem 0.9rem;cursor:pointer;" onclick="clearYourList()">Clear All</button>'
+    + '<button class="btn-primary" style="font-size:11px;padding:0.4rem 0.9rem;" onclick="doneEditingYourList()">✓ Done</button>'
+    + '</div>';
+  return editBar;
+}
+
+  // ── EDIT YOUR LIST MODE — master list with highlight toggles ──
+  if (editingYourList) container.appendChild(buildEditBar());
 
   let searchMatchTotal = 0, searchTotal = 0;
+
+  // Collect all section data first so flat mode can render one unified list
+  const allSectionData = [];
 
   SECTIONS.forEach(sec => {
     const isAll = activeFilters.has('all');
@@ -1049,7 +1097,6 @@ function render() {
     });
     if (!tasks.length) return;
 
-    // Apply search filter
     const matchesSearch = t => {
       if (!searchQuery) return true;
       return (t.name || '').toLowerCase().includes(searchQuery) ||
@@ -1062,98 +1109,80 @@ function render() {
     if (hiddenCount > 0) anyHidden = true;
 
     if (searchQuery) {
-      searchTotal   += tasks.filter(t => !hidden[t.id]).length;
+      searchTotal      += tasks.filter(t => !hidden[t.id]).length;
       searchMatchTotal += visibleTasks.filter(t => !hidden[t.id]).length;
     }
 
-    if (!visibleTasks.length) return; // skip section if nothing matches
-
-    if (isAll && sec.priority !== lastPriority) {
-      lastPriority = sec.priority;
-      const [cls, text] = PRIORITY_META[sec.priority];
-      const lbl = document.createElement('div');
-      lbl.className = 'priority-label ' + cls;
-      lbl.textContent = text;
-      container.appendChild(lbl);
-    }
+    if (!visibleTasks.length) return;
 
     totalVisible += visibleTasks.filter(t => !hidden[t.id]).length;
     const secDone = visibleTasks.filter(t => done[t.id] && !hidden[t.id]).length;
     totalDone += secDone;
-    // Auto-expand sections that have matching tasks when searching
-    const isOpen = searchQuery ? true : !collapsed[sec.id];
-    const isSectionHidden = hidden['section_' + sec.id];
-    if (isSectionHidden) anyHidden = true;
 
-    // Skip hidden sections unless reveal mode is on
-    if (isSectionHidden && !revealHidden) {
-      container.appendChild((() => {
+    allSectionData.push({ sec, visibleTasks, hiddenCount, secDone });
+  });
+
+  if (!yourListGrouped) {
+    // ── FLAT MODE: one unified body, no section headers ──────────
+    const flatBody = document.createElement('div');
+    flatBody.className = 'section-body';
+    flatBody.style.cssText = 'border-radius:8px;border:1px solid var(--border-bright);margin-bottom:1rem;';
+    const allTasks = allSectionData.flatMap(({ visibleTasks }) => visibleTasks);
+    flatBody.innerHTML = allTasks.map(t => sectionTaskHtml(t, done, hidden, yourList, goals, bossKills, notes)).join('');
+    container.appendChild(flatBody);
+  } else {
+    // ── GROUPED MODE: per-section cards with headers ──────────────
+    allSectionData.forEach(({ sec, visibleTasks, hiddenCount, secDone }) => {
+      const isAll = activeFilters.has('all');
+      const isOpen = searchQuery ? true : !collapsed[sec.id];
+      const isSectionHidden = hidden['section_' + sec.id];
+
+      if (isAll && sec.priority !== lastPriority) {
+        lastPriority = sec.priority;
+        const [cls, text] = PRIORITY_META[sec.priority];
+        const lbl = document.createElement('div');
+        lbl.className = 'priority-label ' + cls;
+        lbl.textContent = text;
+        container.appendChild(lbl);
+      }
+
+      if (isSectionHidden && !revealHidden && !editingYourList) {
         const d = document.createElement('div');
         d.className = 'section section-hidden';
-        d.innerHTML = `
-          <div class="section-header" onclick="">
-            <div class="section-icon ${sec.iconClass}">${sec.icon}</div>
-            <div class="section-title-wrap">
-              <div class="section-title">${sec.title}</div>
-              <div class="section-meta">Hidden from All view</div>
-            </div>
-            <button class="section-hide" title="Unhide section" onclick="toggleHideSection(event,'${sec.id}')">👁</button>
-          </div>`;
-        return d;
-      })());
-      return;
-    }
+        d.innerHTML = '<div class="section-header" onclick="">'
+          + '<div class="section-icon ' + sec.iconClass + '">' + sec.icon + '</div>'
+          + '<div class="section-title-wrap">'
+          + '<div class="section-title">' + sec.title + '</div>'
+          + '<div class="section-meta">Hidden from All view</div>'
+          + '</div>'
+          + '<button class="section-hide" title="Unhide section" onclick="toggleHideSection(event,\'' + sec.id + '\')">👁</button>'
+          + '</div>';
+        container.appendChild(d);
+        return;
+      }
 
-    const div = document.createElement('div');
-    div.className = 'section' + (isSectionHidden ? ' section-hidden' : '');
-    div.innerHTML = `
-      <div class="section-header${isOpen?' open':''}" onclick="toggleSection('${sec.id}')">
-        <div class="section-icon ${sec.iconClass}">${sec.icon}</div>
-        <div class="section-title-wrap">
-          <div class="section-title">${sec.title}</div>
-          <div class="section-meta">${sec.meta}</div>
-        </div>
-        <span class="section-count">
-          <span class="done">${secDone}</span>&thinsp;/&thinsp;${visibleTasks.filter(t=>!hidden[t.id]).length}
-          ${hiddenCount > 0 ? `<span class="hidden-count">(${hiddenCount} hidden)</span>` : ''}
-        </span>
-        <button class="section-hide" title="${isSectionHidden?'Unhide section':'Hide section from All view'}" onclick="toggleHideSection(event,'${sec.id}')">${isSectionHidden?'👁':'🚫'}</button>
-        <span class="chevron" style="transform:rotate(${isOpen?'0':'-90'}deg)">▼</span>
-      </div>
-      <div class="section-body${isOpen?'':' hidden'}" id="body-${sec.id}">
-        ${visibleTasks.map(t => {
-          const bossHtml = (t.bosses && !editingYourList) ? `
-            <div class="boss-bubbles">
-              ${t.diff ? `<span class="diff-badge diff-${t.diff.toLowerCase()}">${t.diff}</span>` : ''}
-              ${t.bosses.map(b => {
-                const killed = !!bossKills[t.id + '_' + b.id];
-                return `<button class="boss-bubble${killed?' killed':''}" title="${b.name} — click to mark killed\n${b.url?'Right-click → open guide':'Ctrl+click to open guide'}" onclick="event.stopPropagation();toggleBoss('${t.id}','${b.id}')" oncontextmenu="event.preventDefault();window.open('${b.url}','_blank')">${b.name}</button>`;
-              }).join('')}
-            </div>` : '';
-          const hn = highlightMatch(t.name, searchQuery);
-          const hd = t.desc ? highlightMatch(t.desc, searchQuery) : '';
-          return `
-          <div class="task${done[t.id]?' done':''}${hidden[t.id]?' task-hidden':''}${yourList.has(t.id)?' in-yourlist':''}" >
-            <div class="task-check" onclick="event.stopPropagation();${editingYourList ? `toggleYourListTask('${t.id}')` : `toggle('${t.id}',this)`}" style="cursor:pointer;"></div>
-            <div class="task-body">
-              <div class="task-name">${hn}</div>
-              ${hd?`<div class="task-desc">${hd}</div>`:''}
-              ${t.tags&&t.tags.length?`<div class="task-tags">${t.tags.map(tg=>`<span class="tag ${tg}">${tagLabel(tg)}</span>`).join('')}</div>`:''}
-              ${bossHtml}
-              ${!editingYourList ? noteHtml(t.id, notes) : ''}
-            </div>
-            ${editingYourList
-              ? `<span style="flex-shrink:0;font-size:13px;color:${yourList.has(t.id)?'var(--light-gold)':'var(--text-muted)'};">${yourList.has(t.id)?'⭐':'☆'}</span>`
-              : `<div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">
-                  ${noteBtnHtml(t.id, notes)}
-                  <button class="task-hide" title="${hidden[t.id]?'Unhide task':'Hide task'}" onclick="toggleHideTask(event,'${t.id}')">${hidden[t.id]?'👁':'🚫'}</button>
-                </div>`
-            }
-          </div>`;
-        }).join('')}
-      </div>`;
-    container.appendChild(div);
-  });
+      const div = document.createElement('div');
+      div.className = 'section' + (isSectionHidden ? ' section-hidden' : '');
+      const hiddenCountSpan = hiddenCount > 0 ? '<span class="hidden-count">(' + hiddenCount + ' hidden)</span>' : '';
+      div.innerHTML = '<div class="section-header' + (isOpen ? ' open' : '') + '" onclick="toggleSection(\'' + sec.id + '\')">'
+        + '<div class="section-icon ' + sec.iconClass + '">' + sec.icon + '</div>'
+        + '<div class="section-title-wrap">'
+        + '<div class="section-title">' + sec.title + '</div>'
+        + '<div class="section-meta">' + sec.meta + '</div>'
+        + '</div>'
+        + '<span class="section-count"><span class="done">' + secDone + '</span>&thinsp;/&thinsp;' + visibleTasks.filter(function(t){return !hidden[t.id];}).length + hiddenCountSpan + '</span>'
+        + '<button class="section-hide" title="' + (isSectionHidden ? 'Unhide section' : 'Hide section from All view') + '" onclick="toggleHideSection(event,\'' + sec.id + '\')">' + (isSectionHidden ? '👁' : '🚫') + '</button>'
+        + '<span class="chevron" style="transform:rotate(' + (isOpen ? '0' : '-90') + 'deg)">▼</span>'
+        + '</div>';
+
+      const secBody = document.createElement('div');
+      secBody.className = 'section-body' + (isOpen ? '' : ' hidden');
+      secBody.id = 'body-' + sec.id;
+      secBody.innerHTML = visibleTasks.map(t => sectionTaskHtml(t, done, hidden, yourList, goals, bossKills, notes)).join('');
+      div.appendChild(secBody);
+      container.appendChild(div);
+    });
+  }
 
   const pct = totalVisible ? Math.round((totalDone / totalVisible) * 100) : 0;
   document.getElementById('prog-fill').style.width = pct + '%';
@@ -1166,15 +1195,15 @@ function render() {
   revealBtn.style.display = (anyHidden || revealHidden) ? '' : 'none';
   revealBtn.textContent = revealHidden ? '🚫 Hide Hidden' : '👁 Show Hidden';
 
-  // Show Edit List button only when on Your List tab or editing
-  const editBtn = document.getElementById('btn-edit-yourlist');
-  const showEditBtn = activeFilters.has('yourlist') && !editingYourList;
-  editBtn.style.display = showEditBtn ? '' : 'none';
-  editBtn.textContent = '⭐ Edit List';
+  // Edit List button hidden when not on yourlist tab
+  document.getElementById('btn-edit-yourlist').textContent = editingYourList ? '✓ Done' : '⭐ Edit List';
 
-  // Show Apply to All only on Your List tab when not editing and list has items
-  const applyBtn = document.getElementById('btn-yourlist-allchars');
-  applyBtn.style.display = (activeFilters.has('yourlist') && !editingYourList && loadYourList().length > 0) ? '' : 'none';
+  // Update view toggle label
+  const viewBtn = document.getElementById('btn-yourlist-view');
+  viewBtn.textContent = yourListGrouped ? '☰ Flat List' : '⊞ Grouped';
+  viewBtn.title = yourListGrouped ? 'Switch to flat list' : 'Switch to grouped by category';
+
+  // Apply to All hidden when not on yourlist tab
 
   renderCustomSection();
 }
@@ -1362,10 +1391,9 @@ function toggleRevealHidden() {
 function startEditingYourList() {
   if (editingYourList) { doneEditingYourList(); return; }
   editingYourList = true;
-  // Switch to All view so user can browse and select
-  activeFilters = new Set(['all']);
+  activeFilters = new Set(['yourlist']);
   document.querySelectorAll('.tab-btn').forEach(b => {
-    b.classList.toggle('active', b.getAttribute('data-filter') === 'all');
+    b.classList.toggle('active', b.getAttribute('data-filter') === 'yourlist');
   });
   render();
 }
@@ -1445,15 +1473,19 @@ function adjustGoal(id, max, delta) {
   render();
 }
 
-function applyYourListToAll() {
-  if (characters.length <= 1) { alert('You only have one character.'); return; }
-  const others = characters.filter(c => c !== currentChar);
-  if (!confirm(`Copy Your List from "${currentChar}" to all other characters (${others.join(', ')})?`)) return;
+function copyListToSelected() {
+  const sel = document.getElementById('copy-to-select');
+  if (!sel || !sel.value) { alert('Please choose a character to copy to.'); return; }
   const list = loadYourList();
-  others.forEach(c => {
-    localStorage.setItem('wow_mn_yourlist_' + c, JSON.stringify(list));
-  });
-  render();
+  if (sel.value === '__all__') {
+    const others = characters.filter(c => c !== currentChar);
+    if (!others.length) { alert('No other characters to copy to.'); return; }
+    others.forEach(c => localStorage.setItem('wow_mn_yourlist_' + c, JSON.stringify(list)));
+    alert('Copied to: ' + others.join(', '));
+  } else {
+    localStorage.setItem('wow_mn_yourlist_' + sel.value, JSON.stringify(list));
+    alert('Copied to ' + sel.value);
+  }
 }
 function historyKey(charName) { return 'wow_mn_history_' + (charName || currentChar); }
 function loadHistory(charName) { return JSON.parse(localStorage.getItem(historyKey(charName)) || '[]'); }
@@ -1506,7 +1538,6 @@ function setFilter(f, btn) {
   // When switching to Your List, ensure the first character is active
   if (f === 'yourlist') {
     if (!characters.includes(currentChar)) currentChar = characters[0];
-    // If no char is visually active, default to first
     currentChar = currentChar || characters[0];
     renderChars();
   }
@@ -1648,21 +1679,19 @@ function loadCustomTasks()  { return JSON.parse(localStorage.getItem(customStora
 function saveCustomTasks(t) { localStorage.setItem(customStorageKey(), JSON.stringify(t)); }
 
 function renderCustomSection() {
-  // Remove existing custom section if present
   const existing = document.getElementById('custom-section-wrap');
   if (existing) existing.remove();
 
   if (!activeFilters.has('all') && !activeFilters.has('custom')) return;
 
-  const tasks   = loadCustomTasks();
-  const done    = loadDone();
+  const tasks    = loadCustomTasks();
+  const done     = loadDone();
   const yourList = new Set(loadYourList());
-  const notes   = loadNotes();
-  const wrap   = document.createElement('div');
-  wrap.id      = 'custom-section-wrap';
+  const notes    = loadNotes();
+  const wrap     = document.createElement('div');
+  wrap.id        = 'custom-section-wrap';
   wrap.className = 'custom-section-wrap';
 
-  // Priority label when in "all" view
   if (activeFilters.has('all')) {
     const lbl = document.createElement('div');
     lbl.className = 'priority-label p3';
@@ -1670,87 +1699,85 @@ function renderCustomSection() {
     wrap.appendChild(lbl);
   }
 
-  // When in custom-only view, show a prominent top add bar
-  if (activeFilters.has('custom') && !activeFilters.has('all')) {
+  const isCustomOnly = activeFilters.has('custom') && !activeFilters.has('all');
+
+  if (isCustomOnly) {
     const addBar = document.createElement('div');
     addBar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;';
-    addBar.innerHTML = `
-      <div style="font-family:\'Cinzel\',serif;font-size:13px;color:var(--text-secondary);letter-spacing:0.05em;">
-        ${tasks.length === 0 ? 'No custom tasks yet' : `${tasks.filter(t=>done['custom_'+t.id]).length} / ${tasks.length} done`}
-      </div>
-      <button class="btn-primary" style="font-size:12px;padding:0.5rem 1.2rem;letter-spacing:0.1em;" onclick="openCustomModal()">+ Add Task</button>`;
+    const countText = tasks.length === 0 ? 'No custom tasks yet'
+      : (tasks.filter(t => done['custom_' + t.id]).length + ' / ' + tasks.length + ' done');
+    addBar.innerHTML = '<div style="font-family:\'Cinzel\',serif;font-size:13px;color:var(--text-secondary);letter-spacing:0.05em;">' + countText + '</div>'
+      + '<button class="btn-primary" style="font-size:12px;padding:0.5rem 1.2rem;letter-spacing:0.1em;" onclick="openCustomModal()">+ Add Task</button>';
     wrap.appendChild(addBar);
   }
 
-  // Section header — flat list in custom-only view, collapsible in all view
   const isOpen = !collapsed['custom'];
-  const isCustomOnly = activeFilters.has('custom') && !activeFilters.has('all');
   const header = document.createElement('div');
   header.className = 'section';
 
+  function customTaskHtml(t) {
+    const id = 'custom_' + t.id;
+    const inList = yourList.has(id);
+    const isDone = !!done[id];
+    const checkFn = editingYourList
+      ? 'toggleYourListTask(\'' + id + '\')'
+      : 'toggleCustom(\'' + t.id + '\',this)';
+    const starCol = editingYourList
+      ? '<span style="flex-shrink:0;font-size:13px;color:' + (inList ? 'var(--light-gold)' : 'var(--text-muted)') + ';">' + (inList ? '⭐' : '☆') + '</span>'
+      : '<div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">'
+        + noteBtnHtml(id, notes)
+        + '<button class="task-del" title="Delete task" onclick="deleteCustomTask(event,\'' + t.id + '\')">✕</button>'
+        + '</div>';
+    return '<div class="task' + (isDone ? ' done' : '') + (inList ? ' in-yourlist' : '') + '">'
+      + '<div class="task-check" onclick="event.stopPropagation();' + checkFn + '" style="cursor:pointer;"></div>'
+      + '<div class="task-body">'
+      + '<div class="task-name">' + escHtml(t.name) + '</div>'
+      + (t.desc ? '<div class="task-desc">' + escHtml(t.desc) + '</div>' : '')
+      + (!editingYourList ? noteHtml(id, notes) : '')
+      + '</div>'
+      + starCol
+      + '</div>';
+  }
+
+  const emptyHtml = '<div class="custom-empty" style="border:none;padding:2.5rem 1rem;"><div style="font-size:2rem;margin-bottom:0.5rem;">✦</div>Nothing here yet — hit <strong>+ Add Task</strong> above to get started.</div>';
+
   if (isCustomOnly) {
-    header.innerHTML = `
-      <div class="section-body" id="body-custom" style="border-radius:8px;border:1px solid var(--border-bright);">
-        ${tasks.length === 0
-          ? `<div class="custom-empty" style="border:none;padding:2.5rem 1rem;">
-               <div style="font-size:2rem;margin-bottom:0.5rem;">✦</div>
-               Nothing here yet — hit <strong>+ Add Task</strong> above to get started.
-             </div>`
-          : tasks.map(t => {
-              const inList = yourList.has('custom_' + t.id);
-              return `
-              <div class="task${done['custom_'+t.id]?' done':''}${inList?' in-yourlist':''}" >
-                <div class="task-check" onclick="event.stopPropagation();${editingYourList ? `toggleYourListTask('custom_${t.id}')` : `toggleCustom('${t.id}',this)`}" style="cursor:pointer;"></div>
-                <div class="task-body">
-                  <div class="task-name">${escHtml(t.name)}</div>
-                  ${t.desc?`<div class="task-desc">${escHtml(t.desc)}</div>`:''}
-                  ${!editingYourList ? noteHtml('custom_'+t.id, notes) : ''}
-                </div>
-                ${editingYourList
-                  ? `<span style="flex-shrink:0;font-size:13px;color:${inList?'var(--light-gold)':'var(--text-muted)'};">${inList?'⭐':'☆'}</span>`
-                  : `<div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">
-                      ${noteBtnHtml('custom_'+t.id, notes)}
-                      <button class="task-del" title="Delete task" onclick="deleteCustomTask(event,'${t.id}')">✕</button>
-                    </div>`
-                }
-              </div>`;}).join('')}
-      </div>`;
+    const body = document.createElement('div');
+    body.className = 'section-body';
+    body.id = 'body-custom';
+    body.style.cssText = 'border-radius:8px;border:1px solid var(--border-bright);';
+    body.innerHTML = tasks.length === 0 ? emptyHtml : tasks.map(customTaskHtml).join('');
+    header.appendChild(body);
   } else {
-    header.innerHTML = `
-      <div class="section-header${isOpen?' open':''}" onclick="toggleSection('custom')" style="margin-bottom:0;">
-        <div class="section-icon icon-optional">✦</div>
-        <div class="section-title-wrap">
-          <div class="section-title">Custom Tasks</div>
-          <div class="section-meta">Your personal weekly to-dos · Saved per character · Never auto-reset</div>
-        </div>
-        <span class="section-count"><span class="done">${tasks.filter(t=>done['custom_'+t.id]).length}</span>&thinsp;/&thinsp;${tasks.length}</span>
-        <span class="chevron" style="transform:rotate(${isOpen?'0':'-90'}deg)">▼</span>
-      </div>
-      <div class="section-body${isOpen?'':' hidden'}" id="body-custom">
-        <div style="padding:0.65rem 1rem; border-bottom:1px solid var(--border); display:flex; gap:0.6rem;">
-          <button class="btn-primary" style="font-size:11px;padding:0.35rem 0.9rem;" onclick="openCustomModal()">+ Add Task</button>
-        </div>
-        ${tasks.length === 0
-          ? `<div class="custom-empty">No custom tasks yet — add one above.</div>`
-          : tasks.map(t => {
-              const inList = yourList.has('custom_' + t.id);
-              return `
-              <div class="task${done['custom_'+t.id]?' done':''}${inList?' in-yourlist':''}" >
-                <div class="task-check" onclick="event.stopPropagation();${editingYourList ? `toggleYourListTask('custom_${t.id}')` : `toggleCustom('${t.id}',this)`}" style="cursor:pointer;"></div>
-                <div class="task-body">
-                  <div class="task-name">${escHtml(t.name)}</div>
-                  ${t.desc ? `<div class="task-desc">${escHtml(t.desc)}</div>` : ''}
-                  ${!editingYourList ? noteHtml('custom_'+t.id, notes) : ''}
-                </div>
-                ${editingYourList
-                  ? `<span style="flex-shrink:0;font-size:13px;color:${inList?'var(--light-gold)':'var(--text-muted)'};">${inList?'⭐':'☆'}</span>`
-                  : `<div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">
-                      ${noteBtnHtml('custom_'+t.id, notes)}
-                      <button class="task-del" title="Delete task" onclick="deleteCustomTask(event,'${t.id}')">✕</button>
-                    </div>`
-                }
-              </div>`;}).join('')}
-      </div>`;
+    const secHead = document.createElement('div');
+    secHead.className = 'section-header' + (isOpen ? ' open' : '');
+    secHead.setAttribute('onclick', 'toggleSection(\'custom\')');
+    secHead.style.marginBottom = '0';
+    secHead.innerHTML = '<div class="section-icon icon-optional">✦</div>'
+      + '<div class="section-title-wrap">'
+      + '<div class="section-title">Custom Tasks</div>'
+      + '<div class="section-meta">Your personal weekly to-dos · Saved per character · Never auto-reset</div>'
+      + '</div>'
+      + '<span class="section-count"><span class="done">' + tasks.filter(t => done['custom_' + t.id]).length + '</span>&thinsp;/&thinsp;' + tasks.length + '</span>'
+      + '<span class="chevron" style="transform:rotate(' + (isOpen ? '0' : '-90') + 'deg)">▼</span>';
+    header.appendChild(secHead);
+
+    const body = document.createElement('div');
+    body.className = 'section-body' + (isOpen ? '' : ' hidden');
+    body.id = 'body-custom';
+    const addBtn = document.createElement('div');
+    addBtn.style.cssText = 'padding:0.65rem 1rem; border-bottom:1px solid var(--border); display:flex; gap:0.6rem;';
+    addBtn.innerHTML = '<button class="btn-primary" style="font-size:11px;padding:0.35rem 0.9rem;" onclick="openCustomModal()">+ Add Task</button>';
+    body.appendChild(addBtn);
+    if (tasks.length === 0) {
+      const emp = document.createElement('div');
+      emp.className = 'custom-empty';
+      emp.textContent = 'No custom tasks yet — add one above.';
+      body.appendChild(emp);
+    } else {
+      body.innerHTML += tasks.map(customTaskHtml).join('');
+    }
+    header.appendChild(body);
   }
 
   wrap.appendChild(header);
@@ -2227,6 +2254,12 @@ function toggleCompact() {
   btn.style.borderColor = isCompact ? 'var(--void-purple)' : '';
 }
 
+function toggleYourListView() {
+  yourListGrouped = !yourListGrouped;
+  localStorage.setItem('wow_mn_yl_grouped', yourListGrouped);
+  render();
+}
+
 /* ═══════════════════════════════════════════
    WHAT'S NEXT
 ═══════════════════════════════════════════ */
@@ -2449,8 +2482,199 @@ function renderInlineHistory() {
     </div>`;
 }
 
+/* ── BEGINNER PRESET ── */
+const BEGINNER_STAGES = [
+  {
+    id: 'fresh',
+    label: 'Fresh 80 — Just hit max level',
+    sublabel: 'ilvl ~200–219 · Adventurer gear is your target',
+    color: 'var(--success-bright)',
+    tasks: [
+      'bq1','bq2','bq3',           // Bazaar weeklies — free, high value
+      'we0a','we0b',               // World Quests + Rare mobs — easiest gear
+      'va2','va3','va4',           // Void Assaults — strong intro content
+      'we1',                       // World Bosses
+      'we4',                       // Saltheril's Soiree
+      'we2',                       // Abundance
+      'pr_norm',                   // Normal Prey (2x, Adventurer gear)
+      'd_bountiful',               // Bountiful Delves (scales to your tier)
+      'd3',                        // Delve weekly cache
+      'v1','v2',                   // Great Vault — always open it
+      'cu1',                       // Spend Crests
+    ]
+  },
+  {
+    id: 'gearing',
+    label: 'Early Gearing — Building toward Veteran',
+    sublabel: 'ilvl 220–232 · Pushing into Veteran content',
+    color: 'var(--light-gold)',
+    tasks: [
+      'bq1','bq2','bq3',
+      'we0a','we0b',
+      'va2','va3','va4',
+      'we1','we4','we2','we3',
+      'pr_norm','pr_hard',         // Normal + Hard Prey
+      'rs1',                       // Ritual Sites
+      'd1',                        // Trovehunter's Bounty
+      'd_bountiful',
+      'd3',
+      'v1','v2',
+      'cu1','cu2','cu5',           // Crests + Catalyst + Dawncrest crafting
+      'vf1','vf2','vf3',           // Voidforge questline
+    ]
+  },
+  {
+    id: 'progressing',
+    label: 'Progressing — Veteran to Champion',
+    sublabel: 'ilvl 233–249 · Solo content fully unlocked',
+    color: 'var(--void-glow)',
+    tasks: [
+      'bq1','bq2','bq3',
+      'we0a','we0b',
+      'va2','va3','va4',
+      'we1','we4','we2','we3','we5',
+      'pr_norm','pr_hard','pr_nm', // All three Prey difficulties
+      'pr3',                       // Prey transmog check
+      'rs1',
+      'd1','d_bountiful','d3',
+      'm1','m4','m5',              // Mythic+ for vault + Crests
+      'v1','v2',
+      'cu1','cu2','cu3','cu4','cu5',
+      'vf1','vf2','vf3','vf4',
+    ]
+  },
+  {
+    id: 'endgame',
+    label: 'Solo Endgame — Champion and beyond',
+    sublabel: 'ilvl 250+ · Maximising every weekly system',
+    color: '#c0b8d8',
+    tasks: [
+      'bq1','bq2','bq3',
+      'we0a','we0b',
+      'va2','va3','va4',
+      'we1','we4','we2','we3','we5',
+      'pr_hard','pr_nm','pr3',
+      'rs1',
+      'd1','d_bountiful','d2','d3',
+      'm1','m4','m5',
+      'rd_h','rd_m',               // Dreamrift Heroic + Mythic
+      'vs_h','vs_m',               // Voidspire Heroic + Mythic
+      'mq_h','mq_m',               // March on Quel'Danas Heroic + Mythic
+      'ra8',                       // Weekly raid quest
+      'v1','v2',
+      'cu1','cu2','cu3','cu4','cu5',
+      'vf1','vf2','vf3','vf4',
+    ]
+  },
+];
+
+function openBeginnerPreset() {
+  const stagesEl = document.getElementById('beginner-stages');
+  stagesEl.innerHTML = BEGINNER_STAGES.map(s => `
+    <div class="beginner-stage-card" onclick="applyBeginnerPreset('${s.id}')">
+      <div class="beginner-stage-dot" style="background:${s.color};"></div>
+      <div class="beginner-stage-text">
+        <div class="beginner-stage-label">${s.label}</div>
+        <div class="beginner-stage-sub">${s.sublabel}</div>
+      </div>
+      <span class="beginner-stage-arrow">→</span>
+    </div>`).join('');
+  document.getElementById('modal-beginner').style.display = 'flex';
+}
+
+function closeBeginnerModal() {
+  document.getElementById('modal-beginner').style.display = 'none';
+}
+
+function applyBeginnerPreset(stageId) {
+  const stage = BEGINNER_STAGES.find(s => s.id === stageId);
+  if (!stage) return;
+  saveYourList(stage.tasks);
+  saveYourListOrder(stage.tasks);
+  closeBeginnerModal();
+  doneEditingYourList();
+}
+
+/* ── INLINE EVENT DISPLAY ── */
+const WORLD_EVENTS = [
+  { name:'Pet Battle Bonus Event',        url:'https://www.wowhead.com/event=565',   start:'2026-05-19', end:'2026-05-26' },
+  { name:'Delves Bonus Event',             url:'https://www.wowhead.com/event=1559',  start:'2026-05-19', end:'2026-05-26' },
+  { name:'PvP Brawl: Deepwind Dunk',      url:'https://www.wowhead.com/event=1240',  start:'2026-05-19', end:'2026-05-26' },
+  { name:'Glowcap Festival',              url:'https://www.wowhead.com/event=648',   start:'2026-05-27', end:'2026-05-28' },
+  { name:'Midnight Dungeon Event',        url:'https://www.wowhead.com/event=1802',  start:'2026-05-26', end:'2026-06-02' },
+  { name:'PvP Brawl: Shado-Pan Showdown', url:'https://www.wowhead.com/event=1233',  start:'2026-05-26', end:'2026-06-02' },
+  { name:'Timewalking Dungeon Event',     url:'https://www.wowhead.com/event=1263',  start:'2026-06-02', end:'2026-06-09' },
+  { name:'Darkmoon Faire',                url:'https://www.wowhead.com/event=479',   start:'2026-06-06', end:'2026-06-13' },
+  { name:'Thousand Boat Bash',            url:'https://www.wowhead.com/event=642',   start:'2026-06-06', end:'2026-06-09' },
+  { name:'Arena Skirmish Bonus Event',    url:'https://www.wowhead.com/event=561',   start:'2026-06-09', end:'2026-06-16' },
+  { name:'PvP Brawl: Cooking Impossible', url:'https://www.wowhead.com/event=1047',  start:'2026-06-09', end:'2026-06-16' },
+  { name:'World Quest Bonus Event',       url:'https://www.wowhead.com/event=592',   start:'2026-06-16', end:'2026-06-23' },
+  { name:'PvP Brawl: Temple of Hotmogu',  url:'https://www.wowhead.com/event=1170',  start:'2026-06-16', end:'2026-06-23' },
+  { name:'Midsummer Fire Festival',       url:'https://www.wowhead.com/event=341',   start:'2026-06-21', end:'2026-07-05' },
+  { name:'Timewalking Dungeon Event',     url:'https://www.wowhead.com/event=1669',  start:'2026-06-23', end:'2026-06-30' },
+  { name:'Darkspear Dash',                url:'https://www.wowhead.com/event=1793',  start:'2026-06-27', end:'2026-06-29' },
+  { name:'Battleground Bonus Event',      url:'https://www.wowhead.com/event=563',   start:'2026-06-30', end:'2026-07-07' },
+  { name:'Fireworks Spectacular',         url:'https://www.wowhead.com/event=62',    start:'2026-07-04', end:'2026-07-05' },
+  { name:'PvP Brawl: Packed House',       url:'https://www.wowhead.com/event=667',   start:'2026-07-07', end:'2026-07-14' },
+  { name:'Luminous Luminaries',           url:'https://www.wowhead.com/event=1054',  start:'2026-07-13', end:'2026-07-14' },
+  { name:'Timewalking Dungeon Event',     url:'https://www.wowhead.com/event=1703',  start:'2026-07-14', end:'2026-07-21' },
+  { name:'PvP Brawl: Deep Six',           url:'https://www.wowhead.com/event=702',   start:'2026-07-14', end:'2026-07-21' },
+  { name:'PvP Brawl: Arathi Blizzard',    url:'https://www.wowhead.com/event=666',   start:'2026-07-21', end:'2026-07-28' },
+  { name:'Auction House Dance Party',     url:'https://www.wowhead.com/event=692',   start:'2026-07-22', end:'2026-07-23' },
+  { name:'Trial of Style',                url:'https://www.wowhead.com/event=691',   start:'2026-08-01', end:'2026-08-08' },
+  { name:'Timewalking Dungeon Event',     url:'https://www.wowhead.com/event=1508',  start:'2026-08-04', end:'2026-08-11' },
+  { name:'Free T-Shirt Day',              url:'https://www.wowhead.com/event=1053',  start:'2026-08-16', end:'2026-08-17' },
+  { name:'Northrend Cup',                 url:'https://www.wowhead.com/event=1429',  start:'2026-08-25', end:'2026-09-08' },
+  { name:'Outland Timewalking',           url:'https://www.wowhead.com/event=559',   start:'2026-08-25', end:'2026-09-01' },
+  { name:'Northrend Timewalking',         url:'https://www.wowhead.com/event=562',   start:'2026-09-15', end:'2026-09-22' },
+  { name:"Pirates' Day",                  url:'https://www.wowhead.com/event=398',   start:'2026-09-19', end:'2026-09-20' },
+  { name:'Brewfest',                      url:'https://www.wowhead.com/event=372',   start:'2026-09-20', end:'2026-10-06' },
+  { name:'Harvest Festival',              url:'https://www.wowhead.com/event=321',   start:'2026-09-21', end:'2026-09-28' },
+  { name:'Cataclysm Timewalking',         url:'https://www.wowhead.com/event=587',   start:'2026-10-06', end:'2026-10-13' },
+  { name:"Hallow's End",                  url:'https://www.wowhead.com/event=324',   start:'2026-10-18', end:'2026-11-01' },
+  { name:'WoW\'s 22nd Anniversary',       url:'https://www.wowhead.com/event=1808',  start:'2026-11-17', end:'2026-12-08' },
+  { name:"Pilgrim's Bounty",              url:'https://www.wowhead.com/event=404',   start:'2026-11-22', end:'2026-11-29' },
+  { name:'Feast of Winter Veil',          url:'https://www.wowhead.com/event=141',   start:'2026-12-15', end:'2027-01-02' },
+  { name:'Lunar Festival',                url:'https://www.wowhead.com/event=327',   start:'2027-02-02', end:'2027-02-16' },
+  { name:'Love is in the Air',            url:'https://www.wowhead.com/event=423',   start:'2027-02-08', end:'2027-02-22' },
+  { name:'Noblegarden',                   url:'https://www.wowhead.com/event=181',   start:'2027-03-29', end:'2027-04-05' },
+  { name:'Eastern Kingdoms Cup',          url:'https://www.wowhead.com/event=1400',  start:'2027-08-24', end:'2027-09-07' },
+];
+
+function renderInlineEvent() {
+  const el = document.getElementById('inline-event');
+  if (!el) return;
+  const now = new Date();
+  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const parseD = s => new Date(s + 'T00:00:00Z');
+
+  const active = WORLD_EVENTS.filter(e => parseD(e.start) <= today && today < parseD(e.end));
+  const upcoming = WORLD_EVENTS
+    .filter(e => parseD(e.start) > today)
+    .sort((a,b) => parseD(a.start) - parseD(b.start))
+    .slice(0, 1);
+
+  let inner = '';
+  if (active.length) {
+    const names = active.map(e =>
+      `<a href="${e.url}" target="_blank" class="inline-event-link">${e.name}</a>`
+    ).join(', ');
+    inner = `<span class="inline-event-badge live">LIVE</span>${names}`;
+  } else if (upcoming.length) {
+    const e = upcoming[0];
+    const startDate = parseD(e.start);
+    const daysUntil = Math.round((startDate - today) / 86400000);
+    const daysStr = daysUntil === 1 ? 'tomorrow' : `in ${daysUntil}d`;
+    inner = `<span class="inline-event-badge soon">SOON</span><a href="${e.url}" target="_blank" class="inline-event-link">${e.name}</a><span class="inline-event-when">${daysStr}</span>`;
+  } else {
+    inner = `<span class="inline-event-none">No upcoming events</span>`;
+  }
+
+  el.innerHTML = `${inner}<a href="events.html" class="inline-event-btn">📅 All Events</a>`;
+}
+
 /* ── INIT ── */
-renderChars(); renderClassLinksBar(); render(); renderInlineHistory(); updateCountdown(); setInterval(updateCountdown, 1000);
+renderChars(); renderClassLinksBar(); render(); renderInlineHistory(); renderInlineEvent(); updateCountdown(); setInterval(updateCountdown, 1000);
 
 // Sync toolbar button labels to persisted state
 document.getElementById('btn-theme').textContent   = isLightMode ? '🌙 Dark'   : '☀️ Light';

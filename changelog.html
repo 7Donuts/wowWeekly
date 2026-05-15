@@ -145,6 +145,31 @@
 <script>
 const VERSIONS = [
   {
+    version: 'v1.6',
+    date: 'May 15, 2026',
+    summary: 'New tasks, Your List overhaul, Event Calendar, grouped/flat view, Starter Guide',
+    entries: [
+      { type: 'content', text: 'World Quests and Rare Elite kills added to World Events section', detail: 'Both reward Adventurer-level gear (ilvl 220–237). World Quests are daily; Rare Elites are opportunistic kills while doing open-world content.' },
+      { type: 'content', text: 'Prey System expanded — Normal, Hard, and Nightmare difficulty hunts each tracked separately', detail: 'Normal and Hard have +/− goal trackers capped at 2 per week. Nightmare uses a 3-kill tracker matching the weekly quest requirement. All three difficulties show milestone notes.' },
+      { type: 'content', text: 'Delves reworked — Trovehunter\'s Bounty replaces the old "complete highest tier" task; Bountiful Delves get a 4-run goal tracker', detail: 'Trovehunter\'s Bounty is a single weekly checkbox. Bountiful Delves show milestone notes and include an inline T1–T11 tier selector that persists per character.' },
+      { type: 'content', text: 'Crafting / Dawncrest empowerment task added to Currency & Upgrades', detail: 'Covers all three Dawncrest tiers (Adventurer, Veteran, Hero) with a reminder to spend at 80+.' },
+      { type: 'new',     text: 'Event Calendar — standalone events.html page with live and upcoming world events', detail: 'LIVE / SOON / past-dimmed badges on each card. Filter by All, Upcoming, World, PvP, Dungeons, Delves. Grouped by month. Covers May 2026 through mid-2027. Shares midnight.css and persists light/dark preference.' },
+      { type: 'new',     text: 'Inline event strip in reset bar — shows current live event or next upcoming event with days-until countdown and a 📅 All Events button', detail: 'Positioned left-justified on the history line, aligned with the weekly reset text.' },
+      { type: 'new',     text: '⊞ Grouped / ☰ Flat List toggle — left of the search bar, applies to all views', detail: 'Grouped mode (default): sections render as collapsible cards with headers. Flat mode: all visible tasks merged into one scrollable list with no section dividers. Your List view also respects this toggle, with tasks sorted by saved drag order.' },
+      { type: 'new',     text: 'Your List — grouped by section with sub-headers when in Grouped mode', detail: 'Each section group shows its icon, title, and done/total count. Done tasks sort to the bottom within each group independently.' },
+      { type: 'new',     text: '🧭 Starter Guide — preset task lists for four progression stages', detail: 'Fresh 80, Early Gearing, Progressing, and Solo Endgame presets. Each auto-populates Your List with the most efficient solo-friendly tasks for that stage. Endgame preset includes Heroic and Mythic raids. Selecting a stage exits edit mode and takes you directly to Your List.' },
+      { type: 'new',     text: 'Your List edit mode redesigned — Edit List button stays on Your List tab showing remove controls', detail: 'In edit mode on the Your List tab, each task shows a red ✕ Remove button. Switch to any other tab to see the full master list with ⭐/☆ highlight toggles for adding tasks.' },
+      { type: 'new',     text: 'Edit bar (yellow) shown in both Your List and master list views while editing', detail: 'Contains: 🧭 Starter Guide, Copy to character dropdown, Clear All, and ✓ Done. The bar is identical in both views.' },
+      { type: 'new',     text: 'Copy List to Character — select a specific character or All characters from a dropdown in the edit bar', detail: 'Replaces the old "Apply to All" toolbar button. Only visible when multiple characters exist.' },
+      { type: 'new',     text: 'Goal trackers (+/− counters with milestone notes) now visible on all section views, not just Your List', detail: 'Previously the +/− tracker only appeared when tasks were added to Your List. Fixed by adding goal rendering to the main section render path.' },
+      { type: 'improve', text: '⭐ Edit List button always visible in the top bar regardless of active tab, styled gold to match the Your List tab', detail: 'Previously only appeared when the Your List tab was active. Now accessible from any tab so users can jump into editing from anywhere.' },
+      { type: 'improve', text: 'Text color improved across task cards, section tabs, and event calendar dates', detail: 'Italic descriptions, inactive filter tabs, section meta text, and event date/duration text all use --text-secondary (#9d90b8). All hardcoded hex values replaced with the CSS variable for consistent theming.' },
+      { type: 'fix',     text: 'Edit mode master list was blank — caused by nested template literals inside innerHTML assignments being silently truncated by the browser', detail: 'Rebuilt all task HTML rendering functions (sectionTaskHtml, ylTaskHtml, ylEditTaskHtml, renderCustomSection, renderTierSelector, section headers) using pure string concatenation with no nested backticks.' },
+      { type: 'remove',  text: 'Event Calendar removed from the main task list — moved to standalone events.html', detail: 'The Event Calendar filter tab is removed from the tracker. All 50+ events live in events.html with a richer card layout.' },
+      { type: 'remove',  text: '"Apply to All" toolbar button removed', detail: 'Replaced by the Copy to Character dropdown in the edit bar.' },
+    ]
+  },
+  {
     version: 'v1.5',
     date: 'May 14, 2026',
     summary: 'Raid boss tracking, task search, mobile fixes, button polish',
