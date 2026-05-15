@@ -1491,3 +1491,36 @@ body.light-mode .btn-view-toggle:hover {
   background: rgba(100,68,170,0.1);
   color: #4422aa;
 }
+
+/* ── SHARED: back-link navigation pill ──────────────────────
+   Used by events.html and changelog.html to link back to the
+   main tracker. Defined once here; remove from page <style>. */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-decoration: none;
+  border: 1px solid var(--border);
+  padding: 4px 14px;
+  border-radius: 20px;
+  margin-bottom: 2rem;
+  transition: all 0.2s;
+}
+.back-link:hover {
+  color: var(--light-gold);
+  border-color: rgba(201,168,76,0.4);
+  background: rgba(201,168,76,0.06);
+}
+body.light-mode .back-link {
+  border-color: rgba(100,68,170,0.25);
+  color: #666;
+}
+body.light-mode .back-link:hover {
+  color: #4422aa;
+  border-color: rgba(68,34,170,0.4);
+  background: rgba(68,34,170,0.06);
+}
