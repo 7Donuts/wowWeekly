@@ -44,9 +44,11 @@
         <button class="btn-reset-all" onclick="openSummary()">📊 Summary</button>
         <button class="btn-reset-all" onclick="resetAll()">↺ Reset Week</button>
         <button class="btn-reset-all" onclick="openExportImport()">⇅ Data</button>
-        <button class="btn-reset-all" id="btn-reveal" onclick="toggleRevealHidden()" style="visibility:hidden;">👁 Show Hidden</button>
-        <button class="btn-reset-all" id="btn-edit-yourlist" onclick="startEditingYourList()" style="visibility:hidden;">⭐ Edit List</button>
-        <button class="btn-reset-all" id="btn-yourlist-allchars" onclick="applyYourListToAll()" style="visibility:hidden;">⭐ Apply to All</button>
+        <div class="btn-conditional-group">
+          <button class="btn-reset-all" id="btn-reveal" onclick="toggleRevealHidden()" style="display:none;">👁 Show Hidden</button>
+          <button class="btn-reset-all" id="btn-edit-yourlist" onclick="startEditingYourList()" style="display:none;">⭐ Edit List</button>
+          <button class="btn-reset-all" id="btn-yourlist-allchars" onclick="applyYourListToAll()" style="display:none;">⭐ Apply to All</button>
+        </div>
       </div>
     </div>
     <div class="reset-bar-bottom">
@@ -78,6 +80,18 @@
     <button class="tab-btn" data-filter="optional" onclick="setFilter('optional',this)">Optional</button>
     <button class="tab-btn" data-filter="world-events" onclick="setFilter('world-events',this)">Event Calendar</button>
     <button class="tab-btn tab-custom" data-filter="custom" onclick="setFilter('custom',this)">✦ Custom</button>
+  </div>
+
+  <div class="search-bar-wrap">
+    <div class="search-bar-inner">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="task-search" class="task-search-input"
+             placeholder="Search tasks…"
+             oninput="onSearchInput(this.value)"
+             onkeydown="if(event.key==='Escape'){clearSearch();this.blur();}" />
+      <button class="search-clear" id="search-clear-btn" onclick="clearSearch()" style="display:none;" title="Clear search">✕</button>
+    </div>
+    <div id="search-result-count" class="search-result-count"></div>
   </div>
 
   <div id="sections-container"></div>
@@ -138,22 +152,117 @@ const SECTIONS = [
     id: 'raid',
     icon: '', iconClass: 'icon-raid',
     title: 'Raids',
-    meta: 'Personal loot lockout resets Tuesday · LFR wings independent',
+    meta: 'Personal loot lockout resets Tuesday · Click boss bubbles to track kills',
     categories: ['raid'],
     priority: 1,
     tasks: [
-      { id: 'ra2', name: 'LFR — The Sundered Sanctum Wing 1',
-        desc: 'Queue via Group Finder. Rewards Veteran-quality gear and Crests. No lockout — repeatable but only first kill awards personal loot.',
-        tags: ['tag-raid'] },
-      { id: 'ra3', name: 'LFR — The Sundered Sanctum Wing 2',
-        desc: 'Unlocks after Wing 1. Continues the Quel\'Thalas siege storyline.',
-        tags: ['tag-raid'] },
-      { id: 'ra4', name: 'LFR — The Sundered Sanctum Wing 3',
-        desc: 'Final wing. Higher item level tier token drop rate. Counts toward Raid vault row.',
-        tags: ['tag-raid'] },
-      { id: 'ra5', name: 'Normal / Heroic — The Sundered Sanctum',
-        desc: 'Personal loot lockout per difficulty. Each boss killed counts toward your Raid vault row slots (unlock at 1, 3, 6 kills).',
-        tags: ['tag-raid'] },
+      // ── THE DREAMRIFT ──
+      { id: 'rd_lfr',    name: 'The Dreamrift — LFR',
+        desc: 'Queue via Group Finder. Rewards Veteran-quality gear and Crests.',
+        tags: ['tag-raid'],
+        bosses: [{ id: 'chimaerus', name: 'Chimaerus', url: 'https://www.icy-veins.com/wow/chimaerus-raid-guide' }],
+        diff: 'LFR' },
+      { id: 'rd_n',      name: 'The Dreamrift — Normal',
+        desc: 'Personal loot lockout. Counts toward Raid vault row.',
+        tags: ['tag-raid'],
+        bosses: [{ id: 'chimaerus', name: 'Chimaerus', url: 'https://www.icy-veins.com/wow/chimaerus-raid-guide' }],
+        diff: 'Normal' },
+      { id: 'rd_h',      name: 'The Dreamrift — Heroic',
+        desc: 'Personal loot lockout. Higher ilvl rewards.',
+        tags: ['tag-raid'],
+        bosses: [{ id: 'chimaerus', name: 'Chimaerus', url: 'https://www.icy-veins.com/wow/chimaerus-raid-guide' }],
+        diff: 'Heroic' },
+      { id: 'rd_m',      name: 'The Dreamrift — Mythic',
+        desc: 'Weekly lockout. Hall of Fame eligible. Highest ilvl in the game.',
+        tags: ['tag-raid'],
+        bosses: [{ id: 'chimaerus', name: 'Chimaerus', url: 'https://www.icy-veins.com/wow/chimaerus-raid-guide' }],
+        diff: 'Mythic' },
+
+      // ── THE VOIDSPIRE ──
+      { id: 'vs_lfr',   name: 'The Voidspire — LFR',
+        desc: 'Queue via Group Finder. Multiple wings — each awards Veteran-quality gear.',
+        tags: ['tag-raid'],
+        bosses: [
+          { id: 'averzian',  name: 'Imperator Averzian',    url: 'https://www.icy-veins.com/wow/imperator-averzian-raid-guide' },
+          { id: 'vorasius',  name: 'Vorasius',              url: 'https://www.icy-veins.com/wow/vorasius-raid-guide' },
+          { id: 'salhadaar', name: 'Fallen-King Salhadaar', url: 'https://www.icy-veins.com/wow/fallen-king-salhadaar-raid-guide' },
+          { id: 'vaelgor',   name: 'Vaelgor & Ezzorak',     url: 'https://www.icy-veins.com/wow/vaelgor-and-ezzorak-raid-guide' },
+          { id: 'vanguard',  name: 'Lightblinded Vanguard', url: 'https://www.icy-veins.com/wow/lightblinded-vanguard-raid-guide' },
+          { id: 'cosmos',    name: 'Crown of the Cosmos',   url: 'https://www.icy-veins.com/wow/crown-of-the-cosmos-raid-guide' },
+        ],
+        diff: 'LFR' },
+      { id: 'vs_n',     name: 'The Voidspire — Normal',
+        desc: 'Personal loot lockout. Each kill counts toward Raid vault row.',
+        tags: ['tag-raid'],
+        bosses: [
+          { id: 'averzian',  name: 'Imperator Averzian',    url: 'https://www.icy-veins.com/wow/imperator-averzian-raid-guide' },
+          { id: 'vorasius',  name: 'Vorasius',              url: 'https://www.icy-veins.com/wow/vorasius-raid-guide' },
+          { id: 'salhadaar', name: 'Fallen-King Salhadaar', url: 'https://www.icy-veins.com/wow/fallen-king-salhadaar-raid-guide' },
+          { id: 'vaelgor',   name: 'Vaelgor & Ezzorak',     url: 'https://www.icy-veins.com/wow/vaelgor-and-ezzorak-raid-guide' },
+          { id: 'vanguard',  name: 'Lightblinded Vanguard', url: 'https://www.icy-veins.com/wow/lightblinded-vanguard-raid-guide' },
+          { id: 'cosmos',    name: 'Crown of the Cosmos',   url: 'https://www.icy-veins.com/wow/crown-of-the-cosmos-raid-guide' },
+        ],
+        diff: 'Normal' },
+      { id: 'vs_h',     name: 'The Voidspire — Heroic',
+        desc: 'Personal loot lockout. Higher ilvl, tier tokens available.',
+        tags: ['tag-raid'],
+        bosses: [
+          { id: 'averzian',  name: 'Imperator Averzian',    url: 'https://www.icy-veins.com/wow/imperator-averzian-raid-guide' },
+          { id: 'vorasius',  name: 'Vorasius',              url: 'https://www.icy-veins.com/wow/vorasius-raid-guide' },
+          { id: 'salhadaar', name: 'Fallen-King Salhadaar', url: 'https://www.icy-veins.com/wow/fallen-king-salhadaar-raid-guide' },
+          { id: 'vaelgor',   name: 'Vaelgor & Ezzorak',     url: 'https://www.icy-veins.com/wow/vaelgor-and-ezzorak-raid-guide' },
+          { id: 'vanguard',  name: 'Lightblinded Vanguard', url: 'https://www.icy-veins.com/wow/lightblinded-vanguard-raid-guide' },
+          { id: 'cosmos',    name: 'Crown of the Cosmos',   url: 'https://www.icy-veins.com/wow/crown-of-the-cosmos-raid-guide' },
+        ],
+        diff: 'Heroic' },
+      { id: 'vs_m',     name: 'The Voidspire — Mythic',
+        desc: 'Weekly lockout. Hall of Fame eligible.',
+        tags: ['tag-raid'],
+        bosses: [
+          { id: 'averzian',  name: 'Imperator Averzian',    url: 'https://www.icy-veins.com/wow/imperator-averzian-raid-guide' },
+          { id: 'vorasius',  name: 'Vorasius',              url: 'https://www.icy-veins.com/wow/vorasius-raid-guide' },
+          { id: 'salhadaar', name: 'Fallen-King Salhadaar', url: 'https://www.icy-veins.com/wow/fallen-king-salhadaar-raid-guide' },
+          { id: 'vaelgor',   name: 'Vaelgor & Ezzorak',     url: 'https://www.icy-veins.com/wow/vaelgor-and-ezzorak-raid-guide' },
+          { id: 'vanguard',  name: 'Lightblinded Vanguard', url: 'https://www.icy-veins.com/wow/lightblinded-vanguard-raid-guide' },
+          { id: 'cosmos',    name: 'Crown of the Cosmos',   url: 'https://www.icy-veins.com/wow/crown-of-the-cosmos-raid-guide' },
+        ],
+        diff: 'Mythic' },
+
+      // ── MARCH ON QUEL'DANAS ──
+      { id: 'mq_lfr',   name: "March on Quel'Danas — LFR",
+        desc: "Queue via Group Finder. Final raid of Season 1 — Sunwell storyline conclusion.",
+        tags: ['tag-raid'],
+        bosses: [
+          { id: 'beloren', name: "Belo'ren, Child of A'lar", url: 'https://www.icy-veins.com/wow/beloren-raid-guide' },
+          { id: 'midnight', name: 'Midnight Falls',           url: 'https://www.icy-veins.com/wow/midnight-falls-raid-guide' },
+        ],
+        diff: 'LFR' },
+      { id: 'mq_n',     name: "March on Quel'Danas — Normal",
+        desc: 'Personal loot lockout. Each kill counts toward Raid vault row.',
+        tags: ['tag-raid'],
+        bosses: [
+          { id: 'beloren', name: "Belo'ren, Child of A'lar", url: 'https://www.icy-veins.com/wow/beloren-raid-guide' },
+          { id: 'midnight', name: 'Midnight Falls',           url: 'https://www.icy-veins.com/wow/midnight-falls-raid-guide' },
+        ],
+        diff: 'Normal' },
+      { id: 'mq_h',     name: "March on Quel'Danas — Heroic",
+        desc: 'Personal loot lockout. Higher ilvl rewards.',
+        tags: ['tag-raid'],
+        bosses: [
+          { id: 'beloren', name: "Belo'ren, Child of A'lar", url: 'https://www.icy-veins.com/wow/beloren-raid-guide' },
+          { id: 'midnight', name: 'Midnight Falls',           url: 'https://www.icy-veins.com/wow/midnight-falls-raid-guide' },
+        ],
+        diff: 'Heroic' },
+      { id: 'mq_m',     name: "March on Quel'Danas — Mythic",
+        desc: 'Weekly lockout. Hall of Fame eligible. Highest ilvl gear.',
+        tags: ['tag-raid'],
+        bosses: [
+          { id: 'beloren', name: "Belo'ren, Child of A'lar", url: 'https://www.icy-veins.com/wow/beloren-raid-guide' },
+          { id: 'midnight', name: 'Midnight Falls',           url: 'https://www.icy-veins.com/wow/midnight-falls-raid-guide' },
+        ],
+        diff: 'Mythic' },
+
+      // ── WEEKLY QUEST ──
       { id: 'ra8', name: 'Complete weekly raid quest from The Bazaar (if active)',
         desc: 'Some weekly reset quests reward bonus loot or Crests for completing a raid boss. Check Lady Liadrin and the Adventure Guide.',
         tags: ['tag-raid', 'tag-gold'] },
@@ -707,6 +816,28 @@ function yourListOrderKey()  { return 'wow_mn_ylorder_' + currentChar; }
 function loadYourListOrder() { return JSON.parse(localStorage.getItem(yourListOrderKey()) || '[]'); }
 function saveYourListOrder(o){ localStorage.setItem(yourListOrderKey(), JSON.stringify(o)); }
 
+function bossKey()           { return 'wow_mn_bosses_' + currentChar + '_' + getWeekKey(); }
+function loadBossKills()     { return JSON.parse(localStorage.getItem(bossKey()) || '{}'); }
+function saveBossKills(b)    { localStorage.setItem(bossKey(), JSON.stringify(b)); }
+
+function toggleBoss(taskId, bossId) {
+  const kills = loadBossKills();
+  const k = taskId + '_' + bossId;
+  kills[k] = !kills[k];
+  saveBossKills(kills);
+
+  // Auto-check task if all bosses killed; auto-uncheck if any unchecked
+  const task = SECTIONS.flatMap(s => s.tasks).find(t => t.id === taskId);
+  if (task && task.bosses) {
+    const allKilled = task.bosses.every(b => kills[taskId + '_' + b.id]);
+    const done = loadDone();
+    if (allKilled) done[taskId] = true;
+    else delete done[taskId];
+    saveDone(done);
+  }
+  render();
+}
+
 function goalsKey()          { return 'wow_mn_goals_' + currentChar + '_' + getWeekKey(); }
 function loadGoals()         { return JSON.parse(localStorage.getItem(goalsKey()) || '{}'); }
 function saveGoals(g)        { localStorage.setItem(goalsKey(), JSON.stringify(g)); }
@@ -715,6 +846,22 @@ let revealHidden    = false;
 let editingYourList = false;
 let isCompact       = localStorage.getItem('wow_mn_compact') === 'true';
 let isLightMode     = localStorage.getItem('wow_mn_theme') === 'light';
+let searchQuery     = '';
+
+function onSearchInput(val) {
+  searchQuery = val.trim().toLowerCase();
+  document.getElementById('search-clear-btn').style.display = searchQuery ? '' : 'none';
+  render();
+}
+
+function clearSearch() {
+  searchQuery = '';
+  const inp = document.getElementById('task-search');
+  if (inp) inp.value = '';
+  document.getElementById('search-clear-btn').style.display = 'none';
+  document.getElementById('search-result-count').textContent = '';
+  render();
+}
 
 if (isCompact)   document.body.classList.add('compact-mode');
 if (isLightMode) { document.body.classList.add('light-mode'); }
@@ -737,11 +884,30 @@ function tagLabel(cls) {
   return m[cls] || cls;
 }
 
+function highlightMatch(text, query) {
+  if (!query || !text) return text || '';
+  const idx = text.toLowerCase().indexOf(query);
+  if (idx === -1) return text;
+  return text.slice(0, idx)
+    + `<span class="search-highlight">${text.slice(idx, idx + query.length)}</span>`
+    + highlightMatch(text.slice(idx + query.length), query);
+}
+
+function updateSearchResultCount(matched, total) {
+  const el = document.getElementById('search-result-count');
+  if (!el) return;
+  if (!searchQuery) { el.textContent = ''; el.className = 'search-result-count'; return; }
+  if (matched === 0) { el.textContent = 'No results'; el.className = 'search-result-count no-results'; return; }
+  el.textContent = `${matched} of ${total} tasks`;
+  el.className = 'search-result-count has-results';
+}
+
 function render() {
   const done      = loadDone();
   const hidden    = loadHidden();
   const yourList  = new Set(loadYourList());
   const notes     = loadNotes();
+  const bossKills = loadBossKills();
   const container = document.getElementById('sections-container');
   container.innerHTML = '';
   let totalVisible = 0, totalDone = 0, lastPriority = null;
@@ -750,7 +916,7 @@ function render() {
   // ── YOUR LIST VIEW ──────────────────────────────────────
   if (activeFilters.has('yourlist') && !editingYourList) {
     const editBtn = document.getElementById('btn-edit-yourlist');
-    editBtn.style.visibility = 'visible';
+    editBtn.style.display = '';
     editBtn.textContent = '⭐ Edit List';
 
     // Gather all tasks from SECTIONS that are in the list
@@ -764,18 +930,31 @@ function render() {
       if (yourList.has('custom_' + t.id)) selected.push({ ...t, id: 'custom_' + t.id, sectionTitle: 'Custom', sectionIcon: '✦' });
     });
 
-    if (selected.length === 0) {
-      container.innerHTML = `
-        <div class="yourlist-empty">
-          <div style="font-size:2rem;margin-bottom:0.5rem;">⭐</div>
-          Your list is empty.<br>
-          <span style="font-size:13px;margin-top:0.4rem;display:block;">Click <strong style="font-style:normal;color:var(--light-gold);">⭐ Edit List</strong> in the toolbar above to pick tasks from the master list.</span>
-        </div>`;
+    // Apply search filter
+    const matchesSearch = t => {
+      if (!searchQuery) return true;
+      return (t.name || '').toLowerCase().includes(searchQuery) ||
+             (t.desc || '').toLowerCase().includes(searchQuery) ||
+             (t.sectionTitle || '').toLowerCase().includes(searchQuery);
+    };
+    const filteredSelected = selected.filter(matchesSearch);
+
+    if (filteredSelected.length === 0) {
+      container.innerHTML = selected.length === 0
+        ? `<div class="yourlist-empty">
+            <div style="font-size:2rem;margin-bottom:0.5rem;">⭐</div>
+            Your list is empty.<br>
+            <span style="font-size:13px;margin-top:0.4rem;display:block;">Click <strong style="font-style:normal;color:var(--light-gold);">⭐ Edit List</strong> in the toolbar above to pick tasks from the master list.</span>
+          </div>`
+        : `<div class="yourlist-empty">
+            <div style="font-size:2rem;margin-bottom:0.5rem;">🔍</div>
+            No tasks match <strong style="color:var(--void-glow);">"${searchQuery}"</strong>
+          </div>`;
     } else {
       // Apply saved order, then sort done to bottom
       const order = loadYourListOrder();
       const goals = loadGoals();
-      const sorted = [...selected].sort((a, b) => {
+      const sorted = [...filteredSelected].sort((a, b) => {
         const ai = order.indexOf(a.id), bi = order.indexOf(b.id);
         const aPos = ai === -1 ? 999 : ai;
         const bPos = bi === -1 ? 999 : bi;
@@ -785,8 +964,8 @@ function render() {
         return aPos - bPos;
       });
 
-      totalVisible = sorted.length;
-      totalDone    = sorted.filter(t => done[t.id]).length;
+      totalVisible = filteredSelected.length;
+      totalDone    = filteredSelected.filter(t => done[t.id]).length;
 
       const body = document.createElement('div');
       body.className = 'section-body';
@@ -820,8 +999,8 @@ function render() {
             <div class="yl-drag-handle" onclick="event.stopPropagation()" title="Drag to reorder">⠿</div>
             <div class="task-check" onclick="event.stopPropagation();toggle('${t.id}',this)" style="cursor:pointer;"></div>
             <div class="task-body">
-              <div class="task-name">${t.name}</div>
-              ${t.desc?`<div class="task-desc">${t.desc}</div>`:''}
+              <div class="task-name">${highlightMatch(t.name, searchQuery)}</div>
+              ${t.desc?`<div class="task-desc">${highlightMatch(t.desc, searchQuery)}</div>`:''}
               ${milestoneNote ? `<div class="milestone-note">${milestoneNote}</div>` : ''}
               <div class="task-tags" style="margin-top:0.35rem;">
                 <span class="tag" style="background:rgba(201,168,76,0.1);color:var(--light-gold);border-color:rgba(201,168,76,0.25);font-size:10px;">${t.sectionIcon} ${t.sectionTitle}</span>
@@ -842,7 +1021,8 @@ function render() {
     const pct = totalVisible ? Math.round((totalDone / totalVisible) * 100) : 0;
     document.getElementById('prog-fill').style.width = pct + '%';
     document.getElementById('prog-label').textContent = totalDone + ' / ' + totalVisible + ' done';
-    document.getElementById('btn-reveal').style.visibility = 'hidden';
+    document.getElementById('btn-reveal').style.display = 'none';
+    updateSearchResultCount(filteredSelected.length, selected.length);
     return;
   }
 
@@ -859,6 +1039,8 @@ function render() {
     container.appendChild(editBar);
   }
 
+  let searchMatchTotal = 0, searchTotal = 0;
+
   SECTIONS.forEach(sec => {
     const isAll = activeFilters.has('all');
     const tasks = sec.tasks.filter(t => {
@@ -867,9 +1049,24 @@ function render() {
     });
     if (!tasks.length) return;
 
-    const visibleTasks = tasks.filter(t => revealHidden || !hidden[t.id]);
+    // Apply search filter
+    const matchesSearch = t => {
+      if (!searchQuery) return true;
+      return (t.name || '').toLowerCase().includes(searchQuery) ||
+             (t.desc || '').toLowerCase().includes(searchQuery) ||
+             sec.title.toLowerCase().includes(searchQuery);
+    };
+
+    const visibleTasks = tasks.filter(t => (revealHidden || !hidden[t.id]) && matchesSearch(t));
     const hiddenCount  = tasks.filter(t => hidden[t.id]).length;
     if (hiddenCount > 0) anyHidden = true;
+
+    if (searchQuery) {
+      searchTotal   += tasks.filter(t => !hidden[t.id]).length;
+      searchMatchTotal += visibleTasks.filter(t => !hidden[t.id]).length;
+    }
+
+    if (!visibleTasks.length) return; // skip section if nothing matches
 
     if (isAll && sec.priority !== lastPriority) {
       lastPriority = sec.priority;
@@ -883,7 +1080,8 @@ function render() {
     totalVisible += visibleTasks.filter(t => !hidden[t.id]).length;
     const secDone = visibleTasks.filter(t => done[t.id] && !hidden[t.id]).length;
     totalDone += secDone;
-    const isOpen = !collapsed[sec.id];
+    // Auto-expand sections that have matching tasks when searching
+    const isOpen = searchQuery ? true : !collapsed[sec.id];
     const isSectionHidden = hidden['section_' + sec.id];
     if (isSectionHidden) anyHidden = true;
 
@@ -923,13 +1121,25 @@ function render() {
         <span class="chevron" style="transform:rotate(${isOpen?'0':'-90'}deg)">▼</span>
       </div>
       <div class="section-body${isOpen?'':' hidden'}" id="body-${sec.id}">
-        ${visibleTasks.map(t => `
+        ${visibleTasks.map(t => {
+          const bossHtml = (t.bosses && !editingYourList) ? `
+            <div class="boss-bubbles">
+              ${t.diff ? `<span class="diff-badge diff-${t.diff.toLowerCase()}">${t.diff}</span>` : ''}
+              ${t.bosses.map(b => {
+                const killed = !!bossKills[t.id + '_' + b.id];
+                return `<button class="boss-bubble${killed?' killed':''}" title="${b.name} — click to mark killed\n${b.url?'Right-click → open guide':'Ctrl+click to open guide'}" onclick="event.stopPropagation();toggleBoss('${t.id}','${b.id}')" oncontextmenu="event.preventDefault();window.open('${b.url}','_blank')">${b.name}</button>`;
+              }).join('')}
+            </div>` : '';
+          const hn = highlightMatch(t.name, searchQuery);
+          const hd = t.desc ? highlightMatch(t.desc, searchQuery) : '';
+          return `
           <div class="task${done[t.id]?' done':''}${hidden[t.id]?' task-hidden':''}${yourList.has(t.id)?' in-yourlist':''}" >
             <div class="task-check" onclick="event.stopPropagation();${editingYourList ? `toggleYourListTask('${t.id}')` : `toggle('${t.id}',this)`}" style="cursor:pointer;"></div>
             <div class="task-body">
-              <div class="task-name">${t.name}</div>
-              ${t.desc?`<div class="task-desc">${t.desc}</div>`:''}
+              <div class="task-name">${hn}</div>
+              ${hd?`<div class="task-desc">${hd}</div>`:''}
               ${t.tags&&t.tags.length?`<div class="task-tags">${t.tags.map(tg=>`<span class="tag ${tg}">${tagLabel(tg)}</span>`).join('')}</div>`:''}
+              ${bossHtml}
               ${!editingYourList ? noteHtml(t.id, notes) : ''}
             </div>
             ${editingYourList
@@ -939,7 +1149,8 @@ function render() {
                   <button class="task-hide" title="${hidden[t.id]?'Unhide task':'Hide task'}" onclick="toggleHideTask(event,'${t.id}')">${hidden[t.id]?'👁':'🚫'}</button>
                 </div>`
             }
-          </div>`).join('')}
+          </div>`;
+        }).join('')}
       </div>`;
     container.appendChild(div);
   });
@@ -948,20 +1159,22 @@ function render() {
   document.getElementById('prog-fill').style.width = pct + '%';
   document.getElementById('prog-label').textContent = totalDone + ' / ' + totalVisible + ' done';
 
+  updateSearchResultCount(searchMatchTotal, searchTotal);
+
   // Show/update the reveal hidden button
   const revealBtn = document.getElementById('btn-reveal');
-  revealBtn.style.visibility = (anyHidden || revealHidden) ? 'visible' : 'hidden';
+  revealBtn.style.display = (anyHidden || revealHidden) ? '' : 'none';
   revealBtn.textContent = revealHidden ? '🚫 Hide Hidden' : '👁 Show Hidden';
 
   // Show Edit List button only when on Your List tab or editing
   const editBtn = document.getElementById('btn-edit-yourlist');
-  const showEditBtn = activeFilters.has('yourlist') || editingYourList;
-  editBtn.style.visibility = showEditBtn ? 'visible' : 'hidden';
-  editBtn.textContent = editingYourList ? '✓ Done Editing' : '⭐ Edit List';
+  const showEditBtn = activeFilters.has('yourlist') && !editingYourList;
+  editBtn.style.display = showEditBtn ? '' : 'none';
+  editBtn.textContent = '⭐ Edit List';
 
   // Show Apply to All only on Your List tab when not editing and list has items
   const applyBtn = document.getElementById('btn-yourlist-allchars');
-  applyBtn.style.visibility = (activeFilters.has('yourlist') && !editingYourList && loadYourList().length > 0) ? 'visible' : 'hidden';
+  applyBtn.style.display = (activeFilters.has('yourlist') && !editingYourList && loadYourList().length > 0) ? '' : 'none';
 
   renderCustomSection();
 }
@@ -1273,7 +1486,9 @@ function resetAll() {
   if (!confirm('Reset all tasks for ' + currentChar + ' this week?')) return;
   // Save a history snapshot before clearing
   snapshotWeekForChar(currentChar, getWeekKey());
-  localStorage.removeItem(storageKey()); render();
+  localStorage.removeItem(storageKey());
+  localStorage.removeItem(bossKey());
+  render();
 }
 function setFilter(f, btn) {
   if (f === 'all') {

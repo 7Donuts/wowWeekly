@@ -145,6 +145,21 @@
 <script>
 const VERSIONS = [
   {
+    version: 'v1.5',
+    date: 'May 14, 2026',
+    summary: 'Raid boss tracking, task search, mobile fixes, button polish',
+    entries: [
+      { type: 'new',     text: 'Raid boss bubble tracker — all three Season 1 raids with per-difficulty boss kill tracking', detail: 'The Dreamrift (1 boss), The Voidspire (6 bosses), and March on Quel\'Danas (2 bosses) each have LFR / Normal / Heroic / Mythic rows. Click a boss bubble to mark it killed. Task auto-checks when all bosses are cleared. Right-click any bubble to open its Icy Veins guide. Boss kills reset weekly with task progress.' },
+      { type: 'new',     text: 'Difficulty badges — LFR (purple), Normal (green), Heroic (blue), Mythic (gold) — matching in-game color language', detail: '' },
+      { type: 'new',     text: 'Task search bar — live search across all tabs including Your List', detail: 'Searches task name, description, and section title. Sections with no matches are hidden. Sections with matches auto-expand. Matched text highlighted in purple. Result count shown ("12 of 47 tasks"). Escape clears search. Boss bubbles hidden in compact mode.' },
+      { type: 'fix',     text: 'Conditional toolbar buttons (Show Hidden, Edit List, Apply to All) no longer push other buttons off-screen', detail: 'Switched from visibility:hidden (holds space) to display:none (takes no space). Wrapped in a display:contents group so the flex row gap remains consistent.' },
+      { type: 'fix',     text: 'Edit List button hidden while in edit mode — the inline Done button handles exiting, no duplicate control needed', detail: '' },
+      { type: 'fix',     text: 'Mobile layout — reset bar now stacks properly on narrow screens', detail: 'Progress bar stretches to fill width. Buttons wrap into rows. Invisible conditional buttons use display:none so they leave no ghost gaps on mobile.' },
+      { type: 'fix',     text: 'History stat boxes moved to right side of history strip, sparkline bars on the left', detail: '' },
+      { type: 'improve', text: 'Raid section rebuilt from scratch — replaced 5 generic tasks with 12 targeted rows (3 raids × 4 difficulties) plus the Bazaar weekly quest', detail: 'Old tasks: LFR Wings 1–3, Normal/Heroic, Bazaar quest. New tasks: per-raid per-difficulty rows with full boss lists sourced from Icy Veins.' },
+    ]
+  },
+  {
     version: 'v1.4',
     date: 'May 14, 2026',
     summary: 'Dashboard redesign, inline history, alt overview',
