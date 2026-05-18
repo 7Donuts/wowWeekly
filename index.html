@@ -40,6 +40,7 @@
       <div class="reset-bar-btns">
         <button class="btn-reset-all" id="btn-theme" onclick="toggleTheme()" title="Toggle dark/light mode">☀️ Light</button>
         <button class="btn-reset-all" id="btn-compact" onclick="toggleCompact()" title="Toggle compact view">⊟ Compact</button>
+        <button class="btn-reset-all" id="btn-last-chance" onclick="toggleLastChance()" title="Show only incomplete tasks — activates automatically under 6 hours to reset">⚡ Last Chance</button>
         <button class="btn-reset-all" id="btn-whats-next" onclick="whatsNext()" title="Randomly pick an uncompleted task from Your List">🎲 What's Next?</button>
         <button class="btn-reset-all" onclick="openSummary()">📊 Summary</button>
         <button class="btn-reset-all" onclick="resetAll()">↺ Reset Week</button>
@@ -168,6 +169,17 @@
     <h3 id="data-modal-title">Character Data</h3>
     <div id="data-modal-content"></div>
     <div class="modal-btns" style="margin-top:1.25rem;" id="data-modal-btns"></div>
+  </div>
+</div>
+
+<!-- TEMPLATE PROFILES MODAL -->
+<div class="modal-overlay" id="modal-profiles">
+  <div class="modal" style="width:560px;max-width:95vw;">
+    <h3>🗂️ Template Profiles</h3>
+    <div id="profiles-modal-content"></div>
+    <div class="modal-btns" style="margin-top:1.25rem;">
+      <button class="btn-cancel" onclick="closeProfilesModal()">Close</button>
+    </div>
   </div>
 </div>
 
