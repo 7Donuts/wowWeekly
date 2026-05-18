@@ -95,22 +95,37 @@ function snapshotWeekForChar(charName, weekKey) {
   const hidden  = JSON.parse(localStorage.getItem('wow_mn_hidden_' + charName) || '{}');
   const custom  = JSON.parse(localStorage.getItem('wow_mn_custom_' + charName) || '[]');
   let total = 0, completed = 0;
+  const sections = {};
   SECTIONS.forEach(sec => {
+    let secTotal = 0, secDone = 0;
     sec.tasks.filter(t => !hidden[t.id]).forEach(t => {
-      total++;
-      if (done[t.id]) completed++;
+      total++; secTotal++;
+      if (done[t.id]) { completed++; secDone++; }
     });
+    if (secTotal > 0) sections[sec.id] = { done: secDone, total: secTotal, title: sec.title };
   });
-  custom.forEach(t => { total++; if (done['custom_' + t.id]) completed++; });
+  if (custom.length) {
+    let cTotal = 0, cDone = 0;
+    custom.forEach(t => {
+      total++; cTotal++;
+      if (done['custom_' + t.id]) { completed++; cDone++; }
+    });
+    sections['custom'] = { done: cDone, total: cTotal, title: 'Custom Tasks' };
+  }
   if (total === 0) return; // nothing to record
   const history = loadHistory(charName);
   // Avoid duplicate entries for same week
   if (!history.find(e => e.week === weekKey)) {
-    history.unshift({ week: weekKey, done: completed, total });
+    history.unshift({ week: weekKey, done: completed, total, sections });
     if (history.length > 52) history.pop(); // keep ~1 year
     saveHistory(history, charName);
   }
 }
+
+/* ── TEMPLATE PROFILES ── */
+function profilesKey()       { return 'wow_mn_profiles'; }
+function loadProfiles()      { return JSON.parse(localStorage.getItem(profilesKey()) || '[]'); }
+function saveProfiles(p)     { localStorage.setItem(profilesKey(), JSON.stringify(p)); }
 
 
 function customStorageKey() { return 'wow_mn_custom_' + currentChar; }

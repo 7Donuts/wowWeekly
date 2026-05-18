@@ -102,18 +102,28 @@ function snapshotWeekForChar(charName, weekKey) {
   const hidden  = JSON.parse(localStorage.getItem('wow_mn_hidden_' + charName) || '{}');
   const custom  = JSON.parse(localStorage.getItem('wow_mn_custom_' + charName) || '[]');
   let total = 0, completed = 0;
+  const sections = {};
   SECTIONS.forEach(sec => {
+    let secTotal = 0, secDone = 0;
     sec.tasks.filter(t => !hidden[t.id]).forEach(t => {
-      total++;
-      if (done[t.id]) completed++;
+      total++; secTotal++;
+      if (done[t.id]) { completed++; secDone++; }
     });
+    if (secTotal > 0) sections[sec.id] = { done: secDone, total: secTotal, title: sec.title };
   });
-  custom.forEach(t => { total++; if (done['custom_' + t.id]) completed++; });
+  if (custom.length) {
+    let cTotal = 0, cDone = 0;
+    custom.forEach(t => {
+      total++; cTotal++;
+      if (done['custom_' + t.id]) { completed++; cDone++; }
+    });
+    sections['custom'] = { done: cDone, total: cTotal, title: 'Custom Tasks' };
+  }
   if (total === 0) return; // nothing to record
   const history = loadHistory(charName);
   // Avoid duplicate entries for same week
   if (!history.find(e => e.week === weekKey)) {
-    history.unshift({ week: weekKey, done: completed, total });
+    history.unshift({ week: weekKey, done: completed, total, sections });
     if (history.length > 52) history.pop(); // keep ~1 year
     saveHistory(history, charName);
   }
@@ -123,6 +133,11 @@ function snapshotWeekForChar(charName, weekKey) {
 function customStorageKey() { return 'wow_mn_custom_' + currentChar; }
 function loadCustomTasks()  { return JSON.parse(localStorage.getItem(customStorageKey()) || '[]'); }
 function saveCustomTasks(t) { localStorage.setItem(customStorageKey(), JSON.stringify(t)); }
+
+/* ── TEMPLATE PROFILES ── */
+function profilesKey()   { return 'wow_mn_profiles'; }
+function loadProfiles()  { return JSON.parse(localStorage.getItem(profilesKey()) || '[]'); }
+function saveProfiles(p) { localStorage.setItem(profilesKey(), JSON.stringify(p)); }
 
 /* ═══════════════════════════════════════════
    APP STATE — global mutable state for the
@@ -139,6 +154,7 @@ let revealHidden    = false;
 let editingYourList = false;
 let yourListGrouped = localStorage.getItem('wow_mn_yl_grouped') !== 'false'; // default grouped
 let searchQuery     = '';
+let lastChanceMode  = false; // session-only urgency mode
 
 function onSearchInput(val) {
   searchQuery = val.trim().toLowerCase();
@@ -380,6 +396,9 @@ function render() {
   let totalVisible = 0, totalDone = 0, lastPriority = null;
   let anyHidden = false;
 
+  // Refresh Last Chance banner remaining count on every render
+  if (lastChanceMode) renderLastChanceBanner();
+
   // ── YOUR LIST VIEW (normal + edit-on-yourlist) ──────────────
   if (activeFilters.has('yourlist')) {
     const editBtn = document.getElementById('btn-edit-yourlist');
@@ -554,7 +573,11 @@ function buildEditBar() {
              sec.title.toLowerCase().includes(searchQuery);
     };
 
-    const visibleTasks = tasks.filter(t => (revealHidden || !hidden[t.id]) && matchesSearch(t));
+    const visibleTasks = tasks.filter(t => {
+      if (!revealHidden && hidden[t.id]) return false;
+      if (lastChanceMode && done[t.id]) return false; // hide completed in Last Chance Mode
+      return matchesSearch(t);
+    });
     const hiddenCount  = tasks.filter(t => hidden[t.id]).length;
     if (hiddenCount > 0) anyHidden = true;
 
@@ -949,6 +972,65 @@ function updateCountdown() {
   const s = Math.floor((diff%60000)/1000);
   document.getElementById('countdown').textContent =
     (d>0?d+'d ':'')+String(h).padStart(2,'0')+'h '+String(m).padStart(2,'0')+'m '+String(s).padStart(2,'0')+'s';
+
+  // Auto-enable Last Chance Mode when < 6 hours remain
+  const sixHours = 6 * 3600 * 1000;
+  if (!lastChanceMode && diff < sixHours) {
+    lastChanceMode = true;
+    renderLastChanceBanner();
+    updateLastChanceBtn();
+  }
+}
+
+/* ── LAST CHANCE MODE ── */
+function toggleLastChance() {
+  lastChanceMode = !lastChanceMode;
+  renderLastChanceBanner();
+  updateLastChanceBtn();
+  render();
+}
+
+function updateLastChanceBtn() {
+  const btn = document.getElementById('btn-last-chance');
+  if (!btn) return;
+  if (lastChanceMode) {
+    btn.textContent = '🔴 Last Chance ON';
+    btn.style.color        = '#e07068';
+    btn.style.borderColor  = 'rgba(192,83,74,0.5)';
+    btn.style.background   = 'rgba(192,83,74,0.08)';
+  } else {
+    btn.textContent = '⚡ Last Chance';
+    btn.style.color        = '';
+    btn.style.borderColor  = '';
+    btn.style.background   = '';
+  }
+}
+
+function renderLastChanceBanner() {
+  let banner = document.getElementById('last-chance-banner');
+  if (!lastChanceMode) {
+    if (banner) banner.remove();
+    return;
+  }
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'last-chance-banner';
+    banner.className = 'last-chance-banner';
+    // Insert below reset-bar
+    const resetBar = document.querySelector('.reset-bar');
+    if (resetBar && resetBar.parentNode) {
+      resetBar.parentNode.insertBefore(banner, resetBar.nextSibling);
+    }
+  }
+  const done    = loadDone();
+  const hidden  = loadHidden();
+  let remaining = 0;
+  SECTIONS.forEach(sec => sec.tasks.filter(t => !hidden[t.id] && !done[t.id]).forEach(() => remaining++));
+  loadCustomTasks().forEach(t => { if (!done['custom_' + t.id]) remaining++; });
+  banner.innerHTML = '<span class="lc-pulse">⚡</span>'
+    + '<span class="lc-text">Last Chance Mode — showing only uncompleted tasks</span>'
+    + '<span class="lc-count">' + remaining + ' remaining</span>'
+    + '<button class="lc-close" onclick="toggleLastChance()" title="Exit Last Chance Mode">✕</button>';
 }
 
 /* ═══════════════════════════════════════════
@@ -1133,6 +1215,7 @@ function renderSummaryTab(tab) {
     <div class="summary-tabs">
       <button class="summary-tab${tab==='current'?' active':''}" onclick="renderSummaryTab('current')">📊 ${currentChar}</button>
       <button class="summary-tab${tab==='alts'?' active':''}" onclick="renderSummaryTab('alts')">👥 All Alts</button>
+      <button class="summary-tab" onclick="renderEfficiencyTab()">📈 Efficiency</button>
     </div>`;
 
   if (tab === 'current') {
@@ -1287,6 +1370,13 @@ function openExportImport() {
       <div class="data-option-body">
         <div class="data-option-title">Export All Characters</div>
         <div class="data-option-desc">Download every character's data as a single backup JSON file.</div>
+      </div>
+    </div>
+    <div class="data-option" onclick="closeDataModal();openProfilesModal()">
+      <div class="data-option-icon">🗂️</div>
+      <div class="data-option-body">
+        <div class="data-option-title">Template Profiles</div>
+        <div class="data-option-desc">Save and apply named configurations (Your List + hidden settings) across characters.</div>
       </div>
     </div>`;
   modal.classList.add('open');
@@ -1615,6 +1705,180 @@ function renderInlineHistory() {
     </div>`;
 }
 
+/* ═══════════════════════════════════════════
+   TEMPLATE PROFILES
+   Captures Your List + hidden tasks/sections
+   into a named, reusable configuration.
+═══════════════════════════════════════════ */
+function openProfilesModal() {
+  document.getElementById('modal-profiles').classList.add('open');
+  renderProfilesModal();
+}
+function closeProfilesModal() {
+  document.getElementById('modal-profiles').classList.remove('open');
+}
+
+function renderProfilesModal() {
+  const profiles = loadProfiles();
+  const content  = document.getElementById('profiles-modal-content');
+  const saveArea = '<div class="profile-save-row">'
+    + '<input type="text" id="profile-name-input" class="profile-name-input" placeholder="Profile name…" maxlength="40" onkeydown="if(event.key===\'Enter\')saveCurrentProfile()">'
+    + '<button class="btn-primary" style="font-size:12px;padding:0.4rem 1rem;" onclick="saveCurrentProfile()">💾 Save Current</button>'
+    + '</div>';
+
+  let listHtml = '';
+  if (profiles.length === 0) {
+    listHtml = '<div class="profile-empty">No profiles saved yet.<br><span style="font-size:12px;color:var(--text-muted)">Save your current Your List + hidden settings as a named profile to reuse on any character.</span></div>';
+  } else {
+    listHtml = profiles.map((p, i) => {
+      const taskCount  = (p.yourList || []).length;
+      const hiddenCount = Object.keys(p.hidden || {}).length;
+      const saved      = new Date(p.savedAt).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+      return '<div class="profile-row">'
+        + '<div class="profile-row-info">'
+        + '<div class="profile-row-name">' + escHtml(p.name) + '</div>'
+        + '<div class="profile-row-meta">' + taskCount + ' tasks · ' + hiddenCount + ' hidden · Saved ' + saved + '</div>'
+        + '</div>'
+        + '<div class="profile-row-btns">'
+        + '<button class="btn-profile-apply" onclick="applyProfile(' + i + ')" title="Apply to current character">Apply</button>'
+        + '<button class="btn-profile-del" onclick="deleteProfile(' + i + ')" title="Delete profile">✕</button>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+  }
+
+  content.innerHTML = saveArea
+    + '<div class="profile-desc">Profiles capture Your List selection and hidden tasks/sections. They do not include weekly completion progress.</div>'
+    + '<div class="profiles-list">' + listHtml + '</div>';
+}
+
+function saveCurrentProfile() {
+  const nameInput = document.getElementById('profile-name-input');
+  const name = nameInput ? nameInput.value.trim() : '';
+  if (!name) { if (nameInput) nameInput.focus(); return; }
+  const profiles = loadProfiles();
+  const existing = profiles.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
+  const profile = {
+    name,
+    savedAt:  new Date().toISOString(),
+    yourList: loadYourList(),
+    hidden:   loadHidden(),
+  };
+  if (existing !== -1) {
+    if (!confirm('A profile named "' + name + '" already exists. Overwrite it?')) return;
+    profiles[existing] = profile;
+  } else {
+    profiles.unshift(profile);
+  }
+  saveProfiles(profiles);
+  if (nameInput) nameInput.value = '';
+  renderProfilesModal();
+}
+
+function applyProfile(idx) {
+  const profiles = loadProfiles();
+  const p = profiles[idx];
+  if (!p) return;
+  if (!confirm('Apply profile "' + p.name + '" to ' + currentChar + '? This will replace their current Your List and hidden settings.')) return;
+  saveYourList(p.yourList || []);
+  saveHidden(p.hidden || {});
+  closeProfilesModal();
+  render();
+}
+
+function deleteProfile(idx) {
+  const profiles = loadProfiles();
+  if (!confirm('Delete profile "' + (profiles[idx] || {}).name + '"?')) return;
+  profiles.splice(idx, 1);
+  saveProfiles(profiles);
+  renderProfilesModal();
+}
+
+
+/* ═══════════════════════════════════════════
+   PER-SECTION EFFICIENCY SCORE
+   Reads historical snapshots to compute how
+   consistently each section gets completed.
+═══════════════════════════════════════════ */
+function renderEfficiencyTab() {
+  const history = loadHistory(currentChar);
+  const content = document.getElementById('summary-content');
+  const week    = getWeekKey();
+  const d       = new Date(week + 'T15:00:00Z');
+  const weekLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+
+  const tabBar = '<div class="summary-tabs">'
+    + '<button class="summary-tab" onclick="renderSummaryTab(\'current\')">📊 ' + currentChar + '</button>'
+    + '<button class="summary-tab" onclick="renderSummaryTab(\'alts\')">👥 All Alts</button>'
+    + '<button class="summary-tab active" onclick="renderEfficiencyTab()">📈 Efficiency</button>'
+    + '</div>';
+
+  // Gather per-section stats from history entries that have section data
+  const sectionStats = {}; // { secId: { title, appearances, totalDone, totalTasks } }
+  const weeksWithData = history.filter(e => e.sections);
+
+  weeksWithData.forEach(e => {
+    Object.entries(e.sections).forEach(([secId, s]) => {
+      if (!sectionStats[secId]) sectionStats[secId] = { title: s.title, appearances: 0, totalDone: 0, totalTasks: 0 };
+      sectionStats[secId].appearances++;
+      sectionStats[secId].totalDone  += s.done;
+      sectionStats[secId].totalTasks += s.total;
+    });
+  });
+
+  const rows = Object.entries(sectionStats).map(([id, s]) => {
+    const rate    = s.totalTasks ? (s.totalDone / s.totalTasks) : 0;
+    const pct     = Math.round(rate * 100);
+    const secDef  = SECTIONS.find(sec => sec.id === id);
+    const icon    = secDef ? secDef.icon : '✦';
+    const iconCls = secDef ? secDef.iconClass : 'icon-optional';
+    // Trend: compare last 3 weeks vs prior 3 weeks
+    const recent  = weeksWithData.slice(0, 3).filter(e => e.sections && e.sections[id]);
+    const older   = weeksWithData.slice(3, 6).filter(e => e.sections && e.sections[id]);
+    let trend = '';
+    if (recent.length >= 2 && older.length >= 1) {
+      const rAvg = recent.reduce((a, e) => a + (e.sections[id].done / e.sections[id].total), 0) / recent.length;
+      const oAvg = older.reduce((a, e) => a + (e.sections[id].done / e.sections[id].total), 0) / older.length;
+      if (rAvg - oAvg > 0.15)       trend = '<span class="eff-trend up" title="Improving">↑</span>';
+      else if (oAvg - rAvg > 0.15)  trend = '<span class="eff-trend down" title="Declining">↓</span>';
+      else                           trend = '<span class="eff-trend flat" title="Steady">→</span>';
+    }
+    // Nudge for consistently skipped sections
+    const skipNudge = (s.appearances >= 3 && pct < 25)
+      ? '<div class="eff-nudge">Skipped most weeks — consider hiding this section if it\'s not relevant.</div>' : '';
+    return { id, title: s.title, icon, iconCls, pct, appearances: s.appearances, trend, skipNudge };
+  }).sort((a, b) => b.pct - a.pct);
+
+  if (weeksWithData.length === 0) {
+    content.innerHTML = tabBar + '<div class="profile-empty" style="margin-top:1rem;">No section history yet.<br><span style="font-size:12px;color:var(--text-muted);">Efficiency scores build up over multiple weeks. Complete your first reset to start tracking.</span></div>';
+    return;
+  }
+
+  const rowsHtml = rows.map(r => {
+    const barColor = r.pct >= 80 ? 'var(--success-bright)'
+      : r.pct >= 50 ? 'var(--void-glow)'
+      : r.pct >= 25 ? 'var(--light-gold)'
+      : 'var(--void-purple)';
+    return '<div class="eff-row">'
+      + '<div class="section-icon ' + r.iconCls + '" style="width:22px;height:22px;font-size:11px;flex-shrink:0;">' + r.icon + '</div>'
+      + '<span class="summary-label" title="' + r.title + '">' + r.title + '</span>'
+      + r.trend
+      + '<div class="summary-bar-track">'
+      + '<div class="summary-bar-fill" style="width:' + r.pct + '%;background:' + barColor + ';"></div>'
+      + '</div>'
+      + '<span class="eff-pct" style="color:' + barColor + ';">' + r.pct + '%</span>'
+      + '<span class="eff-weeks">' + r.appearances + 'w</span>'
+      + '</div>'
+      + r.skipNudge;
+  }).join('');
+
+  content.innerHTML = tabBar
+    + '<div class="summary-week">Based on ' + weeksWithData.length + ' week' + (weeksWithData.length !== 1 ? 's' : '') + ' of data for ' + currentChar + ' · Week of ' + weekLabel + '</div>'
+    + '<div class="eff-legend"><span class="eff-trend up">↑</span> Improving &nbsp; <span class="eff-trend flat">→</span> Steady &nbsp; <span class="eff-trend down">↓</span> Declining</div>'
+    + rowsHtml;
+}
+
+
 /* ── BEGINNER PRESET ── */
 
 
@@ -1653,6 +1917,7 @@ function renderInlineEvent() {
 
 /* ── INIT ── */
 renderChars(); renderClassLinksBar(); render(); renderInlineHistory(); renderInlineEvent(); updateCountdown(); setInterval(updateCountdown, 1000);
+updateLastChanceBtn(); renderLastChanceBanner();
 
 // Sync toolbar button labels to persisted state
 document.getElementById('btn-theme').textContent   = isLightMode ? '🌙 Dark'   : '☀️ Light';
@@ -1665,7 +1930,7 @@ if (isCompact) {
 
 /* ---- Modal overlay close listeners ---- */
 document.addEventListener('DOMContentLoaded', function() {
-  ['modal','modal-custom','modal-summary','modal-data'].forEach(function(id) {
+  ['modal','modal-custom','modal-summary','modal-data','modal-profiles'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener('click', function(e) {
       if (e.target === el) el.classList.remove('open');
