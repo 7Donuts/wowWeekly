@@ -6,6 +6,19 @@
 ------------------------------------------- */
 const VERSIONS = [
   {
+    version: 'v1.7',
+    date: 'May 18, 2026',
+    summary: 'Template Profiles, Last Chance Mode, Section Efficiency Scores',
+    entries: [
+      { type: 'new',     text: 'Template Profiles — save and apply named configurations across characters', detail: 'Profiles capture Your List task selection and hidden tasks/sections. Accessible via ⇅ Data → Template Profiles. Save with any name, overwrite with confirmation, delete, or Apply to stamp onto any character. Metadata shows task count, hidden item count, and save date. Profiles are global — available to all characters.' },
+      { type: 'new',     text: '⚡ Last Chance Mode — urgency view that hides all completed tasks', detail: 'Shows only what still needs doing. Auto-activates when fewer than 6 hours remain until Tuesday reset. Can also be toggled manually at any time. Button lives in the bottom bar next to the history strip. Active state shown with red highlight. A dismissible banner tracks remaining task count, updating live as tasks are checked.' },
+      { type: 'new',     text: '📈 Efficiency Score tab in Summary modal — per-section completion rates across historical weeks', detail: 'Shows each section\'s average completion rate as a fill bar, a week sample count, and a trend arrow (↑ improving / → steady / ↓ declining) comparing last 3 weeks vs prior 3. Sections skipped most weeks surface a nudge suggesting you hide them. Graceful empty state until enough history accumulates.' },
+      { type: 'improve', text: 'Weekly history snapshots now store per-section breakdown', detail: 'Each history entry gains a sections map ({ done, total, title } per section). Used by the Efficiency tab. Backward compatible — older entries without section data are silently skipped.' },
+      { type: 'improve', text: 'Summary modal gains a third tab — Efficiency — alongside Current and All Alts', detail: '' },
+      { type: 'improve', text: 'Last Chance button uses a dedicated CSS class (.btn-last-chance / .active) rather than inline style overrides', detail: 'Cleaner DOM, consistent theming, and proper hover/active states in both light and dark mode.' },
+    ]
+  },
+  {
     version: 'v1.6',
     date: 'May 15, 2026',
     summary: 'New tasks, Your List overhaul, Event Calendar, grouped/flat view, Starter Guide',
