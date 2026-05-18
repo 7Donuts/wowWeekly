@@ -1817,9 +1817,34 @@ body.light-mode .ev-filter-btn.active  { background: rgba(100,68,170,0.12); }
 }
 
 
-/* ══════════════════════════════════════════════════
-   LAST CHANCE MODE BANNER
-══════════════════════════════════════════════════ */
+/* ── LAST CHANCE BUTTON (bottom bar, next to history) ── */
+.btn-last-chance {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  padding: 0.3rem 0.75rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-bright);
+  border-radius: 5px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: center;
+}
+.btn-last-chance:hover {
+  color: #e07068;
+  border-color: rgba(192,83,74,0.5);
+  background: rgba(192,83,74,0.07);
+}
+.btn-last-chance.active {
+  color: #e07068;
+  border-color: rgba(192,83,74,0.5);
+  background: rgba(192,83,74,0.1);
+}
+
+/* ── LAST CHANCE BANNER ── */
 .last-chance-banner {
   display: flex;
   align-items: center;
@@ -1861,135 +1886,3 @@ body.light-mode .ev-filter-btn.active  { background: rgba(100,68,170,0.12); }
   transition: all 0.15s;
 }
 .lc-close:hover { background: rgba(192,83,74,0.12); }
-
-/* ══════════════════════════════════════════════════
-   TEMPLATE PROFILES MODAL
-══════════════════════════════════════════════════ */
-.profile-save-row {
-  display: flex;
-  gap: 0.6rem;
-  align-items: center;
-  margin-bottom: 0.75rem;
-}
-.profile-name-input {
-  flex: 1;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-bright);
-  border-radius: 6px;
-  color: var(--text-primary);
-  font-family: 'Cinzel', serif;
-  font-size: 13px;
-  padding: 0.45rem 0.75rem;
-  outline: none;
-  transition: border-color 0.15s;
-}
-.profile-name-input:focus { border-color: var(--void-glow); }
-.profile-desc {
-  font-size: 13px;
-  color: var(--text-muted);
-  font-style: italic;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--border);
-}
-.profiles-list { display: flex; flex-direction: column; gap: 0.5rem; max-height: 320px; overflow-y: auto; }
-.profile-empty {
-  text-align: center;
-  padding: 2rem 1rem;
-  color: var(--text-secondary);
-  font-size: 15px;
-  line-height: 1.6;
-}
-.profile-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.65rem 0.9rem;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  transition: border-color 0.15s;
-}
-.profile-row:hover { border-color: var(--border-bright); }
-.profile-row-info { flex: 1; }
-.profile-row-name {
-  font-family: 'Cinzel', serif;
-  font-size: 14px;
-  color: var(--light-pale);
-  letter-spacing: 0.04em;
-}
-.profile-row-meta { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
-.profile-row-btns { display: flex; gap: 0.4rem; flex-shrink: 0; }
-.btn-profile-apply {
-  background: rgba(124,92,191,0.12);
-  border: 1px solid rgba(124,92,191,0.35);
-  border-radius: 4px;
-  color: var(--void-glow);
-  font-family: 'Cinzel', serif;
-  font-size: 11px;
-  padding: 3px 10px;
-  cursor: pointer;
-  transition: all 0.15s;
-  letter-spacing: 0.05em;
-}
-.btn-profile-apply:hover { background: rgba(124,92,191,0.22); }
-.btn-profile-del {
-  background: transparent;
-  border: 1px solid rgba(192,83,74,0.25);
-  border-radius: 4px;
-  color: #e07068;
-  font-size: 12px;
-  padding: 3px 8px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.btn-profile-del:hover { background: rgba(192,83,74,0.1); }
-
-/* ══════════════════════════════════════════════════
-   EFFICIENCY SCORE TAB
-══════════════════════════════════════════════════ */
-.eff-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
-}
-.eff-pct {
-  font-family: 'Cinzel', serif;
-  font-size: 12px;
-  min-width: 38px;
-  text-align: right;
-}
-.eff-weeks {
-  font-size: 11px;
-  color: var(--text-muted);
-  min-width: 22px;
-  text-align: right;
-  font-style: italic;
-}
-.eff-trend {
-  font-family: 'Cinzel', serif;
-  font-size: 13px;
-  font-weight: 700;
-  flex-shrink: 0;
-  min-width: 16px;
-}
-.eff-trend.up   { color: var(--success-bright); }
-.eff-trend.flat { color: var(--text-muted); }
-.eff-trend.down { color: #e07068; }
-.eff-nudge {
-  font-size: 12px;
-  color: var(--light-gold);
-  font-style: italic;
-  margin: -0.25rem 0 0.5rem 2.5rem;
-  padding-left: 0.5rem;
-  border-left: 2px solid rgba(201,168,76,0.3);
-}
-.eff-legend {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-bottom: 0.9rem;
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-}
