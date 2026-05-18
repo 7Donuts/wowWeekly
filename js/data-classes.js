@@ -65,7 +65,7 @@ function renderGroupPicker(selectedGroup) {
       + 'padding:4px 12px;border-radius:3px;cursor:pointer;transition:all 0.15s;'
       + 'border:1.5px solid ' + (active ? g.color : 'var(--border)') + ';'
       + 'background:' + (active ? g.color.replace(')', ',0.12)').replace('var(', 'var(') + '' : 'transparent') + ';'
-      + 'color:' + (active ? g.color : 'var(--text-secondary)') + ';'
+      + 'color:' + (active ? (isLightMode ? 'var(--text-primary)' : g.color) : 'var(--text-secondary)') + ';'
       + '">' + g.label + '</button>';
   }).join('');
 }
@@ -79,16 +79,18 @@ function renderClassPicker(selectedId) {
   _modalSelectedClass = selectedId || '';
   const container = document.getElementById('class-picker');
   if (!container) return;
-  container.innerHTML = CLASSES.map(c => `
-    <button onclick="selectClass('${c.id}')" style="
+  container.innerHTML = CLASSES.map(c => {
+    const isActive = _modalSelectedClass === c.id;
+    const textColor = isActive ? (isLightMode ? 'var(--text-primary)' : c.color) : 'var(--text-secondary)';
+    return `<button onclick="selectClass('${c.id}')" style="
       font-family:'Cinzel',serif; font-size:11px; letter-spacing:0.06em;
       padding:4px 9px; border-radius:4px; cursor:pointer;
-      border: 1.5px solid ${_modalSelectedClass === c.id ? c.color : 'rgba(255,255,255,0.1)'};
-      background: ${_modalSelectedClass === c.id ? c.color + '22' : 'transparent'};
-      color: ${_modalSelectedClass === c.id ? c.color : 'var(--text-secondary)'};
+      border: 1.5px solid ${isActive ? c.color : 'var(--border)'};
+      background: ${isActive ? c.color + '22' : 'transparent'};
+      color: ${textColor};
       transition: all 0.15s;
-    "><img src="${c.icon}" style="width:18px;height:18px;vertical-align:middle;margin-right:5px;image-rendering:auto;">${c.name}</button>
-  `).join('') +
+    "><img src="${c.icon}" style="width:18px;height:18px;vertical-align:middle;margin-right:5px;image-rendering:auto;">${c.name}</button>`;
+  }).join('') +
   `<button onclick="selectClass('')" style="
     font-family:'Cinzel',serif; font-size:11px; letter-spacing:0.06em;
     padding:4px 9px; border-radius:4px; cursor:pointer;
@@ -122,47 +124,56 @@ function renderClassLinksBar() {
   const b = parseInt(def.color.slice(5,7),16);
   const rgba = (a) => `rgba(${r},${g},${b},${a})`;
 
+  // In light mode, class colors like Priest #FFF are invisible on ivory — use CSS vars instead
+  const barBg     = isLightMode ? 'var(--bg-panel)'        : rgba(0.06);
+  const barBorder = isLightMode ? 'var(--border)'          : rgba(0.45);
+  const labelClr  = isLightMode ? 'var(--text-primary)'    : def.color;
+  const resClr    = isLightMode ? 'var(--text-muted)'      : rgba(0.5);
+  const linkClr   = isLightMode ? 'var(--text-primary)'    : def.color;
+  const linkBg    = isLightMode ? 'var(--bg-card)'         : rgba(0.1);
+  const linkBgHov = isLightMode ? 'var(--bg-card-hover)'   : rgba(0.2);
+
   bar.style.cssText = `
     display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;
     padding:0.6rem 0.9rem; margin-bottom:1.25rem;
-    background:${rgba(0.06)}; border:1px solid ${rgba(0.45)};
+    background:${barBg}; border:1px solid ${barBorder};
     border-radius:8px; font-size:13px;
   `;
   bar.innerHTML = `
-    <span style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.06em;color:${def.color};flex-shrink:0;">
+    <span style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.06em;color:${labelClr};flex-shrink:0;">
       <img src="${def.icon}" style="width:20px;height:20px;vertical-align:middle;margin-right:5px;image-rendering:auto;">${def.name}
     </span>
-    <span style="color:${rgba(0.5)};font-size:11px;">Resources:</span>
+    <span style="color:${resClr};font-size:11px;">Resources:</span>
     <a href="${icyUrl}" target="_blank" rel="noopener" style="
       font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.07em;
       padding:3px 10px; border-radius:4px; text-decoration:none;
-      border:1px solid ${rgba(0.45)}; color:${def.color};
-      background:${rgba(0.1)}; transition:all 0.2s;
-    " onmouseover="this.style.background='${rgba(0.2)}'" onmouseout="this.style.background='${rgba(0.1)}'">
+      border:1px solid ${barBorder}; color:${linkClr};
+      background:${linkBg}; transition:all 0.2s;
+    " onmouseover="this.style.background='${linkBgHov}'" onmouseout="this.style.background='${linkBg}'">
       📖 Icy Veins
     </a>
     <a href="${murlokUrl}" target="_blank" rel="noopener" style="
       font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.07em;
       padding:3px 10px; border-radius:4px; text-decoration:none;
-      border:1px solid ${rgba(0.45)}; color:${def.color};
-      background:${rgba(0.1)}; transition:all 0.2s;
-    " onmouseover="this.style.background='${rgba(0.2)}'" onmouseout="this.style.background='${rgba(0.1)}'">
+      border:1px solid ${barBorder}; color:${linkClr};
+      background:${linkBg}; transition:all 0.2s;
+    " onmouseover="this.style.background='${linkBgHov}'" onmouseout="this.style.background='${linkBg}'">
       📊 Murlok.io
     </a>
     <a href="${wowheadUrl}" target="_blank" rel="noopener" style="
       font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.07em;
       padding:3px 10px; border-radius:4px; text-decoration:none;
-      border:1px solid ${rgba(0.45)}; color:${def.color};
-      background:${rgba(0.1)}; transition:all 0.2s;
-    " onmouseover="this.style.background='${rgba(0.2)}'" onmouseout="this.style.background='${rgba(0.1)}'">
+      border:1px solid ${barBorder}; color:${linkClr};
+      background:${linkBg}; transition:all 0.2s;
+    " onmouseover="this.style.background='${linkBgHov}'" onmouseout="this.style.background='${linkBg}'">
       🔍 Wowhead
     </a>
     <a href="${blizzUrl}" target="_blank" rel="noopener" style="
       font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.07em;
       padding:3px 10px; border-radius:4px; text-decoration:none;
-      border:1px solid ${rgba(0.45)}; color:${def.color};
-      background:${rgba(0.1)}; transition:all 0.2s;
-    " onmouseover="this.style.background='${rgba(0.2)}'" onmouseout="this.style.background='${rgba(0.1)}'">
+      border:1px solid ${barBorder}; color:${linkClr};
+      background:${linkBg}; transition:all 0.2s;
+    " onmouseover="this.style.background='${linkBgHov}'" onmouseout="this.style.background='${linkBg}'">
       🌐 Blizzard
     </a>`;
 }

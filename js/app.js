@@ -884,7 +884,9 @@ function renderChars() {
     const cls = loadCharClass(c);
     const def = cls ? CLASSES.find(x => x.id === cls) : null;
     const borderStyle = def
-      ? `border-color:${def.color}; box-shadow:0 0 0 1px ${def.color}22;`
+      ? isLightMode
+        ? `border-color:var(--border-bright); box-shadow:0 0 0 1px ${def.color}44;`
+        : `border-color:${def.color}; box-shadow:0 0 0 1px ${def.color}22;`
       : '';
     const group = loadCharGroupFor(c);
     const gm = GROUP_META[group];
@@ -1533,7 +1535,7 @@ function copyDiscordSummary() {
   ).join('\n');
 
   const text = [
-    '📊 **Midnight Weekly** — ' + weekLabel,
+    '📊 **The Azeroth Agenda** — ' + weekLabel,
     charLine,
     '',
     sectionLines,
@@ -2284,8 +2286,8 @@ function renderInlineEvent() {
 const WELCOME_STEPS = [
   {
     icon: '🌙',
-    title: 'Welcome to Midnight Weekly',
-    body: 'Your all-in-one weekly task tracker for WoW Midnight. Built to help you make every reset count — no spreadsheets, no guesswork.',
+    title: 'Welcome to The Azeroth Agenda',
+    body: 'Your all-in-one weekly task tracker for World of Warcraft. Built to help you make every reset count — no spreadsheets, no guesswork.',
     note: null,
   },
   {

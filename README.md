@@ -1,2 +1,2 @@
-# wowWeekly
-World of Warcraft Weekly To Do List
+# The Azeroth Agenda
+World of Warcraft Weekly Task Tracker

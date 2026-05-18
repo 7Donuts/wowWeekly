@@ -9,6 +9,19 @@
 ------------------------------------------- */
 const VERSIONS = [
   {
+    version: 'v1.8.1',
+    date: 'May 18, 2026',
+    summary: 'Renamed to The Azeroth Agenda; light mode character modal fixes',
+    entries: [
+      { type: 'improve', text: 'Tracker renamed to The Azeroth Agenda across all pages', detail: 'All browser titles, page headings, back links, footer credits, the Discord copy output, and the welcome walkthrough now use the new name. Internal file names (midnight.css) and localStorage key prefixes (wow_mn_) are unchanged to avoid breaking existing data.' },
+      { type: 'fix', text: 'Light mode — class picker inactive button borders were invisible (rgba(255,255,255,0.1) on ivory)', detail: 'Inactive class buttons now use var(--border) for their outline, making all 13 class options clearly visible on the parchment background.' },
+      { type: 'fix', text: 'Light mode — active class text unreadable for light-colored classes (Priest white, Rogue yellow, Paladin pink, etc.)', detail: 'Active class button text now uses var(--text-primary) in light mode instead of the class color directly. The class color is still used for the border and background tint, preserving the visual identity without making text invisible.' },
+      { type: 'fix', text: 'Light mode — role picker active text unreadable when selected', detail: 'Same fix as class picker: active role text uses var(--text-primary) in light mode. Role color still shows on the border.' },
+      { type: 'fix', text: 'Light mode — class links bar fully invisible for light-colored classes', detail: 'The class links bar (Priest, Hunter, etc.) used the class color directly for all text, borders, and backgrounds. On ivory this made the entire bar invisible. In light mode the bar now uses CSS variables: var(--text-primary) for text, var(--border) for borders, var(--bg-card) for button backgrounds.' },
+      { type: 'fix', text: 'Light mode — character chip border invisible for Priest and other white/near-white class colors', detail: 'Character chips with a class set now use var(--border-bright) for the border in light mode, with a faint class-color glow as a secondary indicator. Dark mode is unchanged.' },
+    ]
+  },
+  {
     version: 'v1.8.0',
     date: 'May 18, 2026',
     summary: 'Cross-alt completion heatmap, clickable tag filters',
@@ -17,6 +30,7 @@ const VERSIONS = [
       { type: 'improve', text: 'Task tags overhauled — section-redundant tags removed, cross-cutting tags (Vault, Currency, 12.0.5) made clickable', detail: 'Tags that duplicated section filter tabs (Raid, Mythic+, Delve, PvP, Void, World, Housing, Optional) no longer clutter task cards. Vault, Currency, and 12.0.5 tags remain and are now interactive — click any to filter the entire task list to only tasks with that tag, across all visible sections. Click again to clear. Active tag badge gets a glowing outline. Works in all views including Your List.' },
       { type: 'new', text: '📋 Copy for Discord — one-click weekly summary formatted for Discord paste', detail: 'Button lives in the Summary modal footer alongside Close. Generates a plain-text block using Discord markdown: bold section names, ✅/🔄/⬜ completion icons per section, and a 10-block progress bar. Includes character name, class, role tag, and week date. Falls back to a prompt() copy dialog if clipboard access is unavailable.' },
       { type: 'improve', text: 'Currency & Upgrades section renamed to Upgrades', detail: 'Section content is gear upgrade tasks, not currency tracking. The filter tab, section header, and Summary rows all reflect the new name. Internal category key (currency) and localStorage keys are unchanged.' },
+      { type: 'improve', text: 'Light mode redesigned — Silvermoon / Sunwell palette replaces generic purple-on-white', detail: 'Backgrounds shift to sun-warm ivory and parchment (Silvermoon stone). Void-purple accent replaced with Silvermoon crimson (#8b1a1a). Void-glow replaced with Sunwell amber-gold (#b8820a). Progress bars now render a crimson-to-gold gradient. Text uses deep crimson-brown tones throughout. Borders are warm copper. All 14 scattered light-mode override blocks updated — tier buttons, event cards, section headers, view toggle, back links, welcome modal, heatmap cells.' },
     ]
   },
   {
