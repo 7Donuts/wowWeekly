@@ -149,12 +149,15 @@ function saveProfiles(p) { localStorage.setItem(profilesKey(), JSON.stringify(p)
 let currentChar     = 'Main';
 let characters      = JSON.parse(localStorage.getItem('wow_midnight_chars') || '["Main"]');
 let activeFilters   = new Set(['all']); // 'all' means show everything
+let activeTagFilter = '';               // 'tag-vault' | 'tag-gold' | 'tag-new' | ''
 let collapsed       = {};
 let revealHidden    = false;
 let editingYourList = false;
 let yourListGrouped = localStorage.getItem('wow_mn_yl_grouped') !== 'false'; // default grouped
 let searchQuery     = '';
 let lastChanceMode  = false; // session-only urgency mode
+
+const FUNCTIONAL_TAGS = new Set(['tag-vault', 'tag-gold', 'tag-new']);
 
 function onSearchInput(val) {
   searchQuery = val.trim().toLowerCase();
@@ -254,9 +257,19 @@ function sectionTaskHtml(t, done, hidden, yourList, goals, bossKills, notes) {
 
   let tagsHtml = '';
   if (t.tags && t.tags.length) {
-    tagsHtml = '<div class="task-tags">'
-      + t.tags.map(function(tg) { return '<span class="tag ' + tg + '">' + tagLabel(tg) + '</span>'; }).join('')
-      + '</div>';
+    const visibleTags = t.tags.filter(tg => FUNCTIONAL_TAGS.has(tg));
+    if (visibleTags.length) {
+      tagsHtml = '<div class="task-tags">'
+        + visibleTags.map(function(tg) {
+            const isActive = activeTagFilter === tg;
+            return '<span class="tag ' + tg + (isActive ? ' tag-filter-active' : '') + '"'
+              + ' onclick="event.stopPropagation();filterByTag(\'' + tg + '\')"'
+              + ' title="' + (isActive ? 'Clear filter' : 'Filter: ' + tagLabel(tg)) + '">'
+              + tagLabel(tg) + (isActive ? ' ×' : '')
+              + '</span>';
+          }).join('')
+        + '</div>';
+    }
   }
 
   const hn = highlightMatch(t.name, searchQuery);
@@ -420,14 +433,16 @@ function render() {
       if (yourList.has('custom_' + t.id)) selected.push({ ...t, id: 'custom_' + t.id, sectionTitle: 'Custom', sectionIcon: '✦', sectionIconClass: 'icon-custom' });
     });
 
-    // Apply search filter
+    // Apply search + tag filters
     const matchesSearch = t => {
       if (!searchQuery) return true;
       return (t.name || '').toLowerCase().includes(searchQuery) ||
              (t.desc || '').toLowerCase().includes(searchQuery) ||
              (t.sectionTitle || '').toLowerCase().includes(searchQuery);
     };
-    const filteredSelected = selected.filter(matchesSearch);
+    const filteredSelected = selected.filter(t =>
+      matchesSearch(t) && (!activeTagFilter || (t.tags && t.tags.includes(activeTagFilter)))
+    );
 
     if (filteredSelected.length === 0) {
       if (editingYourList) {
@@ -576,6 +591,7 @@ function buildEditBar() {
     const visibleTasks = tasks.filter(t => {
       if (!revealHidden && hidden[t.id]) return false;
       if (lastChanceMode && done[t.id]) return false; // hide completed in Last Chance Mode
+      if (activeTagFilter && !(t.tags && t.tags.includes(activeTagFilter))) return false;
       return matchesSearch(t);
     });
     const hiddenCount  = tasks.filter(t => hidden[t.id]).length;
@@ -679,6 +695,7 @@ function buildEditBar() {
   // Apply to All hidden when not on yourlist tab
 
   renderCustomSection();
+  updateShareBtn();
 }
 
 function toggle(id, taskEl) {
@@ -854,6 +871,11 @@ function setFilter(f, btn) {
   render();
 }
 
+function filterByTag(tag) {
+  activeTagFilter = (activeTagFilter === tag) ? '' : tag;
+  render();
+}
+
 /* ═══════════════════════════════════════════
    CHARACTERS
 ═══════════════════════════════════════════ */
@@ -864,10 +886,13 @@ function renderChars() {
     const borderStyle = def
       ? `border-color:${def.color}; box-shadow:0 0 0 1px ${def.color}22;`
       : '';
+    const group = loadCharGroupFor(c);
+    const gm = GROUP_META[group];
+    const groupDot = gm ? `<span style="font-size:9px;color:${gm.color};line-height:1;" title="${gm.label.replace(/[⭐◆🌿]/g,'').trim()}">${gm.dot}</span>` : '';
     return `
     <span style="display:inline-flex;align-items:center;gap:2px;">
       <button class="char-btn${c===currentChar?' active':''}" onclick="switchChar('${c}')" style="display:inline-flex;align-items:center;gap:5px;${borderStyle}">
-        ${def ? `<img src="${def.icon}" style="width:16px;height:16px;flex-shrink:0;image-rendering:auto;">` : ''}${c}
+        ${def ? `<img src="${def.icon}" style="width:16px;height:16px;flex-shrink:0;image-rendering:auto;">` : ''}${c}${groupDot}
       </button>
       <button class="char-btn-del" title="Edit ${c}" onclick="openRenameChar('${c}')">✏️</button>
       ${characters.length>1?`<button class="char-btn-del" title="Remove ${c}" onclick="deleteChar('${c}')">✕</button>`:''}
@@ -904,6 +929,7 @@ function openAddChar() {
   document.getElementById('modal').classList.add('open');
   document.getElementById('char-input').value = '';
   renderClassPicker('');
+  renderGroupPicker('');
   setTimeout(() => document.getElementById('char-input').focus(), 50);
 }
 function openRenameChar(oldName) {
@@ -912,6 +938,7 @@ function openRenameChar(oldName) {
   document.getElementById('modal').classList.add('open');
   document.getElementById('char-input').value = oldName;
   renderClassPicker(loadCharClass(oldName));
+  renderGroupPicker(loadCharGroupFor(oldName));
   setTimeout(() => { const el = document.getElementById('char-input'); el.focus(); el.select(); }, 50);
 }
 function closeModal() { document.getElementById('modal').classList.remove('open'); }
@@ -923,8 +950,9 @@ function saveChar() {
 
   if (isRename) {
     if (newName === oldName) {
-      // Name unchanged — still save class update
+      // Name unchanged — still save class/group update
       saveCharClass(oldName, _modalSelectedClass);
+      saveCharGroupFor(oldName, _modalSelectedGroup);
       closeModal(); renderChars(); renderClassLinksBar();
       return;
     }
@@ -941,6 +969,7 @@ function saveChar() {
     const existingClass = loadCharClass(oldName);
     localStorage.removeItem(classKey(oldName));
     saveCharClass(newName, _modalSelectedClass || existingClass);
+    saveCharGroupFor(newName, _modalSelectedGroup);
     const idx = characters.indexOf(oldName);
     characters[idx] = newName;
     localStorage.setItem('wow_midnight_chars', JSON.stringify(characters));
@@ -952,10 +981,137 @@ function saveChar() {
       localStorage.setItem('wow_midnight_chars', JSON.stringify(characters));
     }
     saveCharClass(newName, _modalSelectedClass);
+    saveCharGroupFor(newName, _modalSelectedGroup);
     closeModal(); switchChar(newName);
   }
 }
 
+
+/* ═══════════════════════════════════════════
+   EVENT PROXIMITY ALERTS
+   Shows dismissible banners for active events
+   ending within 3 days, and events starting
+   tomorrow. Dismissed per session only.
+═══════════════════════════════════════════ */
+function renderEventAlerts() {
+  const el = document.getElementById('event-alerts');
+  if (!el || typeof EVENTS === 'undefined') return;
+
+  const now   = new Date();
+  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const parseD = s => new Date(s + 'T00:00:00Z');
+  const dismissed = new Set(JSON.parse(sessionStorage.getItem('wow_mn_dismissed_alerts') || '[]'));
+
+  const alerts = [];
+  EVENTS.forEach(e => {
+    const start = parseD(e.start);
+    const end   = parseD(e.end);
+    if (start <= today && today < end) {
+      // Active event — warn if ending within 3 days
+      const daysLeft = Math.round((end - today) / 86400000);
+      if (daysLeft <= 3 && !dismissed.has(e.name)) {
+        alerts.push({ event: e, daysLeft, type: 'ending' });
+      }
+    } else if (start > today) {
+      // Upcoming — notify if starting tomorrow
+      const daysUntil = Math.round((start - today) / 86400000);
+      if (daysUntil === 1 && !dismissed.has('start_' + e.name)) {
+        alerts.push({ event: e, daysUntil, type: 'starting' });
+      }
+    }
+  });
+
+  if (!alerts.length) { el.innerHTML = ''; return; }
+
+  el.innerHTML = alerts.map(a => {
+    const key = a.type === 'starting' ? 'start_' + a.event.name : a.event.name;
+    const icon = a.type === 'ending' ? '⚠️' : '📅';
+    const timeStr = a.type === 'ending'
+      ? (a.daysLeft === 0 ? 'ends today!' : a.daysLeft === 1 ? 'ends tomorrow' : 'ends in ' + a.daysLeft + ' days')
+      : 'starts tomorrow';
+    const isUrgent = a.type === 'ending' && a.daysLeft <= 1;
+    const safeKey = key.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    return '<div class="event-alert' + (isUrgent ? ' urgent' : '') + '">'
+      + '<span class="ea-icon">' + icon + '</span>'
+      + '<span class="ea-text"><a href="' + a.event.url + '" target="_blank" class="ea-link">' + a.event.name + '</a>'
+      + ' <span class="ea-when">' + timeStr + '</span></span>'
+      + '<button class="ea-dismiss" onclick="dismissEventAlert(\'' + safeKey + '\')" title="Dismiss">&times;</button>'
+      + '</div>';
+  }).join('');
+}
+
+function dismissEventAlert(key) {
+  const dismissed = JSON.parse(sessionStorage.getItem('wow_mn_dismissed_alerts') || '[]');
+  if (!dismissed.includes(key)) dismissed.push(key);
+  sessionStorage.setItem('wow_mn_dismissed_alerts', JSON.stringify(dismissed));
+  renderEventAlerts();
+}
+
+/* ═══════════════════════════════════════════
+   SHAREABLE PLAN URL
+   Encodes Your List task IDs into a URL hash.
+   On load, detects #plan=... and offers import.
+═══════════════════════════════════════════ */
+function generateShareURL() {
+  const list = loadYourList();
+  if (!list.length) { alert('Your List is empty — add some tasks first.'); return; }
+  const url = window.location.origin + window.location.pathname + '#plan=' + list.join(',');
+  navigator.clipboard.writeText(url).then(() => {
+    showShareToast('🔗 Link copied to clipboard!');
+  }).catch(() => {
+    prompt('Copy this shareable link:', url);
+  });
+}
+
+function showShareToast(msg) {
+  const t = document.getElementById('share-toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function checkShareablePlanURL() {
+  const hash = window.location.hash;
+  if (!hash.startsWith('#plan=')) return;
+  const ids = hash.slice(6).split(',').filter(Boolean);
+  history.replaceState(null, '', window.location.pathname); // clear hash
+  if (!ids.length) return;
+  const allIds = new Set(SECTIONS.flatMap(s => s.tasks.map(t => t.id)));
+  const valid = ids.filter(id => allIds.has(id));
+  if (!valid.length) return;
+  const allTasks = SECTIONS.flatMap(s => s.tasks);
+  const preview = valid.slice(0, 3).map(id => {
+    const t = allTasks.find(t => t.id === id);
+    return t ? t.name : id;
+  }).join(', ') + (valid.length > 3 ? ' +' + (valid.length - 3) + ' more' : '');
+  const banner = document.getElementById('plan-import-banner');
+  if (!banner) return;
+  banner.innerHTML = '<span class="pib-icon">📋</span>'
+    + '<span class="pib-text">Shared plan &middot; <strong>' + valid.length + ' tasks</strong> &mdash; ' + preview + '</span>'
+    + '<button class="pib-btn" onclick="importSharedPlan(' + JSON.stringify(valid) + ')">Import</button>'
+    + '<button class="pib-dismiss" onclick="dismissPlanBanner()" title="Dismiss">&times;</button>';
+  banner.style.display = 'flex';
+}
+
+function importSharedPlan(ids) {
+  saveYourList(ids);
+  dismissPlanBanner();
+  const btn = document.querySelector('[data-filter="yourlist"]');
+  if (btn) setFilter('yourlist', btn);
+  render();
+  showShareToast('✓ Plan imported to Your List!');
+}
+
+function dismissPlanBanner() {
+  const b = document.getElementById('plan-import-banner');
+  if (b) b.style.display = 'none';
+}
+
+function updateShareBtn() {
+  const btn = document.getElementById('btn-share-plan');
+  if (btn) btn.style.display = loadYourList().length ? '' : 'none';
+}
 
 /* ═══════════════════════════════════════════
    COUNTDOWN
@@ -1207,6 +1363,7 @@ function renderSummaryTab(tab) {
       <button class="summary-tab${tab==='current'?' active':''}" onclick="renderSummaryTab('current')">📊 ${currentChar}</button>
       <button class="summary-tab${tab==='alts'?' active':''}" onclick="renderSummaryTab('alts')">👥 All Alts</button>
       <button class="summary-tab" onclick="renderEfficiencyTab()">📈 Efficiency</button>
+      <button class="summary-tab" onclick="renderHeatmapTab()">🗺 Heatmap</button>
     </div>`;
 
   if (tab === 'current') {
@@ -1271,46 +1428,125 @@ function renderSummaryTab(tab) {
       const history = loadHistory(c);
       let streak = 0;
       for (const e of history) { if (e.done === e.total && e.total > 0) streak++; else break; }
-      return { name: c, done: completed, total, pct, clsDef, streak };
+      const group = loadCharGroupFor(c);
+      return { name: c, done: completed, total, pct, clsDef, streak, group };
     });
 
-    content.innerHTML = tabBar + `
-      <div class="summary-week">Week of ${weekLabel} · ${altRows.filter(r=>r.pct===100).length}/${altRows.length} fully complete</div>
-      ${altRows.map(r => {
-        const barColor = r.pct === 100 ? 'var(--success-bright)'
-          : r.pct >= 60 ? 'var(--void-glow)'
-          : r.pct >= 30 ? 'var(--light-gold)'
-          : 'var(--void-purple)';
-        const clsColor = r.clsDef ? r.clsDef.color : 'var(--border-bright)';
-        return `
-        <div class="alt-row${r.name === currentChar ? ' alt-row-active' : ''}" onclick="closeSummary();switchChar('${r.name}')">
-          <div class="alt-row-left">
-            ${r.clsDef
-              ? `<img src="${r.clsDef.icon}" style="width:18px;height:18px;flex-shrink:0;border-radius:2px;">`
-              : `<div style="width:18px;height:18px;border-radius:2px;background:var(--bg-panel);border:1px solid var(--border);flex-shrink:0;"></div>`}
-            <div class="alt-row-name" style="border-left:3px solid ${clsColor};">
-              ${r.name}${r.name === currentChar ? ' <span style="color:var(--text-muted);font-size:10px;">(active)</span>' : ''}
-            </div>
-          </div>
-          <div class="alt-row-right">
-            ${r.streak > 0 ? `<span class="alt-streak" title="${r.streak} week streak">🔥 ${r.streak}</span>` : ''}
-            <div class="alt-progress-wrap">
-              <div class="alt-progress-track">
-                <div class="alt-progress-fill" style="width:${r.pct}%;background:${barColor};"></div>
-              </div>
-              <span class="alt-progress-label" style="color:${r.pct===100?'var(--success-bright)':'var(--text-secondary)'};">${r.done}/${r.total}</span>
-            </div>
-            <span class="alt-pct" style="color:${barColor};">${r.pct}%</span>
-          </div>
-        </div>`;
-      }).join('')}
-      <div style="margin-top:0.75rem;font-family:'Cinzel',serif;font-size:11px;color:var(--text-muted);text-align:right;">
-        Click any row to switch character
-      </div>`;
+    const altRowHtml = r => {
+      const barColor = r.pct === 100 ? 'var(--success-bright)'
+        : r.pct >= 60 ? 'var(--void-glow)'
+        : r.pct >= 30 ? 'var(--light-gold)'
+        : 'var(--void-purple)';
+      const clsColor = r.clsDef ? r.clsDef.color : 'var(--border-bright)';
+      return '<div class="alt-row' + (r.name === currentChar ? ' alt-row-active' : '') + '" onclick="closeSummary();switchChar(\'' + r.name + '\')">'
+        + '<div class="alt-row-left">'
+        + (r.clsDef
+            ? '<img src="' + r.clsDef.icon + '" style="width:18px;height:18px;flex-shrink:0;border-radius:2px;">'
+            : '<div style="width:18px;height:18px;border-radius:2px;background:var(--bg-panel);border:1px solid var(--border);flex-shrink:0;"></div>')
+        + '<div class="alt-row-name" style="border-left:3px solid ' + clsColor + ';">'
+        + r.name + (r.name === currentChar ? ' <span style="color:var(--text-muted);font-size:10px;">(active)</span>' : '')
+        + '</div></div>'
+        + '<div class="alt-row-right">'
+        + (r.streak > 0 ? '<span class="alt-streak" title="' + r.streak + ' week streak">🔥 ' + r.streak + '</span>' : '')
+        + '<div class="alt-progress-wrap">'
+        + '<div class="alt-progress-track"><div class="alt-progress-fill" style="width:' + r.pct + '%;background:' + barColor + ';"></div></div>'
+        + '<span class="alt-progress-label" style="color:' + (r.pct===100?'var(--success-bright)':'var(--text-secondary)') + ';">' + r.done + '/' + r.total + '</span>'
+        + '</div>'
+        + '<span class="alt-pct" style="color:' + barColor + ';">' + r.pct + '%</span>'
+        + '</div></div>';
+    };
+
+    // Group rows if any character has a group set
+    const hasGroups = altRows.some(r => r.group);
+    let rowsHtml = '';
+    if (hasGroups) {
+      const groupMap = { main: [], alt: [], farm: [], '': [] };
+      altRows.forEach(r => { (groupMap[r.group] || groupMap['']).push(r); });
+      GROUP_ORDER.forEach(g => {
+        if (!groupMap[g] || !groupMap[g].length) return;
+        const gm = GROUP_META[g];
+        const headerColor = gm ? gm.color : 'var(--text-muted)';
+        rowsHtml += '<div class="alts-group-header" style="color:' + headerColor + ';">' + GROUP_LABELS[g] + '</div>';
+        rowsHtml += groupMap[g].map(altRowHtml).join('');
+      });
+    } else {
+      rowsHtml = altRows.map(altRowHtml).join('');
+    }
+
+    content.innerHTML = tabBar
+      + '<div class="summary-week">Week of ' + weekLabel + ' · ' + altRows.filter(r=>r.pct===100).length + '/' + altRows.length + ' fully complete</div>'
+      + rowsHtml
+      + '<div style="margin-top:0.75rem;font-family:\'Cinzel\',serif;font-size:11px;color:var(--text-muted);text-align:right;">Click any row to switch character</div>';
   }
 }
 
 function closeSummary() { document.getElementById('modal-summary').classList.remove('open'); }
+
+function copyDiscordSummary() {
+  const week    = getWeekKey();
+  const d       = new Date(week + 'T15:00:00Z');
+  const weekLabel = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+  const done    = loadDone();
+  const hidden  = loadHidden();
+
+  const cls     = loadCharClass(currentChar);
+  const clsDef  = cls ? CLASSES.find(x => x.id === cls) : null;
+  const group   = loadCharGroupFor(currentChar);
+  const gm      = GROUP_META[group];
+
+  // Build per-section rows
+  const rows = [];
+  let grandTotal = 0, grandDone = 0;
+  SECTIONS.forEach(sec => {
+    const visible = sec.tasks.filter(t => !hidden[t.id]);
+    if (!visible.length) return;
+    const secDone  = visible.filter(t => done[t.id]).length;
+    grandTotal += visible.length;
+    grandDone  += secDone;
+    rows.push({ title: sec.title, done: secDone, total: visible.length });
+  });
+  const customTasks = loadCustomTasks();
+  if (customTasks.length) {
+    const cDone = customTasks.filter(t => done['custom_' + t.id]).length;
+    grandTotal += customTasks.length;
+    grandDone  += cDone;
+    rows.push({ title: 'Custom Tasks', done: cDone, total: customTasks.length });
+  }
+
+  const pct    = grandTotal ? Math.round((grandDone / grandTotal) * 100) : 0;
+  const filled = Math.round(pct / 10);
+  const bar    = '█'.repeat(filled) + '░'.repeat(10 - filled);
+
+  function rowIcon(done, total) {
+    if (done === total && total > 0) return '✅';
+    if (done > 0) return '🔄';
+    return '⬜';
+  }
+
+  // Header line
+  let charLine = '**' + currentChar + '**';
+  if (clsDef) charLine += ' · ' + clsDef.name;
+  if (gm)     charLine += ' · ' + gm.dot + ' ' + gm.label.replace(/^[^ ]+ /, ''); // e.g. "Main"
+
+  const sectionLines = rows.map(r =>
+    rowIcon(r.done, r.total) + ' ' + r.title + ' — ' + r.done + '/' + r.total
+  ).join('\n');
+
+  const text = [
+    '📊 **Midnight Weekly** — ' + weekLabel,
+    charLine,
+    '',
+    sectionLines,
+    '',
+    '**' + grandDone + ' / ' + grandTotal + ' · ' + pct + '%** `' + bar + '`',
+  ].join('\n');
+
+  navigator.clipboard.writeText(text).then(() => {
+    showShareToast('📋 Summary copied for Discord!');
+  }).catch(() => {
+    prompt('Copy this summary:', text);
+  });
+}
 
 
 /* ═══════════════════════════════════════════
@@ -1368,6 +1604,13 @@ function openExportImport() {
       <div class="data-option-body">
         <div class="data-option-title">Template Profiles</div>
         <div class="data-option-desc">Save and apply named configurations (Your List + hidden settings) across characters.</div>
+      </div>
+    </div>
+    <div class="data-option" onclick="closeDataModal();localStorage.removeItem('wow_mn_welcomed');openWelcome()">
+      <div class="data-option-icon">🧭</div>
+      <div class="data-option-body">
+        <div class="data-option-title">Site Guide</div>
+        <div class="data-option-desc">Reopen the feature walkthrough shown on your first visit.</div>
       </div>
     </div>`;
   modal.classList.add('open');
@@ -1802,6 +2045,7 @@ function renderEfficiencyTab() {
     + '<button class="summary-tab" onclick="renderSummaryTab(\'current\')">📊 ' + currentChar + '</button>'
     + '<button class="summary-tab" onclick="renderSummaryTab(\'alts\')">👥 All Alts</button>'
     + '<button class="summary-tab active" onclick="renderEfficiencyTab()">📈 Efficiency</button>'
+    + '<button class="summary-tab" onclick="renderHeatmapTab()">🗺 Heatmap</button>'
     + '</div>';
 
   // Gather per-section stats from history entries that have section data
@@ -1870,6 +2114,132 @@ function renderEfficiencyTab() {
 }
 
 
+/* ── CROSS-ALT COMPLETION HEATMAP ── */
+function renderHeatmapTab() {
+  const content     = document.getElementById('summary-content');
+  const currentWeek = getWeekKey();
+
+  const tabBar = '<div class="summary-tabs">'
+    + '<button class="summary-tab" onclick="renderSummaryTab(\'current\')">📊 ' + currentChar + '</button>'
+    + '<button class="summary-tab" onclick="renderSummaryTab(\'alts\')">👥 All Alts</button>'
+    + '<button class="summary-tab" onclick="renderEfficiencyTab()">📈 Efficiency</button>'
+    + '<button class="summary-tab active" onclick="renderHeatmapTab()">🗺 Heatmap</button>'
+    + '</div>';
+
+  if (characters.length === 0) {
+    content.innerHTML = tabBar + '<div class="profile-empty" style="margin-top:1rem;">No characters found.</div>';
+    return;
+  }
+
+  // Build per-char data: history entries + live current week
+  const charData = characters.map(c => {
+    const history = loadHistory(c);
+    const weekMap = {};
+    history.forEach(e => { weekMap[e.week] = { done: e.done, total: e.total }; });
+
+    // Live data for current week
+    const done   = JSON.parse(localStorage.getItem('wow_mn_' + c + '_' + currentWeek) || '{}');
+    const hidden = JSON.parse(localStorage.getItem('wow_mn_hidden_' + c) || '{}');
+    const custom = JSON.parse(localStorage.getItem('wow_mn_custom_' + c) || '[]');
+    let total = 0, completed = 0;
+    SECTIONS.forEach(sec => {
+      sec.tasks.filter(t => !hidden[t.id]).forEach(t => { total++; if (done[t.id]) completed++; });
+    });
+    custom.forEach(t => { total++; if (done['custom_' + t.id]) completed++; });
+    if (total > 0) weekMap[currentWeek] = { done: completed, total };
+
+    const group  = loadCharGroupFor(c);
+    const cls    = localStorage.getItem('wow_mn_class_' + c) || '';
+    const clsDef = cls ? CLASSES.find(x => x.id === cls) : null;
+    return { name: c, weekMap, group, clsDef };
+  });
+
+  // Union of all weeks across all chars, newest first, max 10
+  const weekSet = new Set();
+  charData.forEach(c => Object.keys(c.weekMap).forEach(w => weekSet.add(w)));
+  const weeks = [...weekSet].sort((a, b) => b.localeCompare(a)).slice(0, 10);
+
+  if (weeks.length === 0) {
+    content.innerHTML = tabBar + '<div class="profile-empty" style="margin-top:1rem;">No weekly data yet.<br><span style="font-size:12px;color:var(--text-muted);">Complete at least one reset to start seeing data here.</span></div>';
+    return;
+  }
+
+  // Week label: 2-line "May<br>18"
+  function fmtWeekLabel(w) {
+    const d = new Date(w + 'T15:00:00Z');
+    const mo  = d.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+    const day = d.toLocaleDateString('en-US', { day: 'numeric', timeZone: 'UTC' });
+    return mo + '<br>' + day;
+  }
+  function fmtWeekPlain(w) {
+    const d = new Date(w + 'T15:00:00Z');
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+  }
+
+  function cellBg(pct, hasData) {
+    if (!hasData)    return 'var(--bg-deep)';
+    if (pct === 100) return 'var(--success-bright)';
+    if (pct >= 60)   return 'var(--void-glow)';
+    if (pct >= 30)   return 'var(--light-gold)';
+    if (pct > 0)     return '#7744aa';
+    return 'var(--bg-panel)';
+  }
+
+  // Sort chars by group order
+  const sorted = [...charData].sort((a, b) => {
+    const ai = GROUP_ORDER.indexOf(a.group || '');
+    const bi = GROUP_ORDER.indexOf(b.group || '');
+    return ai - bi;
+  });
+
+  const headerCells = weeks.map(w => {
+    const isCur = w === currentWeek;
+    return '<div class="hm-week-label' + (isCur ? ' hm-cur' : '') + '" title="Week of ' + fmtWeekPlain(w) + (isCur ? ' (current)' : '') + '">' + fmtWeekLabel(w) + '</div>';
+  }).join('');
+
+  const rowsHtml = sorted.map(c => {
+    const clsColor  = c.clsDef ? c.clsDef.color : 'var(--border-bright)';
+    const groupDot  = GROUP_META[c.group] ? '<span style="color:' + GROUP_META[c.group].color + ';margin-right:3px;">' + GROUP_META[c.group].dot + '</span>' : '';
+    const isActive  = c.name === currentChar;
+
+    const cells = weeks.map(w => {
+      const entry   = c.weekMap[w];
+      const hasData = !!entry && entry.total > 0;
+      const pct     = hasData ? Math.round((entry.done / entry.total) * 100) : 0;
+      const bg      = cellBg(pct, hasData);
+      const isCur   = w === currentWeek;
+      const tooltip = hasData
+        ? c.name + ' · ' + fmtWeekPlain(w) + ': ' + entry.done + '/' + entry.total + ' (' + pct + '%)'
+        : c.name + ' · ' + fmtWeekPlain(w) + ': no data';
+      const opacity = hasData ? '' : ';opacity:0.18';
+      const label   = pct === 100 && hasData ? '✓' : (hasData && pct > 0 ? pct + '%' : '');
+      return '<div class="hm-cell' + (isCur ? ' hm-cur' : '') + '" style="background:' + bg + opacity + ';" title="' + tooltip + '">' + label + '</div>';
+    }).join('');
+
+    return '<div class="hm-row' + (isActive ? ' hm-row-active' : '') + '">'
+      + '<div class="hm-char" style="border-left:3px solid ' + clsColor + ';">' + groupDot + c.name + '</div>'
+      + '<div class="hm-cells">' + cells + '</div>'
+      + '</div>';
+  }).join('');
+
+  const completedCount  = sorted.filter(c => { const e = c.weekMap[currentWeek]; return e && e.done === e.total && e.total > 0; }).length;
+
+  content.innerHTML = tabBar
+    + '<div class="summary-week">Last ' + weeks.length + ' week' + (weeks.length !== 1 ? 's' : '') + ' · ' + completedCount + '/' + characters.length + ' fully done this week</div>'
+    + '<div class="hm-table">'
+    + '<div class="hm-header"><div class="hm-char hm-char-lbl">Character</div><div class="hm-cells">' + headerCells + '</div></div>'
+    + rowsHtml
+    + '</div>'
+    + '<div class="hm-legend">'
+    + '<span class="hm-swatch" style="background:var(--success-bright)"></span> 100%'
+    + ' <span class="hm-swatch" style="background:var(--void-glow)"></span> 60–99%'
+    + ' <span class="hm-swatch" style="background:var(--light-gold)"></span> 30–59%'
+    + ' <span class="hm-swatch" style="background:#7744aa"></span> 1–29%'
+    + ' <span class="hm-swatch" style="background:var(--bg-deep);opacity:0.18;"></span> No data'
+    + '</div>';
+}
+
+
 /* ── BEGINNER PRESET ── */
 
 
@@ -1906,9 +2276,109 @@ function renderInlineEvent() {
   el.innerHTML = `${inner}<a href="events.html" class="inline-event-btn">📅 All Events</a>`;
 }
 
+/* ═══════════════════════════════════════════
+   WELCOME WALKTHROUGH
+   Shows once on first visit. Stored in
+   localStorage under wow_mn_welcomed.
+═══════════════════════════════════════════ */
+const WELCOME_STEPS = [
+  {
+    icon: '🌙',
+    title: 'Welcome to Midnight Weekly',
+    body: 'Your all-in-one weekly task tracker for WoW Midnight. Built to help you make every reset count — no spreadsheets, no guesswork.',
+    note: null,
+  },
+  {
+    icon: '👤',
+    title: 'Set Up Your Characters',
+    body: 'Hit the <strong>+</strong> button in the character bar to add a character. Assign their class for color-coded display, and set a role — <strong>⭐ Main</strong>, <strong>◆ Alt</strong>, or <strong>🌿 Farm</strong> — to keep your roster organized.',
+    note: 'Each character tracks its own progress independently.',
+  },
+  {
+    icon: '⭐',
+    title: 'Build Your List',
+    body: '<strong>Your List</strong> is your personal weekly checklist — only the tasks that matter to your character. Click <strong>⭐ Edit List</strong> to add tasks, or use the <strong>🧭 Starter Guide</strong> to auto-populate based on your current progression stage.',
+    note: 'Drag tasks to reorder. Save different configurations as Template Profiles.',
+  },
+  {
+    icon: '✓',
+    title: 'Track Your Progress',
+    body: 'Check off tasks as you complete them. Raids have per-boss, per-difficulty bubble tracking. Mythic+ and Delves use <strong>+/−</strong> goal counters with milestone rewards shown on hover. Everything resets automatically each Tuesday at 15:00 UTC.',
+    note: 'Use compact mode (⊟) to see more tasks at once.',
+  },
+  {
+    icon: '📊',
+    title: 'Smart Tools Built In',
+    body: '<ul class="welcome-feature-list">'
+      + '<li><strong>📊 Summary</strong> — per-section progress, weekly history &amp; streaks, efficiency scores</li>'
+      + '<li><strong>⚠️ Event Alerts</strong> — warns you when world events are ending soon</li>'
+      + '<li><strong>⚡ Last Chance</strong> — focus view showing only incomplete tasks under 6h to reset</li>'
+      + '<li><strong>🔗 Share Plan</strong> — copy a link to your list and send it to a guildie</li>'
+      + '<li><strong>⇅ Data</strong> — export, import, and back up all your progress</li>'
+      + '</ul>',
+    note: null,
+  },
+  {
+    icon: '🎉',
+    title: "You're All Set!",
+    body: 'Your progress saves automatically in your browser — nothing to sign in to. Check the <strong>📅 Events</strong> calendar and <strong>📋 Changelog</strong> links in the header to stay up to date.',
+    note: 'You can reopen this guide anytime from the ⇅ Data menu.',
+  },
+];
+
+let _welcomeStep = 0;
+
+function openWelcome() {
+  _welcomeStep = 0;
+  renderWelcomeStep();
+  document.getElementById('modal-welcome').classList.add('open');
+}
+
+function closeWelcome() {
+  localStorage.setItem('wow_mn_welcomed', '1');
+  document.getElementById('modal-welcome').classList.remove('open');
+}
+
+function welcomeNext() {
+  if (_welcomeStep < WELCOME_STEPS.length - 1) { _welcomeStep++; renderWelcomeStep(); }
+  else closeWelcome();
+}
+
+function welcomeBack() {
+  if (_welcomeStep > 0) { _welcomeStep--; renderWelcomeStep(); }
+}
+
+function renderWelcomeStep() {
+  const step  = WELCOME_STEPS[_welcomeStep];
+  const total = WELCOME_STEPS.length;
+  const isLast = _welcomeStep === total - 1;
+
+  // Dots
+  document.getElementById('welcome-dots').innerHTML = WELCOME_STEPS.map((_, i) =>
+    '<span class="welcome-dot' + (i === _welcomeStep ? ' active' : '') + '"></span>'
+  ).join('');
+
+  document.getElementById('welcome-icon').textContent  = step.icon;
+  document.getElementById('welcome-title').textContent = step.title;
+  document.getElementById('welcome-body').innerHTML    = step.body;
+
+  const noteEl = document.getElementById('welcome-note');
+  if (step.note) { noteEl.textContent = step.note; noteEl.style.display = ''; }
+  else           { noteEl.style.display = 'none'; }
+
+  const backBtn = document.getElementById('welcome-back');
+  backBtn.style.visibility = _welcomeStep === 0 ? 'hidden' : '';
+
+  const nextBtn = document.getElementById('welcome-next');
+  nextBtn.textContent = isLast ? "Let's Go!" : 'Next →';
+}
+
 /* ── INIT ── */
 renderChars(); renderClassLinksBar(); render(); renderInlineHistory(); renderInlineEvent(); updateCountdown(); setInterval(updateCountdown, 1000);
 updateLastChanceBtn(); renderLastChanceBanner();
+renderEventAlerts();
+checkShareablePlanURL();
+if (!localStorage.getItem('wow_mn_welcomed')) openWelcome();
 
 // Sync toolbar button labels to persisted state
 document.getElementById('btn-theme').textContent   = isLightMode ? '🌙 Dark'   : '☀️ Light';
@@ -1921,7 +2391,7 @@ if (isCompact) {
 
 /* ---- Modal overlay close listeners ---- */
 document.addEventListener('DOMContentLoaded', function() {
-  ['modal','modal-custom','modal-summary','modal-data','modal-profiles'].forEach(function(id) {
+  ['modal','modal-custom','modal-summary','modal-data','modal-profiles','modal-welcome'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener('click', function(e) {
       if (e.target === el) el.classList.remove('open');

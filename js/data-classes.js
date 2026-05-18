@@ -28,6 +28,53 @@ function saveCharClass(name, cls) {
 
 let _modalSelectedClass = '';
 
+/* ── CHARACTER GROUP / ROLE PICKER ── */
+const GROUP_META = {
+  main: { label: '⭐ Main', dot: '⭐', color: 'var(--light-gold)' },
+  alt:  { label: '◆ Alt',  dot: '◆',  color: 'var(--void-glow)' },
+  farm: { label: '🌿 Farm', dot: '🌿', color: 'var(--success-bright)' },
+};
+const GROUP_ORDER = ['main', 'alt', 'farm', ''];
+const GROUP_LABELS = { main: '⭐ Main', alt: '◆ Alt', farm: '🌿 Farm', '': 'Ungrouped' };
+
+let _modalSelectedGroup = '';
+
+function loadCharGroupFor(name) {
+  return JSON.parse(localStorage.getItem('wow_mn_prefs_' + name) || '{}').group || '';
+}
+function saveCharGroupFor(name, group) {
+  const p = JSON.parse(localStorage.getItem('wow_mn_prefs_' + name) || '{}');
+  if (group) p.group = group; else delete p.group;
+  localStorage.setItem('wow_mn_prefs_' + name, JSON.stringify(p));
+}
+
+function renderGroupPicker(selectedGroup) {
+  _modalSelectedGroup = selectedGroup || '';
+  const container = document.getElementById('group-picker');
+  if (!container) return;
+  const groups = [
+    { id: 'main', label: '⭐ Main', color: 'var(--light-gold)' },
+    { id: 'alt',  label: '◆ Alt',  color: 'var(--void-glow)' },
+    { id: 'farm', label: '🌿 Farm', color: 'var(--success-bright)' },
+    { id: '',     label: 'None',   color: 'var(--border-bright)' },
+  ];
+  container.innerHTML = groups.map(g => {
+    const active = _modalSelectedGroup === g.id;
+    return '<button onclick="selectCharGroup(\'' + g.id + '\')" style="'
+      + 'font-family:\'Cinzel\',serif;font-size:11px;letter-spacing:0.06em;'
+      + 'padding:4px 12px;border-radius:3px;cursor:pointer;transition:all 0.15s;'
+      + 'border:1.5px solid ' + (active ? g.color : 'var(--border)') + ';'
+      + 'background:' + (active ? g.color.replace(')', ',0.12)').replace('var(', 'var(') + '' : 'transparent') + ';'
+      + 'color:' + (active ? g.color : 'var(--text-secondary)') + ';'
+      + '">' + g.label + '</button>';
+  }).join('');
+}
+
+function selectCharGroup(id) {
+  _modalSelectedGroup = id;
+  renderGroupPicker(id);
+}
+
 function renderClassPicker(selectedId) {
   _modalSelectedClass = selectedId || '';
   const container = document.getElementById('class-picker');

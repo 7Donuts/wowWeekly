@@ -47,6 +47,7 @@
         <div class="btn-conditional-group">
           <button class="btn-reset-all" id="btn-reveal" onclick="toggleRevealHidden()" style="display:none;">👁 Show Hidden</button>
           <button class="btn-reset-all" id="btn-edit-yourlist" onclick="startEditingYourList()">⭐ Edit List</button>
+          <button class="btn-reset-all" id="btn-share-plan" onclick="generateShareURL()" style="display:none;" title="Copy shareable link for Your List">🔗 Share Plan</button>
         </div>
       </div>
     </div>
@@ -60,6 +61,9 @@
       </div>
     </div>
   </div>
+
+  <div id="event-alerts"></div>
+  <div id="plan-import-banner" class="plan-import-banner" style="display:none;"></div>
 
   <div class="char-bar">
     <span class="char-label">Character:</span>
@@ -79,7 +83,7 @@
     <button class="tab-btn" data-filter="ritual-sites" onclick="setFilter('ritual-sites',this)">Ritual Sites</button>
     <button class="tab-btn" data-filter="voidforge" onclick="setFilter('voidforge',this)">Voidforge</button>
     <button class="tab-btn" data-filter="world" onclick="setFilter('world',this)">World Events</button>
-    <button class="tab-btn" data-filter="currency" onclick="setFilter('currency',this)">Currency</button>
+    <button class="tab-btn" data-filter="currency" onclick="setFilter('currency',this)">Upgrades</button>
     <button class="tab-btn" data-filter="housing" onclick="setFilter('housing',this)">Housing</button>
     <button class="tab-btn" data-filter="pvp" onclick="setFilter('pvp',this)">PvP</button>
     <button class="tab-btn" data-filter="optional" onclick="setFilter('optional',this)">Optional</button>
@@ -114,6 +118,8 @@
            onkeydown="if(event.key==='Enter')saveChar()" />
     <div style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.1em;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.6rem;">Class (optional)</div>
     <div id="class-picker" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:1.1rem;"></div>
+    <div style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.1em;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.5rem;">Role (optional)</div>
+    <div id="group-picker" style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:1.1rem;"></div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeModal()">Cancel</button>
       <button class="btn-primary" onclick="saveChar()">Save</button>
@@ -161,6 +167,7 @@
     <div id="summary-content"></div>
     <div class="modal-btns" style="margin-top:1.25rem;">
       <button class="btn-cancel" onclick="closeSummary()">Close</button>
+      <button class="btn-primary" onclick="copyDiscordSummary()" title="Copy weekly summary formatted for Discord">📋 Copy for Discord</button>
     </div>
   </div>
 </div>
@@ -175,6 +182,23 @@
 </div>
 
 <input type="file" id="import-file-input" accept=".json" style="display:none;" onchange="handleImportFile(event)">
+<div id="share-toast" class="share-toast"></div>
+
+<!-- WELCOME WALKTHROUGH MODAL -->
+<div class="modal-overlay" id="modal-welcome">
+  <div class="modal welcome-modal" style="width:520px;max-width:95vw;">
+    <div id="welcome-dots" class="welcome-dots"></div>
+    <div id="welcome-icon" class="welcome-icon"></div>
+    <h3 id="welcome-title" class="welcome-title"></h3>
+    <div id="welcome-body" class="welcome-body"></div>
+    <div id="welcome-note" class="welcome-note"></div>
+    <div class="welcome-nav">
+      <button id="welcome-back" class="btn-cancel" onclick="welcomeBack()">← Back</button>
+      <button id="welcome-next" class="btn-primary" onclick="welcomeNext()">Next →</button>
+    </div>
+    <button class="welcome-skip" onclick="closeWelcome()">Skip intro</button>
+  </div>
+</div>
 
 
 

@@ -1,12 +1,38 @@
 /* -------------------------------------------
    CHANGELOG DATA
-   One entry per release. Add new versions at
-   the top of the VERSIONS array. Types:
-   new | fix | improve | content | remove
+   Semantic versioning: MAJOR.MINOR.PATCH
+     MAJOR — architectural shift or breaking change
+     MINOR — new features, backward compatible
+     PATCH — bug fixes, small improvements, refactors
+   Add new versions at the top of the VERSIONS array.
+   Types: new | fix | improve | content | remove
 ------------------------------------------- */
 const VERSIONS = [
   {
-    version: 'v1.7',
+    version: 'v1.8.0',
+    date: 'May 18, 2026',
+    summary: 'Cross-alt completion heatmap, clickable tag filters',
+    entries: [
+      { type: 'new', text: '🗺 Heatmap tab in Summary modal — grid of all characters × last 10 weeks, color-coded by completion %', detail: 'Each cell shows the character\'s completion for that reset week. Colors: green = 100%, teal = 60–99%, gold = 30–59%, purple = 1–29%, faded = no data. The current week is always included as live data (not from history). Cells show a ✓ for full completes and a % for partial. Hover any cell for exact done/total counts. Characters are sorted by role group (Main → Alt → Farm → Ungrouped). The active character is highlighted in gold.' },
+      { type: 'improve', text: 'Task tags overhauled — section-redundant tags removed, cross-cutting tags (Vault, Currency, 12.0.5) made clickable', detail: 'Tags that duplicated section filter tabs (Raid, Mythic+, Delve, PvP, Void, World, Housing, Optional) no longer clutter task cards. Vault, Currency, and 12.0.5 tags remain and are now interactive — click any to filter the entire task list to only tasks with that tag, across all visible sections. Click again to clear. Active tag badge gets a glowing outline. Works in all views including Your List.' },
+      { type: 'new', text: '📋 Copy for Discord — one-click weekly summary formatted for Discord paste', detail: 'Button lives in the Summary modal footer alongside Close. Generates a plain-text block using Discord markdown: bold section names, ✅/🔄/⬜ completion icons per section, and a 10-block progress bar. Includes character name, class, role tag, and week date. Falls back to a prompt() copy dialog if clipboard access is unavailable.' },
+      { type: 'improve', text: 'Currency & Upgrades section renamed to Upgrades', detail: 'Section content is gear upgrade tasks, not currency tracking. The filter tab, section header, and Summary rows all reflect the new name. Internal category key (currency) and localStorage keys are unchanged.' },
+    ]
+  },
+  {
+    version: 'v1.7.0',
+    date: 'May 18, 2026',
+    summary: 'Character roles, shareable plans, event alerts, welcome guide',
+    entries: [
+      { type: 'new',     text: 'Character roles — tag characters as ⭐ Main, ◆ Alt, or 🌿 Farm', detail: 'Role picker added to the Add / Edit character modal. Role dot appears inline in the character bar. All Alts tab in Summary modal auto-groups rows by role with colored subheaders when any character has a role set.' },
+      { type: 'new',     text: '🔗 Share Plan — copy a shareable URL encoding your current Your List', detail: 'Share Plan button appears in the toolbar when Your List has tasks. Copies a URL with encoded task IDs to the clipboard. Anyone opening the link sees an import banner with a task preview and a one-click Import button. Hash is cleared from the URL immediately so refresh does not re-trigger.' },
+      { type: 'new',     text: 'Event Proximity Alerts — dismissible banners for events ending soon or starting tomorrow', detail: 'Active events ending within 3 days show a gold warning banner. Events starting tomorrow show a blue notice. Urgent events (ending today or tomorrow) use a red style. Each alert can be individually dismissed; dismissals persist for the session only so alerts reappear on next visit.' },
+      { type: 'new',     text: '🧭 Welcome Walkthrough — 6-step first-visit guide covering all major features', detail: 'Fires automatically on first visit. Covers: character setup, Your List and Starter Guide, task tracking (boss bubbles, goal counters, reset timing), and all smart tools (Summary, Event Alerts, Last Chance, Share Plan, Data export). Navigable with Back / Next. Skip link on every step. Reopenable anytime via ⇅ Data → Site Guide.' },
+      { type: 'improve', text: 'CSS consolidated — duplicate selectors merged, shared badge colors grouped, --color-danger variable added', detail: 'Duplicate .reset-bar-top definition removed (overflow:hidden merged into the first). .task-del and .task-hide share a grouped base rule. .byline-link:hover, .inline-event-btn:hover, and .back-link:hover share one grouped rule. Badge colors across .tag-*, .badge-*, and .ev-tag-* grouped by color theme. New --color-danger: #e07068 CSS variable replaces all hardcoded danger-red values. 1,888 → 1,862 lines.' },
+    ]
+  },
+  {
+    version: 'v1.6.0',
     date: 'May 18, 2026',
     summary: 'Template Profiles, Last Chance Mode, Section Efficiency Scores',
     entries: [
@@ -19,7 +45,7 @@ const VERSIONS = [
     ]
   },
   {
-    version: 'v1.6',
+    version: 'v1.5.0',
     date: 'May 15, 2026',
     summary: 'New tasks, Your List overhaul, Event Calendar, grouped/flat view, Starter Guide',
     entries: [
@@ -44,9 +70,9 @@ const VERSIONS = [
     ]
   },
   {
-    version: 'v1.5',
+    version: 'v1.4.0',
     date: 'May 14, 2026',
-    summary: 'Raid boss tracking, task search, mobile fixes, button polish',
+    summary: 'Raid boss tracking, task search, mobile fixes',
     entries: [
       { type: 'new',     text: 'Raid boss bubble tracker — all three Season 1 raids with per-difficulty boss kill tracking', detail: 'The Dreamrift (1 boss), The Voidspire (6 bosses), and March on Quel\'Danas (2 bosses) each have LFR / Normal / Heroic / Mythic rows. Click a boss bubble to mark it killed. Task auto-checks when all bosses are cleared. Right-click any bubble to open its Icy Veins guide. Boss kills reset weekly with task progress.' },
       { type: 'new',     text: 'Difficulty badges — LFR (purple), Normal (green), Heroic (blue), Mythic (gold) — matching in-game color language', detail: '' },
@@ -59,7 +85,7 @@ const VERSIONS = [
     ]
   },
   {
-    version: 'v1.4',
+    version: 'v1.3.0',
     date: 'May 14, 2026',
     summary: 'Dashboard redesign, inline history, alt overview',
     entries: [
@@ -75,7 +101,7 @@ const VERSIONS = [
     ]
   },
   {
-    version: 'v1.3',
+    version: 'v1.2.1',
     date: 'May 14, 2026',
     summary: 'Class system, UX fixes',
     entries: [
@@ -89,9 +115,9 @@ const VERSIONS = [
     ]
   },
   {
-    version: 'v1.2',
+    version: 'v1.2.0',
     date: 'May 14, 2026',
-    summary: 'New features',
+    summary: 'Notes, dark/light mode, compact view, confetti, summary modal, export/import',
     entries: [
       { type: 'new',     text: 'Task Notes — 📝 button on every task to jot personal reminders', detail: 'Notes are per-character, auto-save as you type, never reset weekly, included in export/import, and hidden in compact mode. A gold 📝 indicates a task has a note.' },
       { type: 'new',     text: 'Dark / Light mode toggle — ☀️ Light button in toolbar', detail: 'Switches to a soft lavender light theme. Preference saved to localStorage and persists across sessions.' },
@@ -107,9 +133,9 @@ const VERSIONS = [
     ]
   },
   {
-    version: 'v1.1',
+    version: 'v1.1.0',
     date: 'May 13, 2026',
-    summary: 'Launch day updates',
+    summary: 'Launch day — multi-character, Your List, custom tasks, task hiding, full content pass',
     entries: [
       { type: 'content', text: 'Tracker fully rebuilt from real Patch 12.0.5 data sourced from Icy Veins and Wowhead', detail: 'Guide last updated May 4, 2026. All speculative content removed. No raid content by design.' },
       { type: 'content', text: 'Voidforge, Void Assaults, Ritual Sites, Bazaar Quests, Prey, Saltheril\'s Soiree, Stormarion Assault, Legends of the Haranir, and Abundance all added as confirmed 12.0.5 content', detail: '' },
@@ -117,7 +143,6 @@ const VERSIONS = [
       { type: 'new',     text: 'Event Calendar tab — 50+ upcoming world events with real Wowhead links', detail: 'All links use verified event IDs (e.g. /event=479/darkmoon-faire). Covers May 2026 through mid-2027.' },
       { type: 'new',     text: 'Multi-select category tabs — hold multiple filters at once', detail: 'All tab clears selections. Deselecting the last active category falls back to All.' },
       { type: 'new',     text: '⭐ Your List — personal curated task list built from the master list', detail: 'Select any tasks from any category. Stored per character. Edit mode shows ⭐/☆ selection state. Completed tasks sort to bottom.' },
-      { type: 'new',     text: 'Your List defaults to first character on tab click', detail: '' },
       { type: 'new',     text: '✦ Custom tab — add personal tasks with name and optional description', detail: 'Persist per character, never auto-reset. Clicking a character name defaults to Custom view if they have tasks.' },
       { type: 'new',     text: 'Hide individual tasks — 🚫 button on hover, stored per character', detail: '👁 Show Hidden button appears when any tasks or sections are hidden.' },
       { type: 'new',     text: 'Hide entire sections from the All view', detail: 'Hidden sections collapse to a slim stub. Reveal with the global Show Hidden toggle.' },
@@ -128,7 +153,6 @@ const VERSIONS = [
       { type: 'new',     text: 'WoW UI icons replace emoji for all 13 section types', detail: 'Embedded as base64 PNGs — no external image files required.' },
       { type: 'new',     text: 'Shared midnight.css extracted for use across tracker and changelog', detail: 'One CSS file to update for both pages.' },
       { type: 'new',     text: 'Changelog page created and linked from tracker header', detail: '' },
-      { type: 'new',     text: 'index.html exported directly — no rename step required for GitHub Pages', detail: '' },
       { type: 'improve', text: '"Pick up quest" wording changed to "Complete quest" across all tasks', detail: '' },
       { type: 'fix',     text: 'Modals showing on page load — missing .modal-overlay CSS selector', detail: '' },
       { type: 'fix',     text: 'Sections not rendering on initial load — init call dropped during edit', detail: '' },
@@ -138,7 +162,7 @@ const VERSIONS = [
     ]
   },
   {
-    version: 'v1.0',
+    version: 'v1.0.0',
     date: 'May 13, 2026',
     summary: 'Initial release',
     entries: [
@@ -150,4 +174,3 @@ const VERSIONS = [
     ]
   },
 ];
-

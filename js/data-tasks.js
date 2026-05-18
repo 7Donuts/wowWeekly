@@ -361,7 +361,7 @@ const SECTIONS = [
   {
     id: 'currency',
     icon: '', iconClass: 'icon-currency',
-    title: 'Currency & Upgrades',
+    title: 'Upgrades',
     meta: 'Weekly caps — spend before reset or lose value',
     categories: ['currency'],
     priority: 2,
