@@ -993,17 +993,8 @@ function toggleLastChance() {
 function updateLastChanceBtn() {
   const btn = document.getElementById('btn-last-chance');
   if (!btn) return;
-  if (lastChanceMode) {
-    btn.textContent = '🔴 Last Chance ON';
-    btn.style.color        = '#e07068';
-    btn.style.borderColor  = 'rgba(192,83,74,0.5)';
-    btn.style.background   = 'rgba(192,83,74,0.08)';
-  } else {
-    btn.textContent = '⚡ Last Chance';
-    btn.style.color        = '';
-    btn.style.borderColor  = '';
-    btn.style.background   = '';
-  }
+  btn.classList.toggle('active', lastChanceMode);
+  btn.textContent = lastChanceMode ? '⚡ Last Chance ON' : '⚡ Last Chance';
 }
 
 function renderLastChanceBanner() {
