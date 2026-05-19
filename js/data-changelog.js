@@ -9,6 +9,31 @@
 ------------------------------------------- */
 const VERSIONS = [
   {
+    version: 'v1.8.4',
+    date: 'May 18, 2026',
+    summary: 'Icy Veins guide links on all section headers',
+    entries: [
+      { type: 'new', text: 'Section headers link to Icy Veins guides — click any category title to open its guide', detail: 'All 13 section headers (Raids, Great Vault, Mythic+, Delves, Prey, Void Assaults, Ritual Sites, Voidforge, World Events, Upgrades, Housing, PvP, and more) are now clickable links to the corresponding Icy Veins guide. Links open in a new tab. Works in both the All view and Your List grouped view. Clicking the title does not accidentally collapse the section.' },
+    ]
+  },
+  {
+    version: 'v1.8.3',
+    date: 'May 19, 2026',
+    summary: 'What\'s New popup — version-aware welcome back modal on every update',
+    entries: [
+      { type: 'new', text: 'What\'s New popup — shown automatically whenever a new version is released', detail: 'Returning users see a personalized "Welcome back, [character]!" modal with the latest patch notes on every visit after an update. New users see a "What\'s New" variant immediately after completing the welcome walkthrough. The popup shows the version badge, release date, summary, and all changelog entries for the latest version. A "View full changelog →" link leads to the full history. Dismissing saves the seen version so the popup won\'t reappear until the next update.' },
+    ]
+  },
+  {
+    version: 'v1.8.2',
+    date: 'May 19, 2026',
+    summary: 'Interactive welcome walkthrough — add character and pick starter preset inline',
+    entries: [
+      { type: 'improve', text: 'Welcome walkthrough step 2 — add your first character without leaving the intro', detail: 'The "Set Up Your Characters" step now contains an inline name input and Add Character button. Submitting creates the character, switches to it, and auto-advances to the next step. Pressing Enter in the input works too. The Next → button still skips if you prefer to add characters later.' },
+      { type: 'improve', text: 'Welcome walkthrough step 3 — pick a Starter Guide preset inline without leaving the intro', detail: 'The "Build Your List" step now renders all four progression stage cards (Fresh 80, Early Gearing, Progressing, Solo Endgame) directly in the modal. Clicking one applies the preset to Your List and auto-advances. An "or skip — I\'ll build it manually" link and the Next → button both let you proceed without selecting a preset.' },
+    ]
+  },
+  {
     version: 'v1.8.1',
     date: 'May 18, 2026',
     summary: 'Renamed to The Azeroth Agenda; light mode character modal fixes',

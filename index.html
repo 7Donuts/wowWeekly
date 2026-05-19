@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Azeroth Agenda</title>
-<link rel="stylesheet" href="midnight.css">
+<link rel="stylesheet" href="midnight.css?v=1.8.4">
 
 </head>
 <body>
@@ -184,6 +184,22 @@
 <input type="file" id="import-file-input" accept=".json" style="display:none;" onchange="handleImportFile(event)">
 <div id="share-toast" class="share-toast"></div>
 
+<!-- WHAT'S NEW MODAL -->
+<div class="modal-overlay" id="modal-whats-new">
+  <div class="modal welcome-modal wn-modal" style="width:540px;max-width:95vw;">
+    <div id="wn-icon" class="welcome-icon"></div>
+    <h3 id="wn-title" class="welcome-title"></h3>
+    <div id="wn-meta" class="wn-meta"></div>
+    <div id="wn-entries" class="wn-entries"></div>
+    <div style="text-align:center;margin-top:0.6rem;">
+      <a href="changelog.html" class="wn-changelog-link" onclick="closeWhatsNew()">View full changelog →</a>
+    </div>
+    <div class="welcome-nav" style="margin-top:0.75rem;">
+      <button class="btn-primary" onclick="closeWhatsNew()" style="flex:1;">Got it!</button>
+    </div>
+  </div>
+</div>
+
 <!-- WELCOME WALKTHROUGH MODAL -->
 <div class="modal-overlay" id="modal-welcome">
   <div class="modal welcome-modal" style="width:520px;max-width:95vw;">
@@ -192,6 +208,7 @@
     <h3 id="welcome-title" class="welcome-title"></h3>
     <div id="welcome-body" class="welcome-body"></div>
     <div id="welcome-note" class="welcome-note"></div>
+    <div id="welcome-interactive"></div>
     <div class="welcome-nav">
       <button id="welcome-back" class="btn-cancel" onclick="welcomeBack()">← Back</button>
       <button id="welcome-next" class="btn-primary" onclick="welcomeNext()">Next →</button>
@@ -206,6 +223,7 @@
 <script src="js/data-tasks.js"></script>
 <script src="js/data-events.js"></script>
 <script src="js/data-classes.js"></script>
+<script src="js/data-changelog.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/confetti.js"></script>
 <script src="js/theme.js"></script>

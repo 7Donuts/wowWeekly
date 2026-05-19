@@ -287,7 +287,8 @@ function sectionTaskHtml(t, done, hidden, yourList, goals, bossKills, notes) {
     rightCol = '<span style="flex-shrink:0;font-size:13px;color:' + (inList ? 'var(--light-gold)' : 'var(--text-muted)') + ';">'
       + (inList ? '⭐' : '☆') + '</span>';
   } else {
-    rightCol = '<div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">'
+    rightCol = '<div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;align-items:center;">'
+      + (inList ? '<span style="font-size:13px;color:var(--light-gold);line-height:1;" title="In Your List">⭐</span>' : '')
       + noteBtnHtml(id, notes)
       + '<button class="task-hide" title="' + (isHidden ? 'Unhide task' : 'Hide task') + '" onclick="toggleHideTask(event,\'' + id + '\')">' + (isHidden ? '👁' : '🚫') + '</button>'
       + '</div>';
@@ -304,8 +305,8 @@ function sectionTaskHtml(t, done, hidden, yourList, goals, bossKills, notes) {
     + bossHtml
     + (!editingYourList ? noteHtml(id, notes) : '')
     + '</div>'
-    + rightCol
     + goalHtml
+    + rightCol
     + '</div>';
 }
 
@@ -493,7 +494,7 @@ function render() {
         const ylHeader = document.createElement('div');
         ylHeader.className = 'yl-section-header';
         ylHeader.innerHTML = '<div class="section-icon ' + sec.iconClass + '" style="width:22px;height:22px;font-size:13px;">' + sec.icon + '</div>'
-          + '<span class="yl-section-title">' + sec.title + '</span>'
+          + ylSecTitleHtml(sec)
           + '<span class="yl-section-count"><span style="color:var(--success-bright)">' + secDone + '</span> / ' + sortedTasks.length + '</span>';
         wrap.appendChild(ylHeader);
 
@@ -639,9 +640,9 @@ function buildEditBar() {
         const d = document.createElement('div');
         d.className = 'section section-hidden';
         d.innerHTML = '<div class="section-header" onclick="">'
-          + '<div class="section-icon ' + sec.iconClass + '">' + sec.icon + '</div>'
+          + '<div class="section-icon ' + sec.iconClass + '" style="width:40px;height:40px;font-size:22px;">' + sec.icon + '</div>'
           + '<div class="section-title-wrap">'
-          + '<div class="section-title">' + sec.title + '</div>'
+          + secTitleHtml(sec)
           + '<div class="section-meta">Hidden from All view</div>'
           + '</div>'
           + '<button class="section-hide" title="Unhide section" onclick="toggleHideSection(event,\'' + sec.id + '\')">👁</button>'
@@ -652,11 +653,12 @@ function buildEditBar() {
 
       const div = document.createElement('div');
       div.className = 'section' + (isSectionHidden ? ' section-hidden' : '');
+      div.dataset.section = sec.id;
       const hiddenCountSpan = hiddenCount > 0 ? '<span class="hidden-count">(' + hiddenCount + ' hidden)</span>' : '';
       div.innerHTML = '<div class="section-header' + (isOpen ? ' open' : '') + '" onclick="toggleSection(\'' + sec.id + '\')">'
-        + '<div class="section-icon ' + sec.iconClass + '">' + sec.icon + '</div>'
+        + '<div class="section-icon ' + sec.iconClass + '" style="width:40px;height:40px;font-size:22px;">' + sec.icon + '</div>'
         + '<div class="section-title-wrap">'
-        + '<div class="section-title">' + sec.title + '</div>'
+        + secTitleHtml(sec)
         + '<div class="section-meta">' + sec.meta + '</div>'
         + '</div>'
         + '<span class="section-count"><span class="done">' + secDone + '</span>&thinsp;/&thinsp;' + visibleTasks.filter(function(t){return !hidden[t.id];}).length + hiddenCountSpan + '</span>'
@@ -713,6 +715,24 @@ function toggle(id, taskEl) {
   render();
 }
 function toggleSection(id) { collapsed[id] = !collapsed[id]; render(); }
+
+function secTitleHtml(sec) {
+  if (!sec.url) return '<div class="section-title">' + sec.title + '</div>';
+  return '<div class="section-title">'
+    + '<a href="' + sec.url + '" target="_blank" rel="noopener" class="section-title-link"'
+    + ' onclick="event.stopPropagation()" title="Icy Veins guide">'
+    + sec.title + '</a>'
+    + '</div>';
+}
+
+function ylSecTitleHtml(sec) {
+  if (!sec.url) return '<span class="yl-section-title">' + sec.title + '</span>';
+  return '<span class="yl-section-title">'
+    + '<a href="' + sec.url + '" target="_blank" rel="noopener" class="section-title-link yl-section-title-link"'
+    + ' onclick="event.stopPropagation()" title="Icy Veins guide">'
+    + sec.title + '</a>'
+    + '</span>';
+}
 
 function toggleHideTask(e, id) {
   e.stopPropagation();
@@ -2285,31 +2305,33 @@ function renderInlineEvent() {
 ═══════════════════════════════════════════ */
 const WELCOME_STEPS = [
   {
-    icon: '🌙',
+    icon: '⚜️',
     title: 'Welcome to The Azeroth Agenda',
     body: 'Your all-in-one weekly task tracker for World of Warcraft. Built to help you make every reset count — no spreadsheets, no guesswork.',
     note: null,
   },
   {
-    icon: '👤',
+    icon: '🧝',
     title: 'Set Up Your Characters',
-    body: 'Hit the <strong>+</strong> button in the character bar to add a character. Assign their class for color-coded display, and set a role — <strong>⭐ Main</strong>, <strong>◆ Alt</strong>, or <strong>🌿 Farm</strong> — to keep your roster organized.',
-    note: 'Each character tracks its own progress independently.',
+    body: 'Add your first character below to get started. Each character tracks its own progress independently — you can always add more later.',
+    note: 'Assign class &amp; role afterward with the ✏️ button in the character bar.',
+    interactive: 'char-setup',
   },
   {
-    icon: '⭐',
+    icon: '📜',
     title: 'Build Your List',
-    body: '<strong>Your List</strong> is your personal weekly checklist — only the tasks that matter to your character. Click <strong>⭐ Edit List</strong> to add tasks, or use the <strong>🧭 Starter Guide</strong> to auto-populate based on your current progression stage.',
-    note: 'Drag tasks to reorder. Save different configurations as Template Profiles.',
+    body: '<strong>Your List</strong> is your personal weekly checklist — only the tasks that matter to your character. Pick a preset below to get started instantly, or skip and build it manually.',
+    note: null,
+    interactive: 'list-setup',
   },
   {
-    icon: '✓',
+    icon: '🏆',
     title: 'Track Your Progress',
     body: 'Check off tasks as you complete them. Raids have per-boss, per-difficulty bubble tracking. Mythic+ and Delves use <strong>+/−</strong> goal counters with milestone rewards shown on hover. Everything resets automatically each Tuesday at 15:00 UTC.',
     note: 'Use compact mode (⊟) to see more tasks at once.',
   },
   {
-    icon: '📊',
+    icon: '⚙️',
     title: 'Smart Tools Built In',
     body: '<ul class="welcome-feature-list">'
       + '<li><strong>📊 Summary</strong> — per-section progress, weekly history &amp; streaks, efficiency scores</li>'
@@ -2321,7 +2343,7 @@ const WELCOME_STEPS = [
     note: null,
   },
   {
-    icon: '🎉',
+    icon: '🌟',
     title: "You're All Set!",
     body: 'Your progress saves automatically in your browser — nothing to sign in to. Check the <strong>📅 Events</strong> calendar and <strong>📋 Changelog</strong> links in the header to stay up to date.',
     note: 'You can reopen this guide anytime from the ⇅ Data menu.',
@@ -2339,6 +2361,7 @@ function openWelcome() {
 function closeWelcome() {
   localStorage.setItem('wow_mn_welcomed', '1');
   document.getElementById('modal-welcome').classList.remove('open');
+  if (shouldShowWhatsNew()) openWhatsNew();
 }
 
 function welcomeNext() {
@@ -2368,6 +2391,39 @@ function renderWelcomeStep() {
   if (step.note) { noteEl.textContent = step.note; noteEl.style.display = ''; }
   else           { noteEl.style.display = 'none'; }
 
+  // Interactive elements
+  const interactEl = document.getElementById('welcome-interactive');
+  if (step.interactive === 'list-setup') {
+    interactEl.innerHTML = '<div class="welcome-stage-list">'
+      + BEGINNER_STAGES.map(s =>
+          '<div class="beginner-stage-card" onclick="welcomeApplyStage(\'' + s.id + '\')">'
+          + '<div class="beginner-stage-dot" style="background:' + s.color + ';"></div>'
+          + '<div class="beginner-stage-text">'
+          + '<div class="beginner-stage-label">' + s.label + '</div>'
+          + '<div class="beginner-stage-sub">' + s.sublabel + '</div>'
+          + '</div>'
+          + '<span class="beginner-stage-arrow">→</span>'
+          + '</div>'
+        ).join('')
+      + '</div>'
+      + '<div class="welcome-stage-skip">or <button class="welcome-skip-inline" onclick="welcomeNext()">skip — I\'ll build it manually</button></div>';
+  } else if (step.interactive === 'char-setup') {
+    interactEl.innerHTML =
+      '<div class="welcome-char-form" id="welcome-char-form">'
+      + '<div class="welcome-char-row">'
+      + '<input id="welcome-char-input" type="text" class="welcome-char-input" placeholder="Character name…" maxlength="24"'
+      + ' onkeydown="if(event.key===\'Enter\')welcomeAddChar()" />'
+      + '<button class="btn-primary welcome-char-btn" onclick="welcomeAddChar()">Add Character</button>'
+      + '</div>'
+      + '</div>';
+    setTimeout(() => {
+      const inp = document.getElementById('welcome-char-input');
+      if (inp) inp.focus();
+    }, 50);
+  } else {
+    interactEl.innerHTML = '';
+  }
+
   const backBtn = document.getElementById('welcome-back');
   backBtn.style.visibility = _welcomeStep === 0 ? 'hidden' : '';
 
@@ -2375,12 +2431,86 @@ function renderWelcomeStep() {
   nextBtn.textContent = isLast ? "Let's Go!" : 'Next →';
 }
 
+function welcomeAddChar() {
+  const input = document.getElementById('welcome-char-input');
+  if (!input) return;
+  const name = input.value.trim();
+  if (!name) { input.focus(); return; }
+
+  if (!characters.includes(name)) {
+    characters.push(name);
+    localStorage.setItem('wow_midnight_chars', JSON.stringify(characters));
+  }
+  switchChar(name);
+  renderChars();
+
+  const form = document.getElementById('welcome-char-form');
+  if (form) {
+    form.innerHTML = '<div class="welcome-char-success">✓ <strong>' + name + '</strong> added — let\'s keep going!</div>';
+  }
+  setTimeout(welcomeNext, 900);
+}
+
+function welcomeApplyStage(stageId) {
+  applyBeginnerPreset(stageId); // saves list, switches to Your List tab
+  const stage = BEGINNER_STAGES.find(s => s.id === stageId);
+  const label = stage ? stage.label.split(' — ')[0] : stageId;
+  const interactEl = document.getElementById('welcome-interactive');
+  if (interactEl) {
+    interactEl.innerHTML = '<div class="welcome-char-success">✓ Your List set up for <strong>' + label + '</strong>!</div>';
+  }
+  setTimeout(welcomeNext, 900);
+}
+
+/* ── WHAT'S NEW ── */
+const _WN_BADGE = { new: 'badge-new', fix: 'badge-fix', improve: 'badge-improve', content: 'badge-content', remove: 'badge-fix' };
+const _WN_LABEL = { new: 'New', fix: 'Fix', improve: 'Improved', content: 'Content', remove: 'Removed' };
+
+function shouldShowWhatsNew() {
+  return localStorage.getItem('wow_mn_seen_version') !== VERSIONS[0].version;
+}
+
+function openWhatsNew() {
+  const v = VERSIONS[0];
+  const isReturning = !!localStorage.getItem('wow_mn_seen_version');
+
+  document.getElementById('wn-icon').textContent = isReturning ? '🔮' : '🌙';
+  document.getElementById('wn-title').textContent = isReturning
+    ? 'Welcome back, ' + currentChar + '!'
+    : "What's New";
+
+  document.getElementById('wn-meta').innerHTML =
+    '<span class="wn-version-tag">' + v.version + '</span>'
+    + ' <span class="wn-version-dot">·</span> '
+    + '<span class="wn-version-date">' + v.date + '</span>'
+    + '<div class="wn-version-summary">' + v.summary + '</div>';
+
+  document.getElementById('wn-entries').innerHTML = v.entries.map(e =>
+    '<div class="cl-entry">'
+    + '<span class="cl-badge ' + (_WN_BADGE[e.type] || 'badge-new') + '">' + (_WN_LABEL[e.type] || 'New') + '</span>'
+    + '<div class="cl-text">' + e.text
+    + (e.detail ? '<span>' + e.detail + '</span>' : '')
+    + '</div></div>'
+  ).join('');
+
+  document.getElementById('modal-whats-new').classList.add('open');
+}
+
+function closeWhatsNew() {
+  localStorage.setItem('wow_mn_seen_version', VERSIONS[0].version);
+  document.getElementById('modal-whats-new').classList.remove('open');
+}
+
 /* ── INIT ── */
 renderChars(); renderClassLinksBar(); render(); renderInlineHistory(); renderInlineEvent(); updateCountdown(); setInterval(updateCountdown, 1000);
 updateLastChanceBtn(); renderLastChanceBanner();
 renderEventAlerts();
 checkShareablePlanURL();
-if (!localStorage.getItem('wow_mn_welcomed')) openWelcome();
+if (!localStorage.getItem('wow_mn_welcomed')) {
+  openWelcome();
+} else if (shouldShowWhatsNew()) {
+  openWhatsNew();
+}
 
 // Sync toolbar button labels to persisted state
 document.getElementById('btn-theme').textContent   = isLightMode ? '🌙 Dark'   : '☀️ Light';
@@ -2393,7 +2523,7 @@ if (isCompact) {
 
 /* ---- Modal overlay close listeners ---- */
 document.addEventListener('DOMContentLoaded', function() {
-  ['modal','modal-custom','modal-summary','modal-data','modal-profiles','modal-welcome'].forEach(function(id) {
+  ['modal','modal-custom','modal-summary','modal-data','modal-profiles','modal-welcome','modal-whats-new'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener('click', function(e) {
       if (e.target === el) el.classList.remove('open');
