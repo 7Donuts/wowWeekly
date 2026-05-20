@@ -505,9 +505,9 @@ function render() {
         wrap.className = 'yl-section-group';
         const ylHeader = document.createElement('div');
         ylHeader.className = 'yl-section-header';
-        ylHeader.innerHTML = '<div class="section-icon ' + sec.iconClass + '" style="width:22px;height:22px;font-size:13px;">' + sec.icon + '</div>'
-          + ylSecTitleHtml(sec)
-          + '<span class="yl-section-count"><span style="color:var(--success-bright)">' + secDone + '</span> / ' + sortedTasks.length + '</span>';
+        ylHeader.innerHTML = '<div class="section-icon ' + sec.iconClass + '">' + sec.icon + '</div>'
+          + '<div class="section-title-wrap">' + ylSecTitleHtml(sec) + '</div>'
+          + '<span class="yl-section-count"><span class="done">' + secDone + '</span> / ' + sortedTasks.length + '</span>';
         wrap.appendChild(ylHeader);
 
         const body = document.createElement('div');
@@ -2796,7 +2796,11 @@ function openWhatsNew() {
 }
 
 function closeWhatsNew() {
-  localStorage.setItem('wow_mn_seen_version', VERSIONS[0].version);
+  const cb = document.getElementById('wn-hide-version');
+  if (cb && cb.checked) {
+    localStorage.setItem('wow_mn_seen_version', VERSIONS[0].version);
+  }
+  if (cb) cb.checked = false;
   document.getElementById('modal-whats-new').classList.remove('open');
 }
 
@@ -2822,10 +2826,14 @@ if (isCompact) {
 
 /* ---- Modal overlay close listeners ---- */
 document.addEventListener('DOMContentLoaded', function() {
-  ['modal','modal-custom','modal-summary','modal-data','modal-profiles','modal-welcome','modal-whats-new','modal-bis','modal-bis-edit'].forEach(function(id) {
+  ['modal','modal-custom','modal-summary','modal-data','modal-profiles','modal-welcome','modal-bis','modal-bis-edit'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener('click', function(e) {
       if (e.target === el) el.classList.remove('open');
     });
+  });
+  var wnEl = document.getElementById('modal-whats-new');
+  if (wnEl) wnEl.addEventListener('click', function(e) {
+    if (e.target === wnEl) closeWhatsNew();
   });
 });

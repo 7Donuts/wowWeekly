@@ -30,6 +30,7 @@
         <span>Weekly reset in:</span>
         <span class="reset-countdown" id="countdown">calculating…</span>
       </div>
+      <button class="btn-reset-all" onclick="resetAll()">↺ Reset Week</button>
       <div class="progress-wrap">
         <div class="progress-bar-track">
           <div class="progress-bar-fill" id="prog-fill" style="width:0%"></div>
@@ -39,15 +40,13 @@
       <div style="flex:1;"></div>
       <div class="reset-bar-btns">
         <button class="btn-reset-all" id="btn-theme" onclick="toggleTheme()" title="Toggle dark/light mode">☀️ Light</button>
-        <button class="btn-reset-all" id="btn-compact" onclick="toggleCompact()" title="Toggle compact view">⊟ Compact</button>
         <button class="btn-reset-all" id="btn-whats-next" onclick="whatsNext()" title="Randomly pick an uncompleted task from Your List">🎲 What's Next?</button>
-        <button class="btn-reset-all" onclick="openBisModal()">⚔️ BiS Gear</button>
         <button class="btn-reset-all" onclick="openSummary()">📊 Summary</button>
-        <button class="btn-reset-all" onclick="resetAll()">↺ Reset Week</button>
         <button class="btn-reset-all" onclick="openExportImport()">⇅ Data</button>
         <div class="btn-conditional-group">
           <button class="btn-reset-all" id="btn-reveal" onclick="toggleRevealHidden()" style="display:none;">👁 Show Hidden</button>
           <button class="btn-reset-all" id="btn-edit-yourlist" onclick="startEditingYourList()">⭐ Edit List</button>
+          <button class="btn-reset-all" id="btn-bis" onclick="openBisModal()" style="color:var(--success-bright);border-color:var(--success);">⚔️ BiS Gear</button>
           <button class="btn-reset-all" id="btn-share-plan" onclick="generateShareURL()" style="display:none;" title="Copy shareable link for Your List">🔗 Share Plan</button>
         </div>
       </div>
@@ -93,6 +92,7 @@
 
   <div class="search-bar-wrap">
     <button class="btn-view-toggle" id="btn-yourlist-view" onclick="toggleYourListView()" title="Toggle grouped / flat list">⊞ Grouped</button>
+    <button class="btn-view-toggle" id="btn-compact" onclick="toggleCompact()" title="Toggle compact view">⊟ Compact</button>
     <div class="search-bar-inner">
       <span class="search-icon">🔍</span>
       <input type="text" id="task-search" class="task-search-input"
@@ -224,6 +224,11 @@
     <div id="wn-entries" class="wn-entries"></div>
     <div style="text-align:center;margin-top:0.6rem;">
       <a href="changelog.html" class="wn-changelog-link" onclick="closeWhatsNew()">View full changelog →</a>
+    </div>
+    <div class="wn-dismiss-wrap">
+      <label class="wn-dismiss-label">
+        <input type="checkbox" id="wn-hide-version"><span class="wn-cb"></span> Hide until next update
+      </label>
     </div>
     <div class="welcome-nav" style="margin-top:0.75rem;">
       <button class="btn-primary" onclick="closeWhatsNew()" style="flex:1;">Got it!</button>

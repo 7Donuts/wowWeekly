@@ -2205,6 +2205,58 @@ body.light-mode .welcome-note { border-color: rgba(139,26,26,0.35); }
   transition: color 0.15s;
 }
 .wn-changelog-link:hover { color: var(--void-glow); }
+.wn-dismiss-wrap {
+  text-align: center;
+  margin-top: 0.75rem;
+}
+.wn-dismiss-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  user-select: none;
+  white-space: nowrap;
+}
+.wn-dismiss-label:hover { color: var(--text-secondary); }
+.wn-dismiss-label input[type="checkbox"] { position: absolute; opacity: 0; width: 0; height: 0; }
+.wn-cb {
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  width: 12px; height: 12px;
+  border: 1.5px solid var(--border-bright); border-radius: 3px;
+  background: transparent; cursor: pointer;
+  transition: all 0.15s;
+}
+.wn-dismiss-label:hover .wn-cb { border-color: var(--void-glow); background: rgba(124,92,191,0.1); }
+.wn-cb::after {
+  content: '';
+  opacity: 0;
+  width: 3px; height: 5px;
+  border: 1.5px solid white; border-top: none; border-left: none;
+  transform: rotate(45deg) translateY(-1px);
+  transition: opacity 0.1s;
+}
+.wn-dismiss-label input:checked ~ .wn-cb { background: var(--success); border-color: var(--success); }
+.wn-dismiss-label input:checked ~ .wn-cb::after { opacity: 1; }
+
+/* ── YOUR LIST GROUP HEADERS ── */
+.yl-section-header {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.35rem 0.75rem 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  cursor: default; user-select: none;
+}
+.yl-section-title {
+  font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700;
+  color: var(--light-gold); letter-spacing: 0.06em; text-transform: uppercase;
+}
+.yl-section-count {
+  font-size: 13px; color: var(--text-muted);
+  font-family: 'Cinzel', serif; white-space: nowrap; margin-left: auto;
+}
+.yl-section-count .done { color: var(--success-bright); }
 
 /* ── CROSS-ALT HEATMAP ── */
 .hm-table {
