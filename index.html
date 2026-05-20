@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Azeroth Agenda</title>
-<link rel="stylesheet" href="midnight.css?v=1.8.4">
+<link rel="stylesheet" href="midnight.css?v=1.8.5">
 
 </head>
 <body>
@@ -41,6 +41,7 @@
         <button class="btn-reset-all" id="btn-theme" onclick="toggleTheme()" title="Toggle dark/light mode">☀️ Light</button>
         <button class="btn-reset-all" id="btn-compact" onclick="toggleCompact()" title="Toggle compact view">⊟ Compact</button>
         <button class="btn-reset-all" id="btn-whats-next" onclick="whatsNext()" title="Randomly pick an uncompleted task from Your List">🎲 What's Next?</button>
+        <button class="btn-reset-all" onclick="openBisModal()">⚔️ BiS Gear</button>
         <button class="btn-reset-all" onclick="openSummary()">📊 Summary</button>
         <button class="btn-reset-all" onclick="resetAll()">↺ Reset Week</button>
         <button class="btn-reset-all" onclick="openExportImport()">⇅ Data</button>
@@ -184,6 +185,36 @@
 <input type="file" id="import-file-input" accept=".json" style="display:none;" onchange="handleImportFile(event)">
 <div id="share-toast" class="share-toast"></div>
 
+<!-- BEST IN SLOT EDIT MODAL -->
+<div class="modal-overlay" id="modal-bis-edit">
+  <div class="modal" style="width:460px;max-width:95vw;">
+    <h3 id="bis-edit-title">Edit BiS Item</h3>
+    <div id="bis-edit-slot-label" style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.1em;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.4rem;"></div>
+    <input type="text" id="bis-edit-name" placeholder="Item name…" maxlength="120"
+           onkeydown="if(event.key==='Enter')document.getElementById('bis-edit-desc').focus()" />
+    <input type="text" id="bis-edit-desc" placeholder="Source · Location (optional)…" maxlength="200"
+           style="margin-bottom:1rem;"
+           onkeydown="if(event.key==='Enter')saveBisEdit()" />
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeBisEditModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveBisEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- BEST IN SLOT MODAL -->
+<div class="modal-overlay" id="modal-bis">
+  <div class="modal bis-modal" style="width:640px;max-width:97vw;">
+    <div class="bis-header">
+      <div id="bis-breadcrumb" class="bis-breadcrumb"></div>
+      <h3 id="bis-title">Best in Slot Gear</h3>
+      <p id="bis-subtitle" class="bis-subtitle">Select your class and specialization to see your BiS gear list and import items as tasks.</p>
+    </div>
+    <div id="bis-content"></div>
+    <div class="modal-btns" id="bis-footer" style="margin-top:1rem;"></div>
+  </div>
+</div>
+
 <!-- WHAT'S NEW MODAL -->
 <div class="modal-overlay" id="modal-whats-new">
   <div class="modal welcome-modal wn-modal" style="width:540px;max-width:95vw;">
@@ -220,14 +251,15 @@
 
 
 <!-- ── JS: load order matters — each file depends on the ones above it ── -->
-<script src="js/data-tasks.js"></script>
-<script src="js/data-events.js"></script>
-<script src="js/data-classes.js"></script>
-<script src="js/data-changelog.js"></script>
-<script src="js/storage.js"></script>
-<script src="js/confetti.js"></script>
-<script src="js/theme.js"></script>
-<script src="js/app.js"></script>
+<script src="js/data-tasks.js?v=1.8.5"></script>
+<script src="js/data-events.js?v=1.8.5"></script>
+<script src="js/data-classes.js?v=1.8.5"></script>
+<script src="js/data-changelog.js?v=1.8.5"></script>
+<script src="js/data-bis.js?v=1.8.5"></script>
+<script src="js/storage.js?v=1.8.5"></script>
+<script src="js/confetti.js?v=1.8.5"></script>
+<script src="js/theme.js?v=1.8.5"></script>
+<script src="js/app.js?v=1.8.5"></script>
 
 </body>
 </html>

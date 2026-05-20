@@ -9,6 +9,14 @@
 ------------------------------------------- */
 const VERSIONS = [
   {
+    version: 'v1.8.5',
+    date: 'May 20, 2026',
+    summary: 'Best in Slot gear import — add BiS items as Your List tasks by class & spec',
+    entries: [
+      { type: 'new', text: 'Best in Slot import — click ⚔️ BiS Gear to browse gear by class/spec and add items to Your List', detail: 'A new BiS Gear button in the toolbar opens a three-step modal: pick your class (13 classes, color-coded), pick your spec (47 specializations including the new Devourer Demon Hunter), then browse a slot-by-slot gear list with item name and drop source. Check any items and click Import — each becomes a completable custom task in Your List with the format "[Slot] Item Name" and the boss/location as the description. Already-imported items are pre-checked. Dimmed specs indicate lists that are coming soon. Patch 12.0.5 data included for Arms Warrior, Retribution Paladin, Unholy Death Knight, Beast Mastery Hunter, Frost Mage, and Shadow Priest.' },
+    ]
+  },
+  {
     version: 'v1.8.4',
     date: 'May 18, 2026',
     summary: 'Icy Veins guide links on all section headers',

@@ -16,13 +16,247 @@ const SECTIONS = [
   // ── PRIORITY 1  (Do First) ─────────────────────────────
 
   {
+    id: 'voidforge',
+    icon: '', iconClass: 'icon-void',
+    title: 'Voidforge',
+    url: 'https://www.icy-veins.com/wow/turboboost-and-bonus-rolls-in-midnight-season-1-the-voidforge',
+    meta: '12.0.5 · Top priority if not yet complete · Powers endgame bonus rolls',
+    categories: ['voidforge', 'currency'],
+    priority: 1,
+    tasks: [
+      { id: 'vf1', name: 'Check Voidforge quest status — visit Decimus at 51.2, 68.4 in The Voidstorm',
+        desc: 'Requires campaign completion up to "Domus Penumbra." If behind, Decimus offers all 6 catch-up weeks at once.',
+        tags: ['tag-void', 'tag-new'] },
+      { id: 'vf2', name: 'Complete this week\'s Voidforge quest',
+        desc: 'Completed Voidforge rewards 2 Nebulous Voidcores per week. Weekly cap increases by 2 each week for the rest of the season.',
+        tags: ['tag-void', 'tag-new'] },
+      { id: 'vf3', name: 'Use Nebulous Voidcores as bonus rolls on weak gear slots',
+        desc: 'Available from Mythic+, Bountiful Delves, and Nightmare Prey Hunts. Check your class guide on Icy Veins for optimal slot priorities.',
+        tags: ['tag-void', 'tag-gold', 'tag-new'] },
+      { id: 'vf4', name: 'Use Ascendant Voidcores on trinkets or weapons (if in endgame)',
+        desc: 'Drops from Season 1 endgame content. Upgrades max ilvl trinkets and weapons beyond normal caps.',
+        tags: ['tag-void', 'tag-gold', 'tag-new'] },
+    ]
+  },
+
+  {
+    id: 'prey',
+    icon: '', iconClass: 'icon-prey',
+    title: 'Prey System',
+    url: 'https://www.icy-veins.com/wow/prey-system-guide',
+    meta: 'Open-world hunting · Great Vault World row · Enable via Astalor Bloodsworn in Murder Row, Silvermoon',
+    categories: ['prey'],
+    priority: 1,
+    tasks: [
+      { id: 'pr_norm', goal: {max:2, label:'hunts', milestones:[
+          {at:1, note:'1 / 2 Normal hunts done'},
+          {at:2, note:'✓ Both Normal hunts complete'},
+        ]},
+        name: 'Normal Prey Hunts (2 per week)',
+        desc: 'Rewards Adventurer-level gear (ilvl 220–237). Twice-weekly lockout. Enable via Astalor Bloodsworn in Murder Row, Silvermoon.',
+        tags: ['tag-world'] },
+      { id: 'pr_hard', goal: {max:2, label:'hunts', milestones:[
+          {at:1, note:'1 / 2 Hard hunts done'},
+          {at:2, note:'✓ Both Hard hunts complete'},
+        ]},
+        name: 'Hard Prey Hunts (2 per week)',
+        desc: 'Rewards Veteran-level gear (ilvl 233–250). Twice-weekly lockout. Harder targets may require a partner.',
+        tags: ['tag-world'] },
+      { id: 'pr_nm', goal: {max:3, label:'hunts', milestones:[
+          {at:1, note:'1 / 3 Nightmare hunts done'},
+          {at:2, note:'2 / 3 Nightmare hunts done'},
+          {at:3, note:'✓ Weekly Prey quest complete'},
+        ]},
+        name: 'Nightmare Prey Hunts (weekly quest — 3 kills)',
+        desc: 'Rewards Champion-level gear (ilvl 246–263). Also drops Nebulous Voidcores for bonus rolls. Core Icy Veins weekly priority.',
+        tags: ['tag-world', 'tag-void'] },
+      { id: 'pr3', name: 'Check Prey target list for transmog / mount / housing drops',
+        desc: 'Specific Prey targets drop unique achievements, transmog, mounts, and housing decor.',
+        tags: ['tag-world', 'tag-optional'] },
+    ]
+  },
+
+  {
+    id: 'delves',
+    icon: '', iconClass: 'icon-delve',
+    title: 'Delves',
+    url: 'https://www.icy-veins.com/wow/delves-guide',
+    meta: 'Solo/2-player instanced content · Contributes to Great Vault World row',
+    categories: ['delve'],
+    priority: 1,
+    tasks: [
+      { id: 'd1', name: 'Use Trovehunter\'s Bounty in highest tier Delve possible',
+        desc: 'Trovehunter\'s Bounty reveals the Hidden Trove inside a Delve. Always use it at your highest manageable tier — Champion gear at T1–T7, Hero gear at T8+. One use per week.',
+        tags: ['tag-delve', 'tag-gold'] },
+      { id: 'd_bountiful', goal: {max:4, label:'delves', milestones:[
+          {at:1, note:'1 / 4 Bountiful Delves done'},
+          {at:2, note:'2 / 4 Bountiful Delves done'},
+          {at:3, note:'3 / 4 Bountiful Delves done'},
+          {at:4, note:'✓ Weekly Bountiful Delve goal complete'},
+        ]},
+        name: 'Complete Bountiful Delves (up to 4 per week)',
+        desc: 'Bountiful Delves reward end-of-run caches and are eligible Voidforge bonus roll sources. Set your current max tier below — gear quality scales with tier.',
+        tags: ['tag-delve', 'tag-void'],
+        tierSelector: true },
+      { id: 'd3', name: 'Collect Delve weekly cache reward',
+        desc: 'Check for any active weekly Delve quest associated with your current tier.',
+        tags: ['tag-delve', 'tag-gold'] },
+    ]
+  },
+
+  {
+    id: 'currency',
+    icon: '', iconClass: 'icon-currency',
+    title: 'Upgrades',
+    url: 'https://www.icy-veins.com/wow/midnight-pve-gearing-guide',
+    meta: 'Weekly caps — spend before reset or lose value',
+    categories: ['currency'],
+    priority: 1,
+    tasks: [
+      { id: 'cu1', name: 'Spend all Crests of Champion quality and below on gear upgrades',
+        desc: 'Lower-tier Crests lose value if stockpiled. Prioritize weakest item level slots each week.',
+        tags: ['tag-gold'] },
+      { id: 'cu2', name: 'Use weekly Catalyst charge (if available)',
+        desc: 'Catalyst converts eligible gear into tier set pieces. 1 charge accrues per week.',
+        tags: ['tag-gold'] },
+      { id: 'cu3', name: 'Collect and spend Brimming Arcana (from Soiree / subfaction quartermasters)',
+        desc: 'Popular Blood Elf currency. Subfaction QMs and Silvermoon Court QM sell cosmetics, housing decor, and crafting recipes.',
+        tags: ['tag-gold'] },
+      { id: 'cu4', name: 'Open Relic Coffers with accumulated Key shards (from Bazaar caches)',
+        desc: 'Relic Coffer Key shards drop from Ranger\'s Cache rewards. Combine to open Coffers for additional loot.',
+        tags: ['tag-gold'] },
+      { id: 'cu5', name: 'Craft or empower gear with Dawncrest (if holding 80+)',
+        desc: 'Dawncrest comes in three tiers — Adventurer (ilvl 220–237), Veteran (ilvl 233–250), and Hero (ilvl 259–276). Spend 80 of the appropriate Dawncrest at a crafter or workbench to empower a crafted piece to that tier. Don\'t sit on 80+ — it\'s dead value.',
+        tags: ['tag-gold'] },
+    ]
+  },
+
+  {
+    id: 'vault',
+    icon: '', iconClass: 'icon-vault',
+    title: 'Great Vault',
+    url: 'https://www.icy-veins.com/wow/great-vault-guide',
+    meta: 'Opens Tuesday reset — claim before doing anything else',
+    categories: ['currency'],
+    priority: 1,
+    tasks: [
+      { id: 'v1', name: 'Open your Great Vault',
+        desc: 'First thing every Tuesday. Choose from up to 9 unlocked reward slots across World, Dungeon, and Raid rows.',
+        tags: ['tag-vault'] },
+      { id: 'v2', name: 'Plan your Vault rows intentionally this week',
+        desc: 'World row: Delves + Prey + Ritual Sites. Dungeon row: Mythic+ runs. Build rows with a goal — don\'t fill randomly.',
+        tags: ['tag-vault'] },
+    ]
+  },
+
+  // ── PRIORITY 2  (Important) ────────────────────────────
+
+  {
+    id: 'mythicplus',
+    icon: '', iconClass: 'icon-mythic',
+    title: 'Mythic+ Dungeons',
+    url: 'https://www.icy-veins.com/wow/midnight-mythic-season-1-guide',
+    meta: 'No lockout — farm freely · Vault slots unlock at 1 / 4 / 8 runs',
+    categories: ['mythic'],
+    priority: 2,
+    tasks: [
+      { id: 'm1', goal: {max:8, label:'runs', milestones:[
+          {at:1, note:'🔓 Vault slot 1 unlocked'},
+          {at:4, note:'🔓🔓 Vault slots 1–2 unlocked'},
+          {at:8, note:'🔓🔓🔓 All 3 Vault slots unlocked'},
+        ]},
+        name: 'Complete Mythic+ keys for Great Vault',
+        desc: 'Run 1 for slot 1, 4 for slot 2, 8 for all 3 slots.',
+        tags: ['tag-mythic', 'tag-vault'] },
+      { id: 'm4', name: 'Farm the highest keys you can, up to +10s',
+        desc: 'Icy Veins weekly recommendation for optimal Crest income this week.',
+        tags: ['tag-mythic', 'tag-gold'] },
+      { id: 'm5', name: 'Spend all Crests of Champion quality and below on upgrades',
+        desc: 'Lower-tier Crests should be spent each week. Upgrade your weakest gear slots first.',
+        tags: ['tag-mythic', 'tag-gold'] },
+    ]
+  },
+
+  {
+    id: 'ritual-sites',
+    icon: '🔮', iconClass: 'icon-void',
+    title: 'Ritual Sites',
+    url: 'https://www.icy-veins.com/wow/ritual-sites-guide',
+    meta: '12.0.5 · 1–5 players · Great Vault World row · Do early in the week',
+    categories: ['ritual-sites'],
+    priority: 2,
+    tasks: [
+      { id: 'rs1', goal: {max:5, label:'sites'}, name: 'Complete Ritual Sites this week (flexible — solo or small group)',
+        desc: 'Repeatable instanced content with escalating tiers and greater rewards at higher difficulties. Counts toward Great Vault World row.',
+        tags: ['tag-void', 'tag-world', 'tag-new'] },
+    ]
+  },
+
+  {
+    id: 'bazaar',
+    icon: '', iconClass: 'icon-bazaar',
+    title: 'Bazaar Weekly Quests',
+    url: 'https://www.icy-veins.com/wow/weekly-to-do-list',
+    meta: 'Free weekly value — easy to forget, never skip',
+    categories: ['world', 'currency'],
+    priority: 2,
+    tasks: [
+      { id: 'bq1', name: 'Complete quest from Ranger Captain Lilatha (2nd floor, The Bazaar)',
+        desc: 'Rewards a Ranger\'s Cache containing Field Accolades, Relic Coffer Key shards, gear-upgrade materials, and gold.',
+        tags: ['tag-world', 'tag-gold'] },
+      { id: 'bq2', name: 'Complete quest from Kul\'amara the Fierce (2nd floor, The Bazaar)',
+        desc: 'Second free Ranger\'s Cache weekly. Takes minutes and runs naturally alongside Void Assault activity.',
+        tags: ['tag-world', 'tag-gold'] },
+      { id: 'bq3', name: 'Complete Weekly World Event quest from Lady Liadrin',
+        desc: 'Rewards a Spark — used for crafted gear progression.',
+        tags: ['tag-world', 'tag-gold'] },
+      { id: 'bq4', name: 'Complete Housing Weekly quest from Vaeli (outside Silvermoon bank)',
+        desc: 'Weekly housing quest for decor rewards and housing progression.',
+        tags: ['tag-housing', 'tag-world'] },
+    ]
+  },
+
+  {
+    id: 'world-events',
+    icon: '', iconClass: 'icon-world',
+    title: 'World Events',
+    url: 'https://www.icy-veins.com/wow/midnight-world-events-guide',
+    meta: 'Rotating across all four Midnight zones each week',
+    categories: ['world'],
+    priority: 2,
+    tasks: [
+      { id: 'we0a', name: 'Complete World Quests (daily)',
+        desc: 'World Quests reward Adventurer-level gear (ilvl 220–237), gold, and rep. Check your map each day — they rotate frequently and are the lowest barrier gearing activity available at max level.',
+        tags: ['tag-world', 'tag-gold'] },
+      { id: 'we0b', name: 'Kill Rare Elites (as encountered)',
+        desc: 'Rare mobs reward Adventurer-level gear (ilvl 220–237) on kill. Not on a strict lockout — kill rares as you encounter them while doing world content. Higher-threat rares may require a small group.',
+        tags: ['tag-world', 'tag-gold'] },
+      { id: 'we1', name: 'World Bosses — kill each available boss once',
+        desc: 'One kill per boss per week. Four world bosses total across the four Midnight zones. Rewards Champion-quality loot.',
+        tags: ['tag-world', 'tag-gold'] },
+      { id: 'we2', name: 'Abundance — complete Weekly: Abundance quest (20,000 points)',
+        desc: 'Events spawn in zone caverns and rotate every 8 hours. Use Shards of Dundun to empower runs (up to 8 shards per week from outdoor activities). Rewards Overflowing Abundant Satchel + 1,000 Amani Tribe rep.',
+        tags: ['tag-world'] },
+      { id: 'we3', name: 'Stormarion Assault — complete Stand Your Ground weekly',
+        desc: 'Tower defense event at Stormarion Citadel in The Voidstorm, every 30 minutes. Defend 3 waves of void attackers. Rewards Victorious Stormarion Pinnacle Cache.',
+        tags: ['tag-world', 'tag-void'] },
+      { id: 'we4', name: 'Saltheril\'s Soiree — complete weekly faction quests in Eversong Woods',
+        desc: 'Choose your subfaction (Magisters / Blood Knights / Farstriders / Shades of the Row). Fortify the Runestones quest rewards pinnacle chest + 150 Brimming Arcana + 2,000 Silvermoon Court rep. Actions can affect standing with other subfactions.',
+        tags: ['tag-world', 'tag-gold'] },
+      { id: 'we5', name: 'Legends of the Haranir — complete Lost Legends weekly (Harandar)',
+        desc: 'Choose one of 7 Hara\'ti relics and play through its history in a scenario. Rewards Avid Learner\'s Supply Pack (counts as a Midnight Weekly Cache) + 1,000 Hara\'ti rep + a housing decor item based on your relic choice.',
+        tags: ['tag-world', 'tag-housing'] },
+    ]
+  },
+
+  {
     id: 'raid',
     icon: '', iconClass: 'icon-raid',
     title: 'Raids',
     url: 'https://www.icy-veins.com/wow/midnight-season-1-raid-guide',
     meta: 'Personal loot lockout resets Tuesday · Click boss bubbles to track kills',
     categories: ['raid'],
-    priority: 1,
+    priority: 2,
     tasks: [
       // ── THE DREAMRIFT ──
       { id: 'rd_lfr',    name: 'The Dreamrift — LFR',
@@ -137,263 +371,7 @@ const SECTIONS = [
     ]
   },
 
-  {
-    id: 'vault',
-    icon: '', iconClass: 'icon-vault',
-    title: 'Great Vault',
-    url: 'https://www.icy-veins.com/wow/great-vault-guide',
-    meta: 'Opens Tuesday reset — claim before doing anything else',
-    categories: ['currency'],
-    priority: 1,
-    tasks: [
-      { id: 'v1', name: 'Open your Great Vault',
-        desc: 'First thing every Tuesday. Choose from up to 9 unlocked reward slots across World, Dungeon, and Raid rows.',
-        tags: ['tag-vault'] },
-      { id: 'v2', name: 'Plan your Vault rows intentionally this week',
-        desc: 'World row: Delves + Prey + Ritual Sites. Dungeon row: Mythic+ runs. Build rows with a goal — don\'t fill randomly.',
-        tags: ['tag-vault'] },
-    ]
-  },
-
-  {
-    id: 'void-assaults',
-    icon: '🌀', iconClass: 'icon-void',
-    title: 'Void Assaults',
-    url: 'https://www.icy-veins.com/wow/void-assaults-hub',
-    meta: 'Start here each reset · Rotates between Eversong Woods and Zul\'Aman weekly',
-    categories: ['void-assaults'],
-    priority: 1,
-    tasks: [
-      { id: 'va1', name: 'Check which zone has the active Void Assault this week',
-        desc: 'Void Strikes rotate weekly between Eversong Woods and Zul\'Aman. Check your map at reset.',
-        tags: ['tag-void', 'tag-new'] },
-      { id: 'va2', goal: {max:5, label:'strikes'}, name: 'Complete Void Strikes in the active zone',
-        desc: 'Smaller targeted attacks — easily soloable or in a small group. Defeating one spawns another nearby. Each awards Field Accolades.',
-        tags: ['tag-void', 'tag-world'] },
-      { id: 'va3', name: 'Participate in the Void Incursion (once bar reaches 100%)',
-        desc: 'Larger assault requiring more players. Triggered by clearing enough Void Strikes. Best Void Assault rewards.',
-        tags: ['tag-void', 'tag-world'] },
-      { id: 'va4', name: 'Complete Void Assault weekly quest',
-        desc: 'Rewards Ranger\'s Cache Pinnacle cache. Worth doing even if you no longer need Veteran-quality gear.',
-        tags: ['tag-void', 'tag-gold'] },
-    ]
-  },
-
-  {
-    id: 'bazaar',
-    icon: '', iconClass: 'icon-bazaar',
-    title: 'Bazaar Weekly Quests',
-    url: 'https://www.icy-veins.com/wow/weekly-to-do-list',
-    meta: 'Free weekly value — easy to forget, never skip',
-    categories: ['world', 'currency'],
-    priority: 1,
-    tasks: [
-      { id: 'bq1', name: 'Complete quest from Ranger Captain Lilatha (2nd floor, The Bazaar)',
-        desc: 'Rewards a Ranger\'s Cache containing Field Accolades, Relic Coffer Key shards, gear-upgrade materials, and gold.',
-        tags: ['tag-world', 'tag-gold'] },
-      { id: 'bq2', name: 'Complete quest from Kul\'amara the Fierce (2nd floor, The Bazaar)',
-        desc: 'Second free Ranger\'s Cache weekly. Takes minutes and runs naturally alongside Void Assault activity.',
-        tags: ['tag-world', 'tag-gold'] },
-      { id: 'bq3', name: 'Complete Weekly World Event quest from Lady Liadrin',
-        desc: 'Rewards a Spark — used for crafted gear progression.',
-        tags: ['tag-world', 'tag-gold'] },
-      { id: 'bq4', name: 'Complete Housing Weekly quest from Vaeli (outside Silvermoon bank)',
-        desc: 'Weekly housing quest for decor rewards and housing progression.',
-        tags: ['tag-housing', 'tag-world'] },
-    ]
-  },
-
-  {
-    id: 'voidforge',
-    icon: '', iconClass: 'icon-void',
-    title: 'Voidforge',
-    url: 'https://www.icy-veins.com/wow/turboboost-and-bonus-rolls-in-midnight-season-1-the-voidforge',
-    meta: '12.0.5 · Top priority if not yet complete · Powers endgame bonus rolls',
-    categories: ['voidforge', 'currency'],
-    priority: 1,
-    tasks: [
-      { id: 'vf1', name: 'Check Voidforge quest status — visit Decimus at 51.2, 68.4 in The Voidstorm',
-        desc: 'Requires campaign completion up to "Domus Penumbra." If behind, Decimus offers all 6 catch-up weeks at once.',
-        tags: ['tag-void', 'tag-new'] },
-      { id: 'vf2', name: 'Complete this week\'s Voidforge quest',
-        desc: 'Completed Voidforge rewards 2 Nebulous Voidcores per week. Weekly cap increases by 2 each week for the rest of the season.',
-        tags: ['tag-void', 'tag-new'] },
-      { id: 'vf3', name: 'Use Nebulous Voidcores as bonus rolls on weak gear slots',
-        desc: 'Available from Mythic+, Bountiful Delves, and Nightmare Prey Hunts. Check your class guide on Icy Veins for optimal slot priorities.',
-        tags: ['tag-void', 'tag-gold', 'tag-new'] },
-      { id: 'vf4', name: 'Use Ascendant Voidcores on trinkets or weapons (if in endgame)',
-        desc: 'Drops from Season 1 endgame content. Upgrades max ilvl trinkets and weapons beyond normal caps.',
-        tags: ['tag-void', 'tag-gold', 'tag-new'] },
-    ]
-  },
-
-  // ── PRIORITY 2  (Important) ────────────────────────────
-
-  {
-    id: 'mythicplus',
-    icon: '', iconClass: 'icon-mythic',
-    title: 'Mythic+ Dungeons',
-    url: 'https://www.icy-veins.com/wow/midnight-mythic-season-1-guide',
-    meta: 'No lockout — farm freely · Vault slots unlock at 1 / 4 / 8 runs',
-    categories: ['mythic'],
-    priority: 2,
-    tasks: [
-      { id: 'm1', goal: {max:8, label:'runs', milestones:[
-          {at:1, note:'🔓 Vault slot 1 unlocked'},
-          {at:4, note:'🔓🔓 Vault slots 1–2 unlocked'},
-          {at:8, note:'🔓🔓🔓 All 3 Vault slots unlocked'},
-        ]},
-        name: 'Complete Mythic+ keys for Great Vault',
-        desc: 'Run 1 for slot 1, 4 for slot 2, 8 for all 3 slots.',
-        tags: ['tag-mythic', 'tag-vault'] },
-      { id: 'm4', name: 'Farm the highest keys you can, up to +10s',
-        desc: 'Icy Veins weekly recommendation for optimal Crest income this week.',
-        tags: ['tag-mythic', 'tag-gold'] },
-      { id: 'm5', name: 'Spend all Crests of Champion quality and below on upgrades',
-        desc: 'Lower-tier Crests should be spent each week. Upgrade your weakest gear slots first.',
-        tags: ['tag-mythic', 'tag-gold'] },
-    ]
-  },
-
-  {
-    id: 'delves',
-    icon: '', iconClass: 'icon-delve',
-    title: 'Delves',
-    url: 'https://www.icy-veins.com/wow/delves-guide',
-    meta: 'Solo/2-player instanced content · Contributes to Great Vault World row',
-    categories: ['delve'],
-    priority: 2,
-    tasks: [
-      { id: 'd1', name: 'Use Trovehunter\'s Bounty in highest tier Delve possible',
-        desc: 'Trovehunter\'s Bounty reveals the Hidden Trove inside a Delve. Always use it at your highest manageable tier — Champion gear at T1–T7, Hero gear at T8+. One use per week.',
-        tags: ['tag-delve', 'tag-gold'] },
-      { id: 'd_bountiful', goal: {max:4, label:'delves', milestones:[
-          {at:1, note:'1 / 4 Bountiful Delves done'},
-          {at:2, note:'2 / 4 Bountiful Delves done'},
-          {at:3, note:'3 / 4 Bountiful Delves done'},
-          {at:4, note:'✓ Weekly Bountiful Delve goal complete'},
-        ]},
-        name: 'Complete Bountiful Delves (up to 4 per week)',
-        desc: 'Bountiful Delves reward end-of-run caches and are eligible Voidforge bonus roll sources. Set your current max tier below — gear quality scales with tier.',
-        tags: ['tag-delve', 'tag-void'],
-        tierSelector: true },
-      { id: 'd3', name: 'Collect Delve weekly cache reward',
-        desc: 'Check for any active weekly Delve quest associated with your current tier.',
-        tags: ['tag-delve', 'tag-gold'] },
-    ]
-  },
-
-  {
-    id: 'prey',
-    icon: '', iconClass: 'icon-prey',
-    title: 'Prey System',
-    url: 'https://www.icy-veins.com/wow/prey-system-guide',
-    meta: 'Open-world hunting · Great Vault World row · Enable via Astalor Bloodsworn in Murder Row, Silvermoon',
-    categories: ['prey'],
-    priority: 2,
-    tasks: [
-      { id: 'pr_norm', goal: {max:2, label:'hunts', milestones:[
-          {at:1, note:'1 / 2 Normal hunts done'},
-          {at:2, note:'✓ Both Normal hunts complete'},
-        ]},
-        name: 'Normal Prey Hunts (2 per week)',
-        desc: 'Rewards Adventurer-level gear (ilvl 220–237). Twice-weekly lockout. Enable via Astalor Bloodsworn in Murder Row, Silvermoon.',
-        tags: ['tag-world'] },
-      { id: 'pr_hard', goal: {max:2, label:'hunts', milestones:[
-          {at:1, note:'1 / 2 Hard hunts done'},
-          {at:2, note:'✓ Both Hard hunts complete'},
-        ]},
-        name: 'Hard Prey Hunts (2 per week)',
-        desc: 'Rewards Veteran-level gear (ilvl 233–250). Twice-weekly lockout. Harder targets may require a partner.',
-        tags: ['tag-world'] },
-      { id: 'pr_nm', goal: {max:3, label:'hunts', milestones:[
-          {at:1, note:'1 / 3 Nightmare hunts done'},
-          {at:2, note:'2 / 3 Nightmare hunts done'},
-          {at:3, note:'✓ Weekly Prey quest complete'},
-        ]},
-        name: 'Nightmare Prey Hunts (weekly quest — 3 kills)',
-        desc: 'Rewards Champion-level gear (ilvl 246–263). Also drops Nebulous Voidcores for bonus rolls. Core Icy Veins weekly priority.',
-        tags: ['tag-world', 'tag-void'] },
-      { id: 'pr3', name: 'Check Prey target list for transmog / mount / housing drops',
-        desc: 'Specific Prey targets drop unique achievements, transmog, mounts, and housing decor.',
-        tags: ['tag-world', 'tag-optional'] },
-    ]
-  },
-
-  {
-    id: 'ritual-sites',
-    icon: '🔮', iconClass: 'icon-void',
-    title: 'Ritual Sites',
-    url: 'https://www.icy-veins.com/wow/ritual-sites-guide',
-    meta: '12.0.5 · 1–5 players · Great Vault World row · Do early in the week',
-    categories: ['ritual-sites'],
-    priority: 2,
-    tasks: [
-      { id: 'rs1', goal: {max:5, label:'sites'}, name: 'Complete Ritual Sites this week (flexible — solo or small group)',
-        desc: 'Repeatable instanced content with escalating tiers and greater rewards at higher difficulties. Counts toward Great Vault World row.',
-        tags: ['tag-void', 'tag-world', 'tag-new'] },
-    ]
-  },
-
-  {
-    id: 'world-events',
-    icon: '', iconClass: 'icon-world',
-    title: 'World Events',
-    url: 'https://www.icy-veins.com/wow/midnight-world-events-guide',
-    meta: 'Rotating across all four Midnight zones each week',
-    categories: ['world'],
-    priority: 2,
-    tasks: [
-      { id: 'we0a', name: 'Complete World Quests (daily)',
-        desc: 'World Quests reward Adventurer-level gear (ilvl 220–237), gold, and rep. Check your map each day — they rotate frequently and are the lowest barrier gearing activity available at max level.',
-        tags: ['tag-world', 'tag-gold'] },
-      { id: 'we0b', name: 'Kill Rare Elites (as encountered)',
-        desc: 'Rare mobs reward Adventurer-level gear (ilvl 220–237) on kill. Not on a strict lockout — kill rares as you encounter them while doing world content. Higher-threat rares may require a small group.',
-        tags: ['tag-world', 'tag-gold'] },
-      { id: 'we1', name: 'World Bosses — kill each available boss once',
-        desc: 'One kill per boss per week. Four world bosses total across the four Midnight zones. Rewards Champion-quality loot.',
-        tags: ['tag-world', 'tag-gold'] },
-      { id: 'we2', name: 'Abundance — complete Weekly: Abundance quest (20,000 points)',
-        desc: 'Events spawn in zone caverns and rotate every 8 hours. Use Shards of Dundun to empower runs (up to 8 shards per week from outdoor activities). Rewards Overflowing Abundant Satchel + 1,000 Amani Tribe rep.',
-        tags: ['tag-world'] },
-      { id: 'we3', name: 'Stormarion Assault — complete Stand Your Ground weekly',
-        desc: 'Tower defense event at Stormarion Citadel in The Voidstorm, every 30 minutes. Defend 3 waves of void attackers. Rewards Victorious Stormarion Pinnacle Cache.',
-        tags: ['tag-world', 'tag-void'] },
-      { id: 'we4', name: 'Saltheril\'s Soiree — complete weekly faction quests in Eversong Woods',
-        desc: 'Choose your subfaction (Magisters / Blood Knights / Farstriders / Shades of the Row). Fortify the Runestones quest rewards pinnacle chest + 150 Brimming Arcana + 2,000 Silvermoon Court rep. Actions can affect standing with other subfactions.',
-        tags: ['tag-world', 'tag-gold'] },
-      { id: 'we5', name: 'Legends of the Haranir — complete Lost Legends weekly (Harandar)',
-        desc: 'Choose one of 7 Hara\'ti relics and play through its history in a scenario. Rewards Avid Learner\'s Supply Pack (counts as a Midnight Weekly Cache) + 1,000 Hara\'ti rep + a housing decor item based on your relic choice.',
-        tags: ['tag-world', 'tag-housing'] },
-    ]
-  },
-
-  {
-    id: 'currency',
-    icon: '', iconClass: 'icon-currency',
-    title: 'Upgrades',
-    url: 'https://www.icy-veins.com/wow/midnight-pve-gearing-guide',
-    meta: 'Weekly caps — spend before reset or lose value',
-    categories: ['currency'],
-    priority: 2,
-    tasks: [
-      { id: 'cu1', name: 'Spend all Crests of Champion quality and below on gear upgrades',
-        desc: 'Lower-tier Crests lose value if stockpiled. Prioritize weakest item level slots each week.',
-        tags: ['tag-gold'] },
-      { id: 'cu2', name: 'Use weekly Catalyst charge (if available)',
-        desc: 'Catalyst converts eligible gear into tier set pieces. 1 charge accrues per week.',
-        tags: ['tag-gold'] },
-      { id: 'cu3', name: 'Collect and spend Brimming Arcana (from Soiree / subfaction quartermasters)',
-        desc: 'Popular Blood Elf currency. Subfaction QMs and Silvermoon Court QM sell cosmetics, housing decor, and crafting recipes.',
-        tags: ['tag-gold'] },
-      { id: 'cu4', name: 'Open Relic Coffers with accumulated Key shards (from Bazaar caches)',
-        desc: 'Relic Coffer Key shards drop from Ranger\'s Cache rewards. Combine to open Coffers for additional loot.',
-        tags: ['tag-gold'] },
-      { id: 'cu5', name: 'Craft or empower gear with Dawncrest (if holding 80+)',
-        desc: 'Dawncrest comes in three tiers — Adventurer (ilvl 220–237), Veteran (ilvl 233–250), and Hero (ilvl 259–276). Spend 80 of the appropriate Dawncrest at a crafter or workbench to empower a crafted piece to that tier. Don\'t sit on 80+ — it\'s dead value.',
-        tags: ['tag-gold'] },
-    ]
-  },
+  // ── PRIORITY 3  (Optional / Collector) ────────────────
 
   {
     id: 'housing',
@@ -402,7 +380,7 @@ const SECTIONS = [
     url: 'https://www.icy-veins.com/wow/player-housing-guide',
     meta: 'Decor sources spread across multiple weekly systems',
     categories: ['housing'],
-    priority: 2,
+    priority: 3,
     tasks: [
       { id: 'h1', name: 'Complete Housing Weekly quest from Vaeli (outside Silvermoon bank)',
         desc: 'Complete every reset. Weekly housing quest with decor rewards.',
@@ -423,7 +401,7 @@ const SECTIONS = [
     url: 'https://www.icy-veins.com/wow/midnight-pvp-season-1-guide',
     meta: 'Conquest cap resets Tuesday',
     categories: ['pvp'],
-    priority: 2,
+    priority: 3,
     tasks: [
       { id: 'pv1', goal: {max:1750, label:'conquest'}, name: 'Earn weekly Conquest cap',
         desc: 'Fastest via Rated BGs and Arena (2v2 / 3v3). Conquest cap increases each week of the season.',
@@ -437,7 +415,29 @@ const SECTIONS = [
     ]
   },
 
-  // ── PRIORITY 3  (Optional / Collector) ────────────────
+  {
+    id: 'void-assaults',
+    icon: '🌀', iconClass: 'icon-void',
+    title: 'Void Assaults',
+    url: 'https://www.icy-veins.com/wow/void-assaults-hub',
+    meta: 'Start here each reset · Rotates between Eversong Woods and Zul\'Aman weekly',
+    categories: ['void-assaults'],
+    priority: 3,
+    tasks: [
+      { id: 'va1', name: 'Check which zone has the active Void Assault this week',
+        desc: 'Void Strikes rotate weekly between Eversong Woods and Zul\'Aman. Check your map at reset.',
+        tags: ['tag-void', 'tag-new'] },
+      { id: 'va2', goal: {max:5, label:'strikes'}, name: 'Complete Void Strikes in the active zone',
+        desc: 'Smaller targeted attacks — easily soloable or in a small group. Defeating one spawns another nearby. Each awards Field Accolades.',
+        tags: ['tag-void', 'tag-world'] },
+      { id: 'va3', name: 'Participate in the Void Incursion (once bar reaches 100%)',
+        desc: 'Larger assault requiring more players. Triggered by clearing enough Void Strikes. Best Void Assault rewards.',
+        tags: ['tag-void', 'tag-world'] },
+      { id: 'va4', name: 'Complete Void Assault weekly quest',
+        desc: 'Rewards Ranger\'s Cache Pinnacle cache. Worth doing even if you no longer need Veteran-quality gear.',
+        tags: ['tag-void', 'tag-gold'] },
+    ]
+  },
 
   {
     id: 'optional',

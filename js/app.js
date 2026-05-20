@@ -111,9 +111,10 @@ function snapshotWeekForChar(charName, weekKey) {
     });
     if (secTotal > 0) sections[sec.id] = { done: secDone, total: secTotal, title: sec.title };
   });
-  if (custom.length) {
+  const nonBisCustom = custom.filter(t => !t.id.startsWith('bis_'));
+  if (nonBisCustom.length) {
     let cTotal = 0, cDone = 0;
-    custom.forEach(t => {
+    nonBisCustom.forEach(t => {
       total++; cTotal++;
       if (done['custom_' + t.id]) { completed++; cDone++; }
     });
@@ -297,7 +298,7 @@ function sectionTaskHtml(t, done, hidden, yourList, goals, bossKills, notes) {
   return '<div class="task' + (isDone ? ' done' : '') + (isHidden ? ' task-hidden' : '') + (inList ? ' in-yourlist' : '') + '">'
     + '<div class="task-check" onclick="event.stopPropagation();' + checkClick + '" style="cursor:pointer;"></div>'
     + '<div class="task-body">'
-    + '<div class="task-name">' + hn + '</div>'
+    + '<div class="task-name">' + _bisTaskNameHtml(t.name, searchQuery) + '</div>'
     + (hd ? '<div class="task-desc">' + hd + '</div>' : '')
     + (milestoneNote ? '<div class="milestone-note">' + milestoneNote + '</div>' : '')
     + tagsHtml
@@ -385,7 +386,7 @@ function ylTaskHtml(t, done, goals, notes, bossKills) {
     + '<div class="yl-drag-handle" onclick="event.stopPropagation()" title="Drag to reorder">⠿</div>'
     + '<div class="task-check" onclick="event.stopPropagation();toggle(\'' + id + '\',this)" style="cursor:pointer;"></div>'
     + '<div class="task-body">'
-    + '<div class="task-name">' + hn + '</div>'
+    + '<div class="task-name">' + _bisTaskNameHtml(t.name, searchQuery) + '</div>'
     + (hd ? '<div class="task-desc">' + hd + '</div>' : '')
     + (milestoneNote ? '<div class="milestone-note">' + milestoneNote + '</div>' : '')
     + (t.tierSelector ? renderTierSelector(id) : '')
@@ -393,7 +394,10 @@ function ylTaskHtml(t, done, goals, notes, bossKills) {
     + sectionTag
     + noteHtml(id, notes)
     + '</div>'
-    + '<div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">' + noteBtnHtml(id, notes) + '</div>'
+    + '<div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">'
+    + noteBtnHtml(id, notes)
+    + (id.startsWith('custom_bis_') ? '<button class="task-hide" title="Edit item" onclick="openBisEditModal(event,\'' + id + '\')">✏️</button>' : '')
+    + '</div>'
     + goalHtml
     + '</div>';
 }
@@ -431,7 +435,8 @@ function render() {
       });
     });
     loadCustomTasks().forEach(t => {
-      if (yourList.has('custom_' + t.id)) selected.push({ ...t, id: 'custom_' + t.id, sectionTitle: 'Custom', sectionIcon: '✦', sectionIconClass: 'icon-custom' });
+      if (yourList.has('custom_' + t.id))
+        selected.push({ ...t, id: 'custom_' + t.id, sectionTitle: t.id.startsWith('bis_') ? 'Best in Slot Gear' : 'Custom', sectionIcon: t.id.startsWith('bis_') ? '⚔️' : '✦', sectionIconClass: 'icon-custom' });
     });
 
     // Apply search + tag filters
@@ -470,13 +475,20 @@ function render() {
           .map(t => ({ ...t, sectionTitle: sec.title, sectionIcon: sec.icon, sectionId: sec.id, sectionIconClass: sec.iconClass }));
         if (secTasks.length) sectionGroups.push({ sec, tasks: secTasks });
       });
-      const customSelected = loadCustomTasks()
-        .filter(t => yourList.has('custom_' + t.id) && matchesSearch({ ...t, id: 'custom_' + t.id, sectionTitle: 'Custom' }))
+      const allCustom = loadCustomTasks()
+        .filter(t => yourList.has('custom_' + t.id));
+      const bisSelected = allCustom
+        .filter(t => t.id.startsWith('bis_') && matchesSearch({ ...t, id: 'custom_' + t.id, sectionTitle: 'Best in Slot Gear' }))
+        .map(t => ({ ...t, id: 'custom_' + t.id, sectionTitle: 'Best in Slot Gear', sectionIcon: '⚔️', sectionId: 'bis', sectionIconClass: 'icon-custom' }));
+      const customSelected = allCustom
+        .filter(t => !t.id.startsWith('bis_') && matchesSearch({ ...t, id: 'custom_' + t.id, sectionTitle: 'Custom' }))
         .map(t => ({ ...t, id: 'custom_' + t.id, sectionTitle: 'Custom', sectionIcon: '✦', sectionId: 'custom', sectionIconClass: 'icon-custom' }));
+      if (bisSelected.length) sectionGroups.push({ sec: { title: 'Best in Slot Gear', icon: '⚔️', iconClass: 'icon-custom', id: 'bis' }, tasks: bisSelected });
       if (customSelected.length) sectionGroups.push({ sec: { title: 'Custom', icon: '✦', iconClass: 'icon-custom', id: 'custom' }, tasks: customSelected });
 
-      totalVisible = filteredSelected.length;
-      totalDone    = filteredSelected.filter(t => done[t.id]).length;
+      const nonBisSelected = filteredSelected.filter(t => !t.id.startsWith('custom_bis_'));
+      totalVisible = nonBisSelected.length;
+      totalDone    = nonBisSelected.filter(t => done[t.id]).length;
 
       sectionGroups.forEach(({ sec, tasks }) => {
         const sortedTasks = [...tasks].sort((a, b) => {
@@ -518,8 +530,9 @@ function render() {
         return aPos - bPos;
       });
 
-      totalVisible = filteredSelected.length;
-      totalDone    = filteredSelected.filter(t => done[t.id]).length;
+      const nonBisFlat = filteredSelected.filter(t => !t.id.startsWith('custom_bis_'));
+      totalVisible = nonBisFlat.length;
+      totalDone    = nonBisFlat.filter(t => done[t.id]).length;
 
       const body = document.createElement('div');
       body.className = 'section-body';
@@ -1214,7 +1227,7 @@ function renderCustomSection() {
 
   if (!activeFilters.has('all') && !activeFilters.has('custom')) return;
 
-  const tasks    = loadCustomTasks();
+  const tasks    = loadCustomTasks().filter(t => !t.id.startsWith('bis_'));
   const done     = loadDone();
   const yourList = new Set(loadYourList());
   const notes    = loadNotes();
@@ -1224,7 +1237,7 @@ function renderCustomSection() {
 
   if (activeFilters.has('all')) {
     const lbl = document.createElement('div');
-    lbl.className = 'priority-label p3';
+    lbl.className = 'priority-label p-custom';
     lbl.textContent = '✦ Custom Tasks';
     wrap.appendChild(lbl);
   }
@@ -1261,7 +1274,7 @@ function renderCustomSection() {
     return '<div class="task' + (isDone ? ' done' : '') + (inList ? ' in-yourlist' : '') + '">'
       + '<div class="task-check" onclick="event.stopPropagation();' + checkFn + '" style="cursor:pointer;"></div>'
       + '<div class="task-body">'
-      + '<div class="task-name">' + escHtml(t.name) + '</div>'
+      + '<div class="task-name">' + _bisTaskNameHtml(t.name, null) + '</div>'
       + (t.desc ? '<div class="task-desc">' + escHtml(t.desc) + '</div>' : '')
       + (!editingYourList ? noteHtml(id, notes) : '')
       + '</div>'
@@ -1311,7 +1324,8 @@ function renderCustomSection() {
   }
 
   wrap.appendChild(header);
-  document.getElementById('sections-container').appendChild(wrap);
+  const container = document.getElementById('sections-container');
+  container.insertBefore(wrap, container.firstChild);
 }
 
 function escHtml(s) {
@@ -1367,6 +1381,279 @@ function saveCustomTask() {
 
 
 /* ═══════════════════════════════════════════
+   BEST IN SLOT IMPORT
+═══════════════════════════════════════════ */
+let _bisClass = null;
+let _bisSpec  = null;
+
+const _BIS_SLOT_ICONS = {
+  'Head':      'img/headslot.webp',
+  'Neck':      'img/neckslot.webp',
+  'Shoulders': 'img/shoulderslot.webp',
+  'Back':      'img/chestslot.webp',
+  'Chest':     'img/chestslot.webp',
+  'Wrists':    'img/wristslot.webp',
+  'Hands':     'img/handslot.webp',
+  'Waist':     'img/waistslot.webp',
+  'Legs':      'img/legsslot.webp',
+  'Feet':      'img/feetslot.webp',
+  'Ring 1':    'img/fingerslot.webp',
+  'Ring 2':    'img/fingerslot.webp',
+  'Trinket 1': 'img/trinketslot.webp',
+  'Trinket 2': 'img/trinketslot.webp',
+  'Main Hand': 'img/mainhandslot.webp',
+  'Off Hand':  'img/secondaryhandslot.webp',
+  'Shield':    'img/secondaryhandslot.webp',
+  'Ranged':    'img/mainhandslot.webp',
+};
+
+// Used in the BiS gear list modal rows
+function _bisSlotIcon(slot) {
+  const src = _BIS_SLOT_ICONS[slot];
+  if (!src) return `<span class="bis-slot-label">${slot}</span>`;
+  return `<img src="${src}" class="bis-slot-icon" title="${slot}" alt="${slot}">`;
+}
+
+// Used in task cards for imported BiS items — replaces "[Head] Item" with icon + name
+function _bisTaskNameHtml(name, searchQuery) {
+  const m = (name || '').match(/^\[([^\]]+)\]\s*(.+)$/);
+  if (m && _BIS_SLOT_ICONS[m[1]]) {
+    const iconHtml = `<img src="${_BIS_SLOT_ICONS[m[1]]}" class="bis-task-icon" title="${m[1]}" alt="${m[1]}">`;
+    const itemHtml = searchQuery ? highlightMatch(m[2], searchQuery) : escHtml(m[2]);
+    return `<span class="bis-task-name-wrap">${iconHtml}${itemHtml}</span>`;
+  }
+  return searchQuery ? highlightMatch(name, searchQuery) : escHtml(name);
+}
+
+function openBisModal() {
+  _bisClass = null;
+  _bisSpec  = null;
+  document.getElementById('modal-bis').classList.add('open');
+  _renderBisPhase('class');
+}
+
+function closeBisModal() {
+  document.getElementById('modal-bis').classList.remove('open');
+}
+
+let _bisEditId = null;
+
+function openBisEditModal(event, fullId) {
+  event.stopPropagation();
+  _bisEditId = fullId; // e.g. 'custom_bis_abc123_0'
+  const rawId = fullId.replace(/^custom_/, '');
+  const task  = loadCustomTasks().find(t => t.id === rawId);
+  if (!task) return;
+
+  // Parse "[Slot] Item Name"
+  const m = (task.name || '').match(/^\[([^\]]+)\]\s*(.*)$/);
+  const slot     = m ? m[1] : '';
+  const itemName = m ? m[2] : task.name;
+
+  document.getElementById('bis-edit-title').textContent    = 'Edit: ' + slot;
+  document.getElementById('bis-edit-slot-label').textContent = '[' + slot + '] — slot prefix is fixed';
+  document.getElementById('bis-edit-name').value  = itemName;
+  document.getElementById('bis-edit-desc').value  = task.desc || '';
+  document.getElementById('modal-bis-edit').classList.add('open');
+  setTimeout(() => document.getElementById('bis-edit-name').focus(), 50);
+}
+
+function closeBisEditModal() {
+  document.getElementById('modal-bis-edit').classList.remove('open');
+  _bisEditId = null;
+}
+
+function saveBisEdit() {
+  if (!_bisEditId) return;
+  const rawId   = _bisEditId.replace(/^custom_/, '');
+  const newItem = document.getElementById('bis-edit-name').value.trim();
+  const newDesc = document.getElementById('bis-edit-desc').value.trim();
+  if (!newItem) return;
+
+  const tasks = loadCustomTasks();
+  const task  = tasks.find(t => t.id === rawId);
+  if (!task) return;
+
+  // Preserve the [Slot] prefix
+  const m    = (task.name || '').match(/^\[([^\]]+)\]/);
+  const slot = m ? m[1] : '';
+  task.name  = slot ? '[' + slot + '] ' + newItem : newItem;
+  task.desc  = newDesc;
+
+  saveCustomTasks(tasks);
+  closeBisEditModal();
+  render();
+}
+
+function _renderBisPhase(phase) {
+  const content  = document.getElementById('bis-content');
+  const footer   = document.getElementById('bis-footer');
+  const breadEl  = document.getElementById('bis-breadcrumb');
+  const titleEl  = document.getElementById('bis-title');
+  const subEl    = document.getElementById('bis-subtitle');
+
+  if (phase === 'class') {
+    titleEl.textContent = 'Best in Slot Gear';
+    subEl.textContent   = 'Select your class to get started.';
+    breadEl.innerHTML   = '';
+    footer.innerHTML    = '<button class="btn-cancel" onclick="closeBisModal()">Close</button>';
+
+    const grid = WOW_CLASSES.map(cls => {
+      const colorStyle = `border-left: 3px solid ${cls.color};`;
+      const classesId  = cls.key.replace('deathknight','death-knight').replace('demonhunter','demon-hunter');
+      const classDef   = CLASSES.find(c => c.id === classesId);
+      const iconHtml   = classDef
+        ? `<img src="${classDef.icon}" style="width:20px;height:20px;flex-shrink:0;image-rendering:auto;">`
+        : `<span class="bis-class-icon">${cls.icon}</span>`;
+      return `<button class="bis-class-btn" style="${colorStyle}" onclick="_bisPickClass('${cls.key}')">
+        ${iconHtml}
+        <span class="bis-class-label">${cls.label}</span>
+      </button>`;
+    }).join('');
+    content.innerHTML = `<div class="bis-class-grid">${grid}</div>`;
+
+  } else if (phase === 'spec') {
+    const cls = WOW_CLASSES.find(c => c.key === _bisClass);
+    titleEl.textContent = cls.label;
+    subEl.textContent   = `${cls.armor} armor · Choose a specialization.`;
+    breadEl.innerHTML   = `<button class="bis-crumb-btn" onclick="_renderBisPhase('class')">← Classes</button>`;
+
+    const roleBadge = {
+      tank: '<img src="img/tankrole.webp" style="width:14px;height:14px;vertical-align:middle;margin-left:4px;opacity:0.9;">',
+      heal: '<img src="img/healerrole.webp" style="width:14px;height:14px;vertical-align:middle;margin-left:4px;opacity:0.9;">',
+      dps:  '<img src="img/dpsrole.webp" style="width:14px;height:14px;vertical-align:middle;margin-left:4px;opacity:0.9;">',
+    };
+    const specs = cls.specs.map(sp => {
+      const hasData = BIS_DATA[_bisClass] && BIS_DATA[_bisClass][sp.key] && BIS_DATA[_bisClass][sp.key].items.length > 0;
+      const newTag  = sp.tag === 'new' ? '<span class="bis-spec-tag">New</span>' : '';
+      const role    = roleBadge[sp.role] || '';
+      const dimmed  = !hasData ? 'opacity:0.5;' : '';
+      return `<button class="bis-spec-btn" style="${dimmed}" onclick="_bisPickSpec('${sp.key}')">${sp.label}${role}${newTag}</button>`;
+    }).join('');
+    content.innerHTML   = `<div class="bis-spec-grid">${specs}</div>`;
+    footer.innerHTML    = '<button class="btn-cancel" onclick="_renderBisPhase(\'class\')">← Back</button>';
+
+  } else if (phase === 'gear') {
+    const cls  = WOW_CLASSES.find(c => c.key === _bisClass);
+    const sp   = cls.specs.find(s => s.key === _bisSpec);
+    const data = (BIS_DATA[_bisClass] && BIS_DATA[_bisClass][_bisSpec]) ? BIS_DATA[_bisClass][_bisSpec].items : [];
+
+    titleEl.textContent = `${cls.label} — ${sp.label}`;
+    subEl.textContent   = `Select items to add to Your List as tasks. Each imports as a completable gear-tracking task.`;
+    breadEl.innerHTML   = `<button class="bis-crumb-btn" onclick="_renderBisPhase('class')">← Classes</button>
+      <span style="margin:0 0.3rem;opacity:0.5;">›</span>
+      <button class="bis-crumb-btn" onclick="_renderBisPhase('spec')">${cls.label}</button>`;
+
+    if (!data.length) {
+      content.innerHTML = `<div class="bis-empty">
+        BiS list for <strong>${cls.label} · ${sp.label}</strong> is coming soon.<br>
+        Check <a href="https://www.icy-veins.com/wow/${_bisClass.replace('deathknight','death-knight').replace('demonhunter','demon-hunter')}-${_bisSpec}-pve-dps-gear-best-in-slot" target="_blank" rel="noopener">Icy Veins</a> for up-to-date gear recommendations.
+      </div>`;
+      footer.innerHTML = '<button class="btn-cancel" onclick="_renderBisPhase(\'spec\')">← Back</button>';
+      return;
+    }
+
+    // Check which items are already imported (exist as custom tasks)
+    const existingNames = new Set(loadCustomTasks().map(t => t.name));
+    const rows = data.map((item, i) => {
+      const taskName = `[${item.slot}] ${item.item}`;
+      const alreadyIn = existingNames.has(taskName);
+      const selClass  = alreadyIn ? 'selected' : '';
+      const checked   = alreadyIn ? 'checked' : '';
+      return `<label class="bis-gear-row ${selClass}" id="bis-row-${i}">
+        <input type="checkbox" class="bis-gear-check" id="bis-chk-${i}" ${checked}
+               onchange="_bisRowToggle(${i})" onclick="event.stopPropagation()">
+        ${_bisSlotIcon(item.slot)}
+        <span class="bis-item-name">${item.item}</span>
+        <span class="bis-item-source" title="${item.source} · ${item.location}">${item.source}</span>
+      </label>`;
+    }).join('');
+
+    content.innerHTML = `
+      <div class="bis-select-all-bar">
+        <button onclick="_bisSelectAll(true)">Select All</button>
+        <button onclick="_bisSelectAll(false)">Deselect All</button>
+        <span>${data.length} slots</span>
+      </div>
+      <div class="bis-gear-list">${rows}</div>`;
+
+    footer.innerHTML = `
+      <button class="btn-cancel" onclick="_renderBisPhase('spec')">← Back</button>
+      <button class="btn-primary" onclick="_bisImportSelected()">⚔ Import Selected</button>`;
+  }
+}
+
+function _bisPickClass(classKey) {
+  _bisClass = classKey;
+  _renderBisPhase('spec');
+}
+
+function _bisPickSpec(specKey) {
+  _bisSpec = specKey;
+  _renderBisPhase('gear');
+}
+
+function _bisRowToggle(i) {
+  const chk = document.getElementById('bis-chk-' + i);
+  const row = document.getElementById('bis-row-' + i);
+  if (chk.checked) row.classList.add('selected');
+  else row.classList.remove('selected');
+}
+
+function _bisSelectAll(checked) {
+  const data = (BIS_DATA[_bisClass] && BIS_DATA[_bisClass][_bisSpec]) ? BIS_DATA[_bisClass][_bisSpec].items : [];
+  data.forEach((_, i) => {
+    const chk = document.getElementById('bis-chk-' + i);
+    const row = document.getElementById('bis-row-' + i);
+    if (chk) { chk.checked = checked; }
+    if (row) { checked ? row.classList.add('selected') : row.classList.remove('selected'); }
+  });
+}
+
+function _bisImportSelected() {
+  const cls  = WOW_CLASSES.find(c => c.key === _bisClass);
+  const sp   = cls ? cls.specs.find(s => s.key === _bisSpec) : null;
+  const data = (BIS_DATA[_bisClass] && BIS_DATA[_bisClass][_bisSpec]) ? BIS_DATA[_bisClass][_bisSpec].items : [];
+
+  const existing   = loadCustomTasks();
+  const existNames = new Set(existing.map(t => t.name));
+  const yourList   = loadYourList();
+  let   imported   = 0;
+
+  data.forEach((item, i) => {
+    const chk = document.getElementById('bis-chk-' + i);
+    if (!chk || !chk.checked) return;
+    const taskName = `[${item.slot}] ${item.item}`;
+    if (existNames.has(taskName)) return; // skip already-imported
+    const desc = `${item.source} · ${item.location}`;
+    const id   = 'bis_' + Date.now().toString(36) + '_' + i;
+    existing.push({ id, name: taskName, desc });
+    yourList.push('custom_' + id);
+    imported++;
+  });
+
+  if (imported === 0) {
+    // All selected items were already imported — just close
+    closeBisModal();
+    render();
+    return;
+  }
+
+  saveCustomTasks(existing);
+  saveYourList(yourList);
+  closeBisModal();
+  render();
+
+  // Show a brief toast
+  const toast = document.getElementById('share-toast');
+  if (toast) {
+    toast.textContent = `${imported} BiS item${imported === 1 ? '' : 's'} added to Your List`;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  }
+}
+
+/* ═══════════════════════════════════════════
    WEEKLY SUMMARY  (with All Alts tab)
 ═══════════════════════════════════════════ */
 function openSummary() {
@@ -1401,7 +1688,7 @@ function renderSummaryTab(tab) {
       grandDone  += secDone;
       rows.push({ title: sec.title, icon: sec.icon, iconClass: sec.iconClass, done: secDone, total: visible.length });
     });
-    const customTasks = loadCustomTasks();
+    const customTasks = loadCustomTasks().filter(t => !t.id.startsWith('bis_'));
     if (customTasks.length) {
       const cDone = customTasks.filter(t => done['custom_' + t.id]).length;
       grandTotal += customTasks.length;
@@ -2523,7 +2810,7 @@ if (isCompact) {
 
 /* ---- Modal overlay close listeners ---- */
 document.addEventListener('DOMContentLoaded', function() {
-  ['modal','modal-custom','modal-summary','modal-data','modal-profiles','modal-welcome','modal-whats-new'].forEach(function(id) {
+  ['modal','modal-custom','modal-summary','modal-data','modal-profiles','modal-welcome','modal-whats-new','modal-bis','modal-bis-edit'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener('click', function(e) {
       if (e.target === el) el.classList.remove('open');

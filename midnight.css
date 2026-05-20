@@ -458,6 +458,8 @@ h1 span { color: var(--void-glow); }
 .priority-label.p2::after { background: rgba(201,168,76,0.25); }
 .priority-label.p3 { color: var(--text-secondary); }
 .priority-label.p3::after { background: rgba(90,80,112,0.3); }
+.priority-label.p-custom { color: var(--void-glow); }
+.priority-label.p-custom::after { background: rgba(160,125,224,0.15); }
 
 .section { margin-bottom: 0.5rem; }
 
@@ -530,48 +532,23 @@ h1 span { color: var(--void-glow); }
 }
 .section-body.hidden { display: none; }
 
-/* ── PER-SECTION TASK CARD TINTS ──────────────────────────────────────────
-   Default purple (void baseline) for revert reference: rgba(124, 92, 191, 0.18)
-   Hover versions are ~0.10 higher opacity.
+/* ── PER-SECTION HEADER BANNER TINTS ─────────────────────────────────────
+   Colors the section header strip; border-bottom matches the accent color.
+   Task cards remain the default dark purple throughout.
 ─────────────────────────────────────────────────────────────────────────── */
-[data-section="raid"]         .task        { background: rgba(160,  30,  30, 0.18); }
-[data-section="raid"]         .task:hover  { background: rgba(160,  30,  30, 0.28); }
-
-[data-section="vault"]        .task        { background: rgba(201, 168,  76, 0.15); }
-[data-section="vault"]        .task:hover  { background: rgba(201, 168,  76, 0.25); }
-
-[data-section="void-assaults"] .task       { background: rgba(124,  92, 191, 0.18); }
-[data-section="void-assaults"] .task:hover { background: rgba(124,  92, 191, 0.28); }
-
-[data-section="bazaar"]       .task        { background: rgba(110,  20,  50, 0.22); }
-[data-section="bazaar"]       .task:hover  { background: rgba(110,  20,  50, 0.32); }
-
-[data-section="voidforge"]    .task        { background: rgba(124,  92, 191, 0.18); }
-[data-section="voidforge"]    .task:hover  { background: rgba(124,  92, 191, 0.28); }
-
-[data-section="mythicplus"]   .task        { background: rgba( 30,  80, 160, 0.20); }
-[data-section="mythicplus"]   .task:hover  { background: rgba( 30,  80, 160, 0.30); }
-
-[data-section="delves"]       .task        { background: rgba(100,  65,  30, 0.22); }
-[data-section="delves"]       .task:hover  { background: rgba(100,  65,  30, 0.32); }
-
-[data-section="prey"]         .task        { background: rgba(130,  15,  15, 0.25); }
-[data-section="prey"]         .task:hover  { background: rgba(130,  15,  15, 0.35); }
-
-[data-section="ritual-sites"] .task        { background: rgba(124,  92, 191, 0.18); }
-[data-section="ritual-sites"] .task:hover  { background: rgba(124,  92, 191, 0.28); }
-
-[data-section="currency"]     .task        { background: rgba(201, 168,  76, 0.15); }
-[data-section="currency"]     .task:hover  { background: rgba(201, 168,  76, 0.25); }
-
-[data-section="housing"]      .task        { background: rgba( 30, 110,  55, 0.18); }
-[data-section="housing"]      .task:hover  { background: rgba( 30, 110,  55, 0.28); }
-
-[data-section="pvp"]          .task        { background: rgba(160,  30,  30, 0.18); }
-[data-section="pvp"]          .task:hover  { background: rgba(160,  30,  30, 0.28); }
-
-[data-section="optional"]     .task        { background: rgba(255, 255, 255, 0.05); }
-[data-section="optional"]     .task:hover  { background: rgba(255, 255, 255, 0.10); }
+[data-section="raid"]          .section-header { background: rgba(160,  30,  30, 0.18); border-bottom-color: rgba(160,  30,  30, 0.45); }
+[data-section="vault"]         .section-header { background: rgba(201, 168,  76, 0.15); border-bottom-color: rgba(201, 168,  76, 0.40); }
+[data-section="void-assaults"] .section-header { background: rgba(124,  92, 191, 0.18); border-bottom-color: rgba(124,  92, 191, 0.45); }
+[data-section="bazaar"]        .section-header { background: rgba(110,  20,  50, 0.22); border-bottom-color: rgba(110,  20,  50, 0.50); }
+[data-section="voidforge"]     .section-header { background: rgba(124,  92, 191, 0.18); border-bottom-color: rgba(124,  92, 191, 0.45); }
+[data-section="mythicplus"]    .section-header { background: rgba( 30,  80, 160, 0.20); border-bottom-color: rgba( 30,  80, 160, 0.45); }
+[data-section="delves"]        .section-header { background: rgba(100,  65,  30, 0.22); border-bottom-color: rgba(100,  65,  30, 0.50); }
+[data-section="prey"]          .section-header { background: rgba(130,  15,  15, 0.25); border-bottom-color: rgba(130,  15,  15, 0.55); }
+[data-section="ritual-sites"]  .section-header { background: rgba(124,  92, 191, 0.18); border-bottom-color: rgba(124,  92, 191, 0.45); }
+[data-section="currency"]      .section-header { background: rgba(201, 168,  76, 0.15); border-bottom-color: rgba(201, 168,  76, 0.40); }
+[data-section="housing"]       .section-header { background: rgba( 30, 110,  55, 0.18); border-bottom-color: rgba( 30, 110,  55, 0.45); }
+[data-section="pvp"]           .section-header { background: rgba(160,  30,  30, 0.18); border-bottom-color: rgba(160,  30,  30, 0.45); }
+[data-section="optional"]      .section-header { background: rgba(255, 255, 255, 0.04); border-bottom-color: rgba(255, 255, 255, 0.12); }
 
 .task {
   display: flex; align-items: flex-start; gap: 0.85rem;
@@ -2309,3 +2286,207 @@ body.light-mode .welcome-note { border-color: rgba(139,26,26,0.35); }
 }
 body.light-mode .hm-cell { color: rgba(0,0,0,0.7); }
 body.light-mode .hm-char { color: var(--text-primary); }
+
+/* ═══════════════════════════════════════════
+   BEST IN SLOT MODAL
+═══════════════════════════════════════════ */
+.bis-modal { padding: 1.25rem 1.5rem 1.25rem; }
+.bis-header { margin-bottom: 1rem; }
+.bis-breadcrumb {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 0.35rem;
+  min-height: 1.2em;
+}
+.bis-breadcrumb .bis-crumb-btn {
+  background: none; border: none; padding: 0;
+  color: var(--text-muted); cursor: pointer;
+  font-family: inherit; font-size: inherit; letter-spacing: inherit;
+  text-transform: inherit;
+}
+.bis-breadcrumb .bis-crumb-btn:hover { color: var(--light-gold); }
+.bis-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0.25rem 0 0;
+  line-height: 1.45;
+}
+
+/* ── Class grid ── */
+.bis-class-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.4rem;
+}
+.bis-class-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  font-size: 13px;
+  color: var(--text-primary);
+  text-align: left;
+  font-family: inherit;
+}
+.bis-class-btn:hover {
+  border-color: var(--border-bright);
+  background: var(--bg-hover);
+}
+.bis-class-icon { font-size: 16px; flex-shrink: 0; }
+.bis-class-label { font-weight: 600; }
+
+/* ── Spec picker ── */
+.bis-spec-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.bis-spec-btn {
+  padding: 0.45rem 1rem;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+  font-family: inherit;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  position: relative;
+}
+.bis-spec-btn:hover {
+  border-color: var(--border-bright);
+  background: var(--bg-hover);
+}
+.bis-spec-tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--void-glow);
+  color: #000;
+  border-radius: 3px;
+  padding: 1px 4px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+.bis-role-badge {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+/* ── Gear list ── */
+.bis-gear-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 390px;
+  overflow-y: auto;
+  margin-bottom: 0.25rem;
+}
+.bis-gear-row {
+  display: grid;
+  grid-template-columns: 18px 28px 1fr auto;
+  gap: 0 0.6rem;
+  align-items: center;
+  padding: 0.38rem 0.5rem;
+  border-radius: 5px;
+  background: var(--bg-card);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+  font-size: 13px;
+}
+.bis-gear-row:hover { background: var(--bg-hover); border-color: var(--border); }
+.bis-gear-row.selected { background: rgba(201,168,76,0.10); border-color: rgba(201,168,76,0.30); }
+.bis-gear-check { accent-color: var(--light-gold); width: 14px; height: 14px; cursor: pointer; }
+.bis-slot-label {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.bis-slot-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  display: block;
+  opacity: 0.75;
+  transition: opacity 0.15s;
+}
+.bis-gear-row:hover .bis-slot-icon { opacity: 1; }
+
+/* slot icon inside task cards */
+.bis-task-name-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.bis-task-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+.bis-item-name { color: var(--light-gold); font-weight: 600; }
+.bis-item-source {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+.bis-empty {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.bis-empty a { color: var(--light-gold); }
+
+.bis-select-all-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.bis-select-all-bar button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 0;
+}
+.bis-select-all-bar button:hover { color: var(--light-gold); }
+
+/* light mode */
+body.light-mode .bis-class-btn { background: #fff; }
+body.light-mode .bis-class-btn:hover { background: #f4f0e8; }
+body.light-mode .bis-spec-btn { background: #fff; }
+body.light-mode .bis-spec-btn:hover { background: #f4f0e8; }
+body.light-mode .bis-gear-row { background: #faf8f4; }
+body.light-mode .bis-gear-row:hover { background: #f4f0e8; }
+body.light-mode .bis-gear-row.selected { background: rgba(180,130,20,0.10); }
