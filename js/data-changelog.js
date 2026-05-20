@@ -9,7 +9,7 @@
 ------------------------------------------- */
 const VERSIONS = [
   {
-    version: 'v1.8.5',
+    version: 'v1.8.6',
     date: 'May 20, 2026',
     summary: 'Full Best in Slot gear system — import, track, and customize BiS gear for all 40 specs',
     entries: [
