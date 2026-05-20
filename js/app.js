@@ -2630,6 +2630,18 @@ const WELCOME_STEPS = [
     note: null,
   },
   {
+    icon: '⚔️',
+    title: 'Best in Slot Gear Tracker',
+    body: 'Click <strong>⚔️ BiS Gear</strong> in the toolbar to browse Best in Slot gear for your class and spec. Select individual items and import them as trackable tasks under a dedicated <strong>Best in Slot Gear</strong> section in Your List.'
+      + '<ul class="welcome-feature-list" style="margin-top:0.75rem;">'
+      + '<li>All <strong>40 specs</strong> covered for Patch 12.0.5 · Lingering Shadows</li>'
+      + '<li>Each item shows its <strong>slot icon</strong>, item name, and boss/location</li>'
+      + '<li>BiS tasks are a <strong>separate system</strong> — they don\'t count toward your weekly progress bar</li>'
+      + '<li>Click the <strong>✏️ button</strong> on any BiS card to swap in your own item if your BiS differs</li>'
+      + '</ul>',
+    note: null,
+  },
+  {
     icon: '🌟',
     title: "You're All Set!",
     body: 'Your progress saves automatically in your browser — nothing to sign in to. Check the <strong>📅 Events</strong> calendar and <strong>📋 Changelog</strong> links in the header to stay up to date.',
