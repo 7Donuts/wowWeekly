@@ -147,8 +147,8 @@ function saveProfiles(p) { localStorage.setItem(profilesKey(), JSON.stringify(p)
    Note: isLightMode and isCompact live in
    theme.js so they apply before first paint.
 ═══════════════════════════════════════════ */
-let currentChar     = 'Main';
 let characters      = JSON.parse(localStorage.getItem('wow_midnight_chars') || '["Main"]');
+let currentChar     = characters[0] || 'Main';
 let activeFilters   = new Set(['all']); // 'all' means show everything
 let activeTagFilter = '';               // 'tag-vault' | 'tag-gold' | 'tag-new' | ''
 let collapsed       = {};
@@ -924,12 +924,19 @@ function renderChars() {
     const group = loadCharGroupFor(c);
     const gm = GROUP_META[group];
     const groupDot = gm ? `<span style="font-size:9px;color:${gm.color};line-height:1;" title="${gm.label.replace(/[⭐◆🌿]/g,'').trim()}">${gm.dot}</span>` : '';
+    const armory = loadArmoryData(c);
+    const ilvlBadge = armory && armory.ilvl
+      ? `<span class="char-ilvl-badge" title="${armory.guild ? armory.guild + ' · ' : ''}iLvl ${armory.ilvl} · synced ${new Date(armory.lastSync).toLocaleDateString()}">${armory.ilvl}</span>`
+      : '';
+    const hasRealm = !!loadCharRealm(c);
+    const syncBtn = `<button class="char-btn-del char-sync-btn" title="${hasRealm ? 'Sync from Armory' : 'Set realm to enable Armory sync'}" data-armory-char="${c}" onclick="armorySync('${c}')" ${hasRealm?'':'style="opacity:0.4;"'}>🔄</button>`;
     return `
     <span style="display:inline-flex;align-items:center;gap:2px;">
       <button class="char-btn${c===currentChar?' active':''}" onclick="switchChar('${c}')" style="display:inline-flex;align-items:center;gap:5px;${borderStyle}">
-        ${def ? `<img src="${def.icon}" style="width:16px;height:16px;flex-shrink:0;image-rendering:auto;">` : ''}${c}${groupDot}
+        ${def ? `<img src="${def.icon}" style="width:16px;height:16px;flex-shrink:0;image-rendering:auto;">` : ''}${c}${groupDot}${ilvlBadge}
       </button>
       <button class="char-btn-del" title="Edit ${c}" onclick="openRenameChar('${c}')">✏️</button>
+      ${syncBtn}
       ${characters.length>1?`<button class="char-btn-del" title="Remove ${c}" onclick="deleteChar('${c}')">✕</button>`:''}
     </span>`;
   }).join('');
@@ -952,7 +959,7 @@ function switchChar(name) {
 }
 function deleteChar(name) {
   if (!confirm('Remove ' + name + ' and all saved data?')) return;
-  Object.keys(localStorage).filter(k => k.startsWith('wow_mn_' + name + '_') || k === 'wow_mn_hidden_' + name || k === 'wow_mn_custom_' + name || k === 'wow_mn_yourlist_' + name || k === 'wow_mn_ylorder_' + name || k === 'wow_mn_notes_' + name || k === classKey(name)).forEach(k => localStorage.removeItem(k));
+  Object.keys(localStorage).filter(k => k.startsWith('wow_mn_' + name + '_') || k === 'wow_mn_hidden_' + name || k === 'wow_mn_custom_' + name || k === 'wow_mn_yourlist_' + name || k === 'wow_mn_ylorder_' + name || k === 'wow_mn_notes_' + name || k === classKey(name) || k === 'wow_mn_realm_' + name || k === 'wow_mn_armory_' + name).forEach(k => localStorage.removeItem(k));
   characters = characters.filter(c => c !== name);
   localStorage.setItem('wow_midnight_chars', JSON.stringify(characters));
   if (currentChar === name) currentChar = characters[0];
@@ -972,6 +979,7 @@ function openRenameChar(oldName) {
   document.getElementById('modal').dataset.renaming = oldName;
   document.getElementById('modal').classList.add('open');
   document.getElementById('char-input').value = oldName;
+  document.getElementById('char-realm-input').value = loadCharRealm(oldName);
   renderClassPicker(loadCharClass(oldName));
   renderGroupPicker(loadCharGroupFor(oldName));
   setTimeout(() => { const el = document.getElementById('char-input'); el.focus(); el.select(); }, 50);
@@ -988,6 +996,7 @@ function saveChar() {
       // Name unchanged — still save class/group update
       saveCharClass(oldName, _modalSelectedClass);
       saveCharGroupFor(oldName, _modalSelectedGroup);
+      saveCharRealm(oldName, document.getElementById('char-realm-input').value.trim());
       closeModal(); renderChars(); renderClassLinksBar();
       return;
     }
@@ -1000,11 +1009,17 @@ function saveChar() {
         localStorage.setItem(newKey, localStorage.getItem(k));
         localStorage.removeItem(k);
       });
-    // Migrate class
+    // Migrate class, realm, armory
     const existingClass = loadCharClass(oldName);
+    const existingRealm = loadCharRealm(oldName);
+    const existingArmory = loadArmoryData(oldName);
     localStorage.removeItem(classKey(oldName));
+    localStorage.removeItem('wow_mn_realm_' + oldName);
+    localStorage.removeItem('wow_mn_armory_' + oldName);
     saveCharClass(newName, _modalSelectedClass || existingClass);
     saveCharGroupFor(newName, _modalSelectedGroup);
+    saveCharRealm(newName, document.getElementById('char-realm-input').value.trim() || existingRealm);
+    if (existingArmory) saveArmoryData(newName, existingArmory);
     const idx = characters.indexOf(oldName);
     characters[idx] = newName;
     localStorage.setItem('wow_midnight_chars', JSON.stringify(characters));
@@ -1017,6 +1032,7 @@ function saveChar() {
     }
     saveCharClass(newName, _modalSelectedClass);
     saveCharGroupFor(newName, _modalSelectedGroup);
+    saveCharRealm(newName, document.getElementById('char-realm-input').value.trim());
     closeModal(); switchChar(newName);
   }
 }
@@ -1913,6 +1929,13 @@ function openExportImport() {
       <div class="data-option-body">
         <div class="data-option-title">Template Profiles</div>
         <div class="data-option-desc">Save and apply named configurations (Your List + hidden settings) across characters.</div>
+      </div>
+    </div>
+    <div class="data-option" onclick="closeDataModal();openArmoryRegionModal()">
+      <div class="data-option-icon">🌍</div>
+      <div class="data-option-body">
+        <div class="data-option-title">Armory Region</div>
+        <div class="data-option-desc">Set your WoW region (Americas, Europe, Korea, Taiwan) for Armory sync.</div>
       </div>
     </div>
     <div class="data-option" onclick="closeDataModal();localStorage.removeItem('wow_mn_welcomed');openWelcome()">
@@ -2826,7 +2849,7 @@ if (isCompact) {
 
 /* ---- Modal overlay close listeners ---- */
 document.addEventListener('DOMContentLoaded', function() {
-  ['modal','modal-custom','modal-summary','modal-data','modal-profiles','modal-welcome','modal-bis','modal-bis-edit'].forEach(function(id) {
+  ['modal','modal-custom','modal-summary','modal-data','modal-profiles','modal-welcome','modal-bis','modal-bis-edit','modal-armory-region'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener('click', function(e) {
       if (e.target === el) el.classList.remove('open');

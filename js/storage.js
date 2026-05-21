@@ -131,3 +131,11 @@ function saveProfiles(p)     { localStorage.setItem(profilesKey(), JSON.stringif
 function customStorageKey() { return 'wow_mn_custom_' + currentChar; }
 function loadCustomTasks()  { return JSON.parse(localStorage.getItem(customStorageKey()) || '[]'); }
 function saveCustomTasks(t) { localStorage.setItem(customStorageKey(), JSON.stringify(t)); }
+
+/* ── ARMORY ── */
+function loadCharRealm(n)    { return localStorage.getItem('wow_mn_realm_' + n) || ''; }
+function saveCharRealm(n, r) { if (r) localStorage.setItem('wow_mn_realm_' + n, r); else localStorage.removeItem('wow_mn_realm_' + n); }
+function loadArmoryData(n)   { return JSON.parse(localStorage.getItem('wow_mn_armory_' + n) || 'null'); }
+function saveArmoryData(n, d){ localStorage.setItem('wow_mn_armory_' + n, JSON.stringify(d)); }
+function loadBnetCreds()     { return JSON.parse(localStorage.getItem('wow_mn_bnet_creds') || 'null'); }
+function saveBnetCreds(d)    { localStorage.setItem('wow_mn_bnet_creds', JSON.stringify(d)); }

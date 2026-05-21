@@ -1,0 +1,9 @@
+# Cloudflare Worker — WoW Armory Proxy (optional)
+# The app calls Raider.IO directly by default — this Worker
+# is only needed if you want server-side caching.
+#
+# Deploy: npx wrangler deploy  (no secrets required)
+
+name               = "wow-armory-proxy"
+main               = "worker.js"
+compatibility_date = "2024-11-01"

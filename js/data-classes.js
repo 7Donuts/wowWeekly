@@ -104,6 +104,15 @@ function selectClass(id) {
   renderClassPicker(id);
 }
 
+function _mythicScoreColor(score) {
+  if (!score)       return 'var(--text-muted)';
+  if (score < 1000) return '#1eff00';
+  if (score < 1500) return '#0070ff';
+  if (score < 2000) return '#a335ee';
+  if (score < 2500) return '#ff8000';
+  return '#e52b50';
+}
+
 function renderClassLinksBar() {
   const bar = document.getElementById('class-links-bar');
   if (!bar) return;
@@ -112,26 +121,64 @@ function renderClassLinksBar() {
   const def = CLASSES.find(c => c.id === cls);
   if (!def) { bar.style.display = 'none'; return; }
 
-  const slug  = cls; // e.g. 'death-knight'
-  const name  = def.name.toLowerCase().replace(/\s+/g, '-'); // same as slug
-  const icyUrl    = `https://www.icy-veins.com/wow/${slug}-guide`;
-  const murlokUrl = `https://murlok.io/${slug}`;
-  const wowheadUrl= `https://www.wowhead.com/guides/classes#${cls.replace(/-/g, '')}`;
-  const blizzUrl  = `https://worldofwarcraft.blizzard.com/en-us/game/classes/${slug}`;
+  const slug       = cls;
+  const icyUrl     = `https://www.icy-veins.com/wow/${slug}-guide`;
+  const murlokUrl  = `https://murlok.io/${slug}`;
+  const wowheadUrl = `https://www.wowhead.com/guides/classes#${cls.replace(/-/g, '')}`;
+  const blizzUrl   = `https://worldofwarcraft.blizzard.com/en-us/game/classes/${slug}`;
 
   const r = parseInt(def.color.slice(1,3),16);
   const g = parseInt(def.color.slice(3,5),16);
   const b = parseInt(def.color.slice(5,7),16);
   const rgba = (a) => `rgba(${r},${g},${b},${a})`;
 
-  // In light mode, class colors like Priest #FFF are invisible on ivory — use CSS vars instead
-  const barBg     = isLightMode ? 'var(--bg-panel)'        : rgba(0.06);
-  const barBorder = isLightMode ? 'var(--border)'          : rgba(0.45);
-  const labelClr  = isLightMode ? 'var(--text-primary)'    : def.color;
-  const resClr    = isLightMode ? 'var(--text-muted)'      : rgba(0.5);
-  const linkClr   = isLightMode ? 'var(--text-primary)'    : def.color;
-  const linkBg    = isLightMode ? 'var(--bg-card)'         : rgba(0.1);
-  const linkBgHov = isLightMode ? 'var(--bg-card-hover)'   : rgba(0.2);
+  const barBg     = isLightMode ? 'var(--bg-panel)'      : rgba(0.06);
+  const barBorder = isLightMode ? 'var(--border)'        : rgba(0.45);
+  const labelClr  = isLightMode ? 'var(--text-primary)'  : def.color;
+  const resClr    = isLightMode ? 'var(--text-muted)'    : rgba(0.5);
+  const linkClr   = isLightMode ? 'var(--text-primary)'  : def.color;
+  const linkBg    = isLightMode ? 'var(--bg-card)'       : rgba(0.1);
+  const linkBgHov = isLightMode ? 'var(--bg-card-hover)' : rgba(0.2);
+
+  // Armory data — shown if synced
+  const armory      = (typeof loadArmoryData === 'function') ? loadArmoryData(currentChar) : null;
+  const specLabel   = armory?.spec ? armory.spec + ' ' + def.name : def.name;
+  const guildLabel  = armory?.guild ? ` <span style="color:${resClr};font-size:11px;font-family:sans-serif;font-style:italic;">(${armory.guild})</span>` : '';
+
+  // Raider.IO profile link — only shown if realm is set
+  const realm       = (typeof loadCharRealm === 'function') ? loadCharRealm(currentChar) : '';
+  const region      = (typeof loadBnetCreds === 'function') ? (loadBnetCreds()?.region || 'us') : 'us';
+  const realmSlug   = realm.toLowerCase().replace(/\s+/g, '-');
+  const charSlug    = currentChar.toLowerCase();
+  const rioProfileUrl = realm ? `https://raider.io/characters/${region}/${realmSlug}/${charSlug}` : '';
+
+  const ilvlHtml = armory?.ilvl ? `
+    <span style="
+      font-family:'Cinzel',serif; font-size:11px; letter-spacing:0.05em;
+      color:var(--success-bright); background:rgba(74,174,94,0.12);
+      border:1px solid rgba(74,174,94,0.35); border-radius:4px;
+      padding:2px 8px; white-space:nowrap; flex-shrink:0;
+    " title="Equipped item level · synced ${new Date(armory.lastSync).toLocaleDateString()}">
+      ⚔ iLvl ${armory.ilvl}
+    </span>` : '';
+
+  const mScore     = armory?.mythicScore || 0;
+  const mColor     = _mythicScoreColor(mScore);
+  const mythicHtml = armory ? `
+    <span style="
+      font-family:'Cinzel',serif; font-size:11px; letter-spacing:0.05em;
+      color:${mColor}; background:rgba(0,0,0,0.2);
+      border:1px solid ${mColor}55; border-radius:4px;
+      padding:2px 8px; white-space:nowrap; flex-shrink:0;
+    " title="Mythic+ Rating · synced ${new Date(armory.lastSync).toLocaleDateString()}">
+      🔑 ${mScore > 0 ? mScore : '—'}
+    </span>` : '';
+
+  const linkStyle = `
+    font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.07em;
+    padding:3px 10px; border-radius:4px; text-decoration:none;
+    border:1px solid ${barBorder}; color:${linkClr};
+    background:${linkBg}; transition:all 0.2s; white-space:nowrap;`;
 
   bar.style.cssText = `
     display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;
@@ -140,40 +187,22 @@ function renderClassLinksBar() {
     border-radius:8px; font-size:13px;
   `;
   bar.innerHTML = `
-    <span style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.06em;color:${labelClr};flex-shrink:0;">
-      <img src="${def.icon}" style="width:20px;height:20px;vertical-align:middle;margin-right:5px;image-rendering:auto;">${def.name}
+    <span style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.06em;color:${labelClr};flex-shrink:0;display:inline-flex;align-items:center;gap:5px;">
+      <img src="${def.icon}" style="width:20px;height:20px;image-rendering:auto;">${specLabel}${guildLabel}
     </span>
-    <span style="color:${resClr};font-size:11px;">Resources:</span>
-    <a href="${icyUrl}" target="_blank" rel="noopener" style="
-      font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.07em;
-      padding:3px 10px; border-radius:4px; text-decoration:none;
-      border:1px solid ${barBorder}; color:${linkClr};
-      background:${linkBg}; transition:all 0.2s;
-    " onmouseover="this.style.background='${linkBgHov}'" onmouseout="this.style.background='${linkBg}'">
-      📖 Icy Veins
-    </a>
-    <a href="${murlokUrl}" target="_blank" rel="noopener" style="
-      font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.07em;
-      padding:3px 10px; border-radius:4px; text-decoration:none;
-      border:1px solid ${barBorder}; color:${linkClr};
-      background:${linkBg}; transition:all 0.2s;
-    " onmouseover="this.style.background='${linkBgHov}'" onmouseout="this.style.background='${linkBg}'">
-      📊 Murlok.io
-    </a>
-    <a href="${wowheadUrl}" target="_blank" rel="noopener" style="
-      font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.07em;
-      padding:3px 10px; border-radius:4px; text-decoration:none;
-      border:1px solid ${barBorder}; color:${linkClr};
-      background:${linkBg}; transition:all 0.2s;
-    " onmouseover="this.style.background='${linkBgHov}'" onmouseout="this.style.background='${linkBg}'">
-      🔍 Wowhead
-    </a>
-    <a href="${blizzUrl}" target="_blank" rel="noopener" style="
-      font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.07em;
-      padding:3px 10px; border-radius:4px; text-decoration:none;
-      border:1px solid ${barBorder}; color:${linkClr};
-      background:${linkBg}; transition:all 0.2s;
-    " onmouseover="this.style.background='${linkBgHov}'" onmouseout="this.style.background='${linkBg}'">
-      🌐 Blizzard
-    </a>`;
+    <span style="color:${resClr};font-size:11px;white-space:nowrap;">Resources:</span>
+    <a href="${icyUrl}"     target="_blank" rel="noopener" style="${linkStyle}"
+       onmouseover="this.style.background='${linkBgHov}'" onmouseout="this.style.background='${linkBg}'">📖 Icy Veins</a>
+    <a href="${murlokUrl}"  target="_blank" rel="noopener" style="${linkStyle}"
+       onmouseover="this.style.background='${linkBgHov}'" onmouseout="this.style.background='${linkBg}'">📊 Murlok.io</a>
+    <a href="${wowheadUrl}" target="_blank" rel="noopener" style="${linkStyle}"
+       onmouseover="this.style.background='${linkBgHov}'" onmouseout="this.style.background='${linkBg}'">🔍 Wowhead</a>
+    <a href="${blizzUrl}"   target="_blank" rel="noopener" style="${linkStyle}"
+       onmouseover="this.style.background='${linkBgHov}'" onmouseout="this.style.background='${linkBg}'">🌐 Blizzard</a>
+    ${rioProfileUrl ? `<a href="${rioProfileUrl}" target="_blank" rel="noopener" style="${linkStyle}"
+       onmouseover="this.style.background='${linkBgHov}'" onmouseout="this.style.background='${linkBg}'">📈 Raider.IO</a>` : ''}
+    <span style="flex:1;min-width:0.5rem;"></span>
+    ${ilvlHtml}
+    ${mythicHtml}
+  `;
 }

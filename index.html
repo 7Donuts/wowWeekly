@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Azeroth Agenda</title>
-<link rel="stylesheet" href="midnight.css?v=1.8.6">
+<link rel="stylesheet" href="midnight.css?v=1.9.2">
 
 </head>
 <body>
@@ -116,6 +116,10 @@
   <div class="modal" style="width:480px;max-width:95vw;">
     <h3 id="char-modal-title">Add Character</h3>
     <input type="text" id="char-input" placeholder="Character name…" maxlength="24"
+           onkeydown="if(event.key==='Enter')saveChar()" />
+    <div style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.1em;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.4rem;">Realm <span style="font-size:10px;opacity:0.6;">(for Armory sync)</span></div>
+    <input type="text" id="char-realm-input" placeholder="e.g. Area 52, Stormrage…" maxlength="64"
+           style="margin-bottom:1rem;"
            onkeydown="if(event.key==='Enter')saveChar()" />
     <div style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.1em;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.6rem;">Class (optional)</div>
     <div id="class-picker" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:1.1rem;"></div>
@@ -255,16 +259,37 @@
 
 
 
+<!-- ARMORY REGION MODAL -->
+<div class="modal-overlay" id="modal-armory-region">
+  <div class="modal" style="width:360px;max-width:95vw;">
+    <h3>🌍 Armory Region</h3>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:1.1rem;line-height:1.6;">
+      Select your WoW region so the Armory sync looks up characters on the right servers.
+    </p>
+    <select id="armory-region-select" style="margin-bottom:1.25rem;width:100%;padding:0.55rem 0.75rem;background:var(--bg-input);color:var(--text-primary);border:1.5px solid var(--border-bright);border-radius:6px;font-size:14px;">
+      <option value="us">Americas (US)</option>
+      <option value="eu">Europe (EU)</option>
+      <option value="kr">Korea (KR)</option>
+      <option value="tw">Taiwan (TW)</option>
+    </select>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeArmoryRegionModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveArmoryRegion()">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── JS: load order matters — each file depends on the ones above it ── -->
-<script src="js/data-tasks.js?v=1.8.6"></script>
-<script src="js/data-events.js?v=1.8.6"></script>
-<script src="js/data-classes.js?v=1.8.6"></script>
-<script src="js/data-changelog.js?v=1.8.6"></script>
-<script src="js/data-bis.js?v=1.8.6"></script>
-<script src="js/storage.js?v=1.8.6"></script>
-<script src="js/confetti.js?v=1.8.6"></script>
-<script src="js/theme.js?v=1.8.6"></script>
-<script src="js/app.js?v=1.8.6"></script>
+<script src="js/data-tasks.js?v=1.9.2"></script>
+<script src="js/data-events.js?v=1.9.2"></script>
+<script src="js/data-classes.js?v=1.9.2"></script>
+<script src="js/data-changelog.js?v=1.9.2"></script>
+<script src="js/data-bis.js?v=1.9.2"></script>
+<script src="js/storage.js?v=1.9.2"></script>
+<script src="js/armory.js?v=1.9.2"></script>
+<script src="js/confetti.js?v=1.9.2"></script>
+<script src="js/theme.js?v=1.9.2"></script>
+<script src="js/app.js?v=1.9.2"></script>
 
 </body>
 </html>

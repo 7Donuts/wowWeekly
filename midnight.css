@@ -425,6 +425,14 @@ h1 span { color: var(--void-glow); }
   padding: 0 2px; transition: color 0.2s; vertical-align: middle;
 }
 .char-btn-del:hover { color: #c0534a; }
+.char-sync-btn:hover { color: var(--void-glow) !important; }
+.char-ilvl-badge {
+  font-size: 10px; font-family: 'Cinzel', serif;
+  color: var(--success-bright); background: rgba(74,174,94,0.15);
+  border: 1px solid rgba(74,174,94,0.35); border-radius: 3px;
+  padding: 0 4px; line-height: 1.5; letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
 
 .char-add {
   font-size: 18px; color: var(--text-muted); background: none;
