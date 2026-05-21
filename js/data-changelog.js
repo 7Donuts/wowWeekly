@@ -9,14 +9,25 @@
 ------------------------------------------- */
 const VERSIONS = [
   {
+    version: 'v1.9.1',
+    date: 'May 21, 2026',
+    summary: 'Mythic+ weekly run tracker with vault preview and auto-filled counters',
+    entries: [
+      { type: 'new',     text: 'Mythic+ counters are automatically filled from your synced runs each week. The vault counter caps at 8 and the 10+ key counter has no limit', detail: '' },
+      { type: 'new',     text: 'Vault Preview shown on the Mythic+ task card. Displays expected reward track, upgrade level, and item level for each of your three vault slots based on keys completed this week', detail: 'Slot 1 is based on your best key, slot 2 on your 4th best, and slot 3 on your 8th best. Locked slots show how many more runs are needed.' },
+      { type: 'new',     text: 'This week\'s run list shown in the Mythic+ section with dungeon name, key level, and timer result for every run', detail: '' },
+      { type: 'improve', text: '10+ key counter on the farm task has no cap and tracks every high key run without a ceiling', detail: '' },
+    ]
+  },
+  {
     version: 'v1.9.0',
     date: 'May 21, 2026',
-    summary: 'WoW Armory sync via Raider.IO: pull your character stats and auto-check acquired BiS gear',
+    summary: 'Armory sync via Raider.IO: pull character stats and auto-check acquired BiS gear',
     entries: [
       { type: 'new',     text: '🔄 Armory Sync button on each character. Pulls your spec, guild, item level, and Mythic+ rating from Raider.IO with no setup required', detail: 'Just add your realm name to a character and hit the sync button. No API keys or accounts needed.' },
-      { type: 'new',     text: 'Character bar now shows your synced spec, class, and guild on the left with item level and Mythic+ rating badges on the right', detail: '' },
-      { type: 'new',     text: '📈 Raider.IO profile link added to the class resource bar for quick access to your character page', detail: 'Only appears when a realm is set for the character.' },
-      { type: 'new',     text: 'BiS items in Your List are automatically checked off when a sync finds them already equipped on your character', detail: 'Syncing compares each BiS item in your list to what your character currently has equipped. Matching items are marked done for the week.' },
+      { type: 'new',     text: 'Character bar shows your synced spec, class, and guild on the left with item level and Mythic+ rating badges on the right', detail: '' },
+      { type: 'new',     text: '📈 Raider.IO profile link in the class resource bar for quick access to your character page', detail: 'Only appears when a realm is set for the character.' },
+      { type: 'new',     text: 'BiS items in Your List are automatically checked off when a sync finds them already equipped on your character', detail: '' },
       { type: 'improve', text: 'Your first character is now selected and active by default when the tracker loads', detail: '' },
     ]
   },

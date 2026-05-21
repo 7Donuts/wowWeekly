@@ -40,7 +40,7 @@ async function armorySync(charName) {
       region: region,
       realm:  realm,
       name:   charName,
-      fields: 'gear,guild,mythic_plus_scores_by_season:current',
+      fields: 'gear,guild,mythic_plus_scores_by_season:current,mythic_plus_recent_runs',
     });
 
     const res  = await fetch('https://raider.io/api/v1/characters/profile?' + params);
@@ -50,6 +50,11 @@ async function armorySync(charName) {
       throw new Error(data.message || 'Character not found. Check the name and realm spelling.');
     }
 
+    // Filter recent runs to the current reset week
+    const weekStart   = new Date(getWeekKey() + 'T15:00:00.000Z');
+    const recentRuns  = data.mythic_plus_recent_runs || [];
+    const thisWeekRuns = recentRuns.filter(r => r.completed_at && new Date(r.completed_at) >= weekStart);
+
     const armory = {
       className:   data.class                                           || '',
       spec:        data.active_spec_name                                || '',
@@ -57,11 +62,13 @@ async function armorySync(charName) {
       ilvl:        data.gear?.item_level_equipped                       ?? 0,
       mythicScore: Math.round(data.mythic_plus_scores_by_season?.[0]?.scores?.all ?? 0),
       gearItems:   data.gear?.items                                     || {},
+      weeklyRuns:  { week: getWeekKey(), runs: thisWeekRuns },
       lastSync:    new Date().toISOString(),
     };
     saveArmoryData(charName, armory);
 
-    const autoChecked = armoryAutoCheckBis(charName);
+    const autoChecked  = armoryAutoCheckBis(charName);
+    const mpTracked    = armoryAutoTrackMythicPlus(charName);
 
     // Auto-apply class if none is set yet
     if (armory.className && !loadCharClass(charName)) {
@@ -74,7 +81,8 @@ async function armorySync(charName) {
     render();
     const specClass   = [armory.spec, armory.className].filter(Boolean).join(' ');
     const bisMsg      = autoChecked > 0 ? ` · ✅ ${autoChecked} BiS item${autoChecked > 1 ? 's' : ''} checked` : '';
-    showToast(charName + ' synced — ' + specClass + ' · iLvl ' + armory.ilvl + (armory.mythicScore ? ' · M+ ' + armory.mythicScore : '') + bisMsg);
+    const mpMsg       = mpTracked.total > 0 ? ` · 🗝 ${mpTracked.total} run${mpTracked.total > 1 ? 's' : ''} tracked` : '';
+    showToast(charName + ' synced — ' + specClass + ' · iLvl ' + armory.ilvl + (armory.mythicScore ? ' · M+ ' + armory.mythicScore : '') + bisMsg + mpMsg);
   } catch (err) {
     if (btn) { btn.textContent = '🔄'; btn.disabled = false; }
     alert('Armory sync failed: ' + err.message);
@@ -175,6 +183,40 @@ function armoryAutoCheckBis(charName) {
   }
 
   return autoChecked;
+}
+
+/* ── MYTHIC+ AUTO-TRACK ── */
+
+function armoryAutoTrackMythicPlus(charName) {
+  const armory = loadArmoryData(charName);
+  const weeklyData = armory?.weeklyRuns;
+  if (!weeklyData || !weeklyData.runs) return { total: 0, highKeys: 0 };
+
+  // Only count runs from the current reset week
+  if (weeklyData.week !== getWeekKey()) return { total: 0, highKeys: 0 };
+
+  const runs     = weeklyData.runs;
+  const total    = runs.length;                                    // all runs this week
+  const highKeys = runs.filter(r => r.mythic_level >= 10).length; // 10+ runs only
+
+  const goalsKey = 'wow_mn_goals_' + charName + '_' + getWeekKey();
+  const doneKey  = 'wow_mn_'       + charName + '_' + getWeekKey();
+  const goals    = JSON.parse(localStorage.getItem(goalsKey) || '{}');
+  const done     = JSON.parse(localStorage.getItem(doneKey)  || '{}');
+
+  // m1: vault run counter — capped at 8
+  const m1Val = Math.min(total, 8);
+  goals['m1'] = m1Val;
+  if (m1Val >= 8) { done['m1'] = true; }
+  else            { delete done['m1']; }
+
+  // m4: 10+ key counter — uncapped, never auto-check (user decides when done)
+  goals['m4'] = highKeys;
+
+  localStorage.setItem(goalsKey, JSON.stringify(goals));
+  localStorage.setItem(doneKey,  JSON.stringify(done));
+
+  return { total, highKeys };
 }
 
 /* ── TOAST HELPER ── */

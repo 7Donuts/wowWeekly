@@ -232,10 +232,12 @@ function sectionTaskHtml(t, done, hidden, yourList, goals, bossKills, notes) {
 
   let goalHtml = '';
   if (goalDef && !editingYourList) {
+    const gUncapped = !goalDef.max;
+    const gComplete = !gUncapped && goalVal >= goalDef.max;
+    const gMaxHtml  = gUncapped ? '' : '<span class="goal-max"> / ' + goalDef.max + '</span>';
     goalHtml = '<div class="goal-tracker" onclick="event.stopPropagation()">'
       + '<button class="goal-btn" onclick="adjustGoal(\'' + id + '\',' + goalDef.max + ',-1)">−</button>'
-      + '<span class="goal-val ' + (goalVal >= goalDef.max ? 'goal-complete' : '') + '">' + goalVal
-      + '<span class="goal-max"> / ' + goalDef.max + '</span></span>'
+      + '<span class="goal-val ' + (gComplete ? 'goal-complete' : '') + '">' + goalVal + gMaxHtml + '</span>'
       + '<button class="goal-btn" onclick="adjustGoal(\'' + id + '\',' + goalDef.max + ',1)">+</button>'
       + '<span class="goal-label">' + goalDef.label + '</span>'
       + '</div>';
@@ -301,6 +303,7 @@ function sectionTaskHtml(t, done, hidden, yourList, goals, bossKills, notes) {
     + '<div class="task-name">' + _bisTaskNameHtml(t.name, searchQuery) + '</div>'
     + (hd ? '<div class="task-desc">' + hd + '</div>' : '')
     + (milestoneNote ? '<div class="milestone-note">' + milestoneNote + '</div>' : '')
+    + (id === 'm1' ? _m1VaultPreviewHtml() : '')
     + tagsHtml
     + (t.tierSelector && !editingYourList ? renderTierSelector(id) : '')
     + bossHtml
@@ -348,10 +351,12 @@ function ylTaskHtml(t, done, goals, notes, bossKills) {
 
   let goalHtml = '';
   if (goalDef) {
+    const gUncapped = !goalDef.max;
+    const gComplete = !gUncapped && goalVal >= goalDef.max;
+    const gMaxHtml  = gUncapped ? '' : '<span class="goal-max"> / ' + goalDef.max + '</span>';
     goalHtml = '<div class="goal-tracker" onclick="event.stopPropagation()">'
       + '<button class="goal-btn" onclick="adjustGoal(\'' + id + '\',' + goalDef.max + ',-1)">−</button>'
-      + '<span class="goal-val ' + (goalVal >= goalDef.max ? 'goal-complete' : '') + '">' + goalVal
-      + '<span class="goal-max"> / ' + goalDef.max + '</span></span>'
+      + '<span class="goal-val ' + (gComplete ? 'goal-complete' : '') + '">' + goalVal + gMaxHtml + '</span>'
       + '<button class="goal-btn" onclick="adjustGoal(\'' + id + '\',' + goalDef.max + ',1)">+</button>'
       + '<span class="goal-label">' + goalDef.label + '</span>'
       + '</div>';
@@ -389,6 +394,7 @@ function ylTaskHtml(t, done, goals, notes, bossKills) {
     + '<div class="task-name">' + _bisTaskNameHtml(t.name, searchQuery) + '</div>'
     + (hd ? '<div class="task-desc">' + hd + '</div>' : '')
     + (milestoneNote ? '<div class="milestone-note">' + milestoneNote + '</div>' : '')
+    + (id === 'm1' ? _m1VaultPreviewHtml() : '')
     + (t.tierSelector ? renderTierSelector(id) : '')
     + bossHtml
     + sectionTag
@@ -399,6 +405,102 @@ function ylTaskHtml(t, done, goals, notes, bossKills) {
     + (id.startsWith('custom_bis_') ? '<button class="task-hide" title="Edit item" onclick="openBisEditModal(event,\'' + id + '\')">✏️</button>' : '')
     + '</div>'
     + goalHtml
+    + '</div>';
+}
+
+/* ── MYTHIC+ VAULT PREVIEW ── */
+
+// Key level → [minKey, track label, upgrade #, upgrade max, ilvl, color]
+// Source: Midnight Season 1 Great Vault reward table
+const _M_VAULT_TABLE = [
+  [2,  'Hero', 1, 6, 259, '#a335ee'],  // keys 2–3
+  [4,  'Hero', 2, 6, 263, '#a335ee'],  // keys 4–5
+  [6,  'Hero', 3, 6, 266, '#a335ee'],  // key 6
+  [7,  'Hero', 4, 6, 269, '#a335ee'],  // keys 7–9
+  [10, 'Myth', 1, 6, 272, '#ff8000'],  // keys 10+
+];
+
+function _vaultRewardForKey(keyLevel) {
+  if (!keyLevel || keyLevel < 2) return null;
+  // Find the highest bracket that keyLevel meets
+  let row = _M_VAULT_TABLE[0];
+  for (const r of _M_VAULT_TABLE) {
+    if (keyLevel >= r[0]) row = r;
+    else break;
+  }
+  return { track: row[1], upLevel: row[2], upMax: row[3], ilvl: row[4], color: row[5] };
+}
+
+function _m1VaultPreviewHtml() {
+  if (typeof loadArmoryData !== 'function') return '';
+  const armory = loadArmoryData(currentChar);
+  const weeklyData = armory?.weeklyRuns;
+  if (!weeklyData || weeklyData.week !== getWeekKey()) return '';
+
+  // Sort runs highest key first
+  const sorted = [...weeklyData.runs].sort((a, b) => b.mythic_level - a.mythic_level);
+  const total  = sorted.length;
+
+  const SLOTS = [
+    { label: 'Slot 1', runIdx: 0, needed: 1  },
+    { label: 'Slot 2', runIdx: 3, needed: 4  },
+    { label: 'Slot 3', runIdx: 7, needed: 8  },
+  ];
+
+  const rows = SLOTS.map(s => {
+    const unlocked = total >= s.needed;
+    if (unlocked) {
+      const run = sorted[s.runIdx] || sorted[sorted.length - 1];
+      const r   = _vaultRewardForKey(run.mythic_level);
+      if (!r) return '';
+      return '<div class="vault-slot">'
+        + '<span class="vault-slot-label">🔓 ' + s.label + '</span>'
+        + '<span class="vault-slot-track" style="color:' + r.color + '">'
+        + r.track + ' ' + r.upLevel + '/' + r.upMax + '</span>'
+        + '<span class="vault-slot-ilvl">' + r.ilvl + '</span>'
+        + '</div>';
+    } else {
+      const need = s.needed - total;
+      return '<div class="vault-slot vault-slot-locked">'
+        + '<span class="vault-slot-label">🔐 ' + s.label + '</span>'
+        + '<span class="vault-slot-missing">' + need + ' more run' + (need > 1 ? 's' : '') + ' needed</span>'
+        + '</div>';
+    }
+  }).join('');
+
+  if (!rows) return '';
+
+  return '<div class="vault-preview">'
+    + '<div class="vault-preview-title">Vault Preview</div>'
+    + rows
+    + '</div>';
+}
+
+/* ── MYTHIC+ WEEKLY RUNS DISPLAY ── */
+function renderMythicPlusRunsHtml() {
+  if (typeof loadArmoryData !== 'function') return '';
+  const armory = loadArmoryData(currentChar);
+  const weeklyData = armory?.weeklyRuns;
+  if (!weeklyData || !weeklyData.runs || !weeklyData.runs.length) return '';
+  // Only show if data is from the current reset week
+  if (weeklyData.week !== getWeekKey()) return '';
+
+  const runs = weeklyData.runs;
+  const timerIcons = { 3: '⏱⏱⏱', 2: '⏱⏱', 1: '⏱', 0: '' };
+
+  const rows = runs.map(r => {
+    const lvlColor = r.mythic_level >= 10 ? 'var(--light-gold)' : 'var(--text-secondary)';
+    const timer    = timerIcons[r.num_keystone_upgrades] || '';
+    return '<div class="mp-run-row">'
+      + '<span class="mp-run-level" style="color:' + lvlColor + '">+' + r.mythic_level + '</span>'
+      + '<span class="mp-run-name">' + (r.dungeon || r.short_name || 'Unknown') + '</span>'
+      + (timer ? '<span class="mp-run-timer" title="Timed">' + timer + '</span>' : '')
+      + '</div>';
+  }).join('');
+
+  return '<div class="mp-runs-wrap">'
+    + '<div class="mp-runs-label">This week\'s runs <span style="font-size:10px;opacity:0.5;">(from armory sync)</span></div>'
+    + '<div class="mp-runs-grid">' + rows + '</div>'
     + '</div>';
 }
 
@@ -683,6 +785,7 @@ function buildEditBar() {
       secBody.className = 'section-body' + (isOpen ? '' : ' hidden');
       secBody.id = 'body-' + sec.id;
       secBody.innerHTML = visibleTasks.map(t => sectionTaskHtml(t, done, hidden, yourList, goals, bossKills, notes)).join('');
+      if (sec.id === 'mythicplus') secBody.innerHTML += renderMythicPlusRunsHtml();
       div.appendChild(secBody);
       container.appendChild(div);
     });
@@ -842,15 +945,16 @@ function ylDragEnd(e) {
 
 /* ── WEEKLY GOAL TRACKER ── */
 function adjustGoal(id, max, delta) {
-  const goals = loadGoals();
-  const cur   = goals[id] || 0;
-  const next  = Math.max(0, Math.min(max, cur + delta));
-  goals[id]   = next;
+  const goals   = loadGoals();
+  const cur     = goals[id] || 0;
+  const uncapped = !max; // max === 0 means no upper limit
+  const next    = uncapped ? Math.max(0, cur + delta) : Math.max(0, Math.min(max, cur + delta));
+  goals[id]     = next;
   saveGoals(goals);
-  // Auto-check only when goal fully met; uncheck when decremented below max
+  // Auto-check only when capped goal is fully met; uncapped goals never auto-check
   const done = loadDone();
-  if (next >= max) { done[id] = true; }
-  else             { delete done[id]; }
+  if (!uncapped && next >= max) { done[id] = true; }
+  else if (!uncapped)           { delete done[id]; }
   saveDone(done);
   render();
 }
@@ -2663,6 +2767,19 @@ const WELCOME_STEPS = [
       + '<li>Click the <strong>✏️ button</strong> on any BiS card to swap in your own item if your BiS differs</li>'
       + '</ul>',
     note: null,
+  },
+  {
+    icon: '🔄',
+    title: 'Armory Sync',
+    body: 'Connect your characters to Raider.IO for automatic stat tracking. No accounts, API keys, or setup required — just your realm name.'
+      + '<ul class="welcome-feature-list" style="margin-top:0.75rem;">'
+      + '<li>Click the <strong>✏️ edit button</strong> on your character and enter your realm name, then hit <strong>🔄</strong> to sync</li>'
+      + '<li>Pulls your <strong>spec, class, guild, item level, and Mythic+ rating</strong> and displays them in the class bar</li>'
+      + '<li>Automatically <strong>checks off BiS items</strong> in Your List that you already have equipped</li>'
+      + '<li>Fills your <strong>Mythic+ run counters</strong> from this week\'s completed keys and shows a <strong>Vault Preview</strong> with expected reward per slot</li>'
+      + '<li>Your <strong>Raider.IO profile</strong> link appears in the class resource bar for quick access</li>'
+      + '</ul>',
+    note: 'Sync as often as you like. Data updates every time you hit the 🔄 button on a character.',
   },
   {
     icon: '🌟',

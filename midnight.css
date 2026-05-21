@@ -434,6 +434,71 @@ h1 span { color: var(--void-glow); }
   flex-shrink: 0;
 }
 
+/* ── Mythic+ vault preview ── */
+.vault-preview {
+  margin: 0.4rem 0 0.2rem;
+  padding: 0.45rem 0.7rem;
+  background: rgba(163,53,238,0.07);
+  border: 1px solid rgba(163,53,238,0.2);
+  border-radius: 5px;
+  display: flex; flex-direction: column; gap: 0.25rem;
+}
+.vault-preview-title {
+  font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--text-muted); font-family: 'Cinzel', serif;
+  margin-bottom: 0.15rem;
+}
+.vault-slot {
+  display: flex; align-items: center; gap: 0.6rem; font-size: 12px;
+}
+.vault-slot-label {
+  color: var(--text-muted); min-width: 4.5rem; flex-shrink: 0; font-size: 11px;
+}
+.vault-slot-track {
+  font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.04em;
+  font-weight: 600; flex-shrink: 0;
+}
+.vault-slot-ilvl {
+  font-size: 11px; color: var(--text-secondary);
+}
+.vault-slot-ilvl::before { content: '· '; opacity: 0.5; }
+.vault-slot-locked .vault-slot-label { opacity: 0.5; }
+.vault-slot-missing {
+  font-size: 11px; color: var(--text-muted); font-style: italic;
+}
+
+/* ── Mythic+ weekly runs list ── */
+.mp-runs-wrap {
+  margin: 0.5rem 0.75rem 0.75rem;
+  padding: 0.6rem 0.85rem;
+  background: rgba(120,86,196,0.07);
+  border: 1px solid rgba(120,86,196,0.2);
+  border-radius: 6px;
+}
+.mp-runs-label {
+  font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text-muted); margin-bottom: 0.45rem;
+  font-family: 'Cinzel', serif;
+}
+.mp-runs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.3rem 1rem;
+}
+.mp-run-row {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 12px;
+}
+.mp-run-level {
+  font-family: 'Cinzel', serif; font-size: 12px;
+  font-weight: 600; min-width: 2.2rem; flex-shrink: 0;
+}
+.mp-run-name {
+  color: var(--text-secondary); flex: 1; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.mp-run-timer { font-size: 10px; flex-shrink: 0; }
+
 .char-add {
   font-size: 18px; color: var(--text-muted); background: none;
   border: 1px dashed var(--border); border-radius: 4px;
