@@ -984,7 +984,11 @@ function resetAll() {
 function setFilter(f, btn) {
   if (f === 'all') {
     activeFilters = new Set(['all']);
+  } else if (f === 'yourlist') {
+    activeFilters = new Set(['yourlist']);
   } else {
+    // Switching to a category tab — always leave Your List
+    activeFilters.delete('yourlist');
     activeFilters.delete('all');
     if (activeFilters.has(f)) {
       activeFilters.delete(f);
