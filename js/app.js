@@ -1278,11 +1278,37 @@ function updateShareBtn() {
 /* ═══════════════════════════════════════════
    COUNTDOWN
 ═══════════════════════════════════════════ */
-function updateCountdown() {
+let _resetTimestamp = null;
+
+async function _fetchResetTime() {
+  try {
+    const res = await fetch('/api/reset-time');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data?.end_timestamp) _resetTimestamp = data.end_timestamp;
+  } catch (_) {}
+}
+
+function _hardcodedNextReset() {
   const now = new Date();
-  let next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 15, 0, 0));
+  const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 15, 0, 0));
   while (next.getUTCDay() !== 2) next.setUTCDate(next.getUTCDate() + 1);
   if (next <= now) next.setUTCDate(next.getUTCDate() + 7);
+  return next;
+}
+
+function updateCountdown() {
+  const now  = new Date();
+  const next = (_resetTimestamp && _resetTimestamp > now.getTime())
+    ? new Date(_resetTimestamp)
+    : _hardcodedNextReset();
+
+  // Once the API timestamp expires, re-fetch so the next period is picked up
+  if (_resetTimestamp && _resetTimestamp <= now.getTime()) {
+    _resetTimestamp = null;
+    _fetchResetTime();
+  }
+
   const diff = next - now;
   const d = Math.floor(diff/86400000);
   const h = Math.floor((diff%86400000)/3600000);
@@ -3105,7 +3131,7 @@ function closeWhatsNew() {
 }
 
 /* ── INIT ── */
-renderChars(); renderClassLinksBar(); render(); renderInlineHistory(); renderInlineEvent(); updateCountdown(); setInterval(updateCountdown, 1000);
+renderChars(); renderClassLinksBar(); render(); renderInlineHistory(); renderInlineEvent(); updateCountdown(); setInterval(updateCountdown, 1000); _fetchResetTime();
 updateLastChanceBtn(); renderLastChanceBanner();
 renderEventAlerts();
 checkShareablePlanURL();

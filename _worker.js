@@ -412,6 +412,44 @@ async function getClientToken(env) {
   return access_token;
 }
 
+async function handleResetTime(request, env) {
+  const region   = new URL(request.url).searchParams.get('region') || 'us';
+  const cacheKey = `__reset_time_${region}__`;
+
+  const cached = await env.USER_DATA.get(cacheKey, { type: 'json' });
+  if (cached?.end_timestamp && cached.end_timestamp > Date.now()) {
+    return Response.json(cached);
+  }
+
+  const token = await getClientToken(env);
+  if (!token) return new Response('API unavailable', { status: 502 });
+
+  const apiBase = `https://${region}.api.blizzard.com`;
+  const headers = {
+    'Authorization':       `Bearer ${token}`,
+    'Battlenet-Namespace': `dynamic-${region}`,
+  };
+
+  const indexRes = await fetch(`${apiBase}/data/wow/mythic-keystone/period/index?locale=en_US`, { headers });
+  if (!indexRes.ok) return new Response('API unavailable', { status: 502 });
+  const index = await indexRes.json();
+  const periodId = index.current_period?.id;
+  if (!periodId) return new Response('No current period', { status: 502 });
+
+  const periodRes = await fetch(`${apiBase}/data/wow/mythic-keystone/period/${periodId}?locale=en_US`, { headers });
+  if (!periodRes.ok) return new Response('API unavailable', { status: 502 });
+  const period = await periodRes.json();
+
+  const result = {
+    end_timestamp:   period.end_timestamp,
+    start_timestamp: period.start_timestamp,
+    period_id:       periodId,
+    region,
+  };
+  await env.USER_DATA.put(cacheKey, JSON.stringify(result), { expirationTtl: 3600 });
+  return Response.json(result);
+}
+
 async function handleItemIconsCache(request, env) {
   const raw = await env.USER_DATA.get('__item_icons__');
   return Response.json(raw ? JSON.parse(raw) : {});
@@ -515,6 +553,7 @@ export default {
       if (request.method === 'GET') return handleGetData(request, env);
       if (request.method === 'PUT') return handlePutData(request, env);
     }
+    if (pathname === '/api/reset-time'        && request.method === 'GET')  return handleResetTime(request, env);
     if (pathname === '/api/item-icons-cache'  && request.method === 'GET')  return handleItemIconsCache(request, env);
     if (pathname === '/api/item-icons'        && request.method === 'POST') return handleItemIcons(request, env);
     if (pathname === '/api/item-icons-by-id'  && request.method === 'POST') return handleItemIconsById(request, env);
