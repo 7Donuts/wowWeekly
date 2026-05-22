@@ -1565,11 +1565,44 @@ function _bisTaskNameHtml(name, searchQuery) {
   return searchQuery ? highlightMatch(name, searchQuery) : escHtml(name);
 }
 
+let _allIconsPrefetched = false;
+
+async function _prefetchAllBisIcons() {
+  if (_allIconsPrefetched) return;
+  _allIconsPrefetched = true;
+
+  await _seedIconCacheFromKV();
+
+  if (typeof BIS_ITEM_IDS === 'undefined') return;
+  const cache = JSON.parse(localStorage.getItem('wow_mn_item_icons') || '{}');
+  const missing = Object.entries(BIS_ITEM_IDS)
+    .filter(([name]) => !cache[name.toLowerCase()])
+    .map(([name, id]) => ({ name, id }));
+  if (!missing.length) return;
+
+  for (let i = 0; i < missing.length; i += 40) {
+    try {
+      const res = await fetch('/api/item-icons-by-id', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ items: missing.slice(i, i + 40) }),
+      });
+      if (!res.ok) continue;
+      const found = await res.json();
+      if (Object.keys(found).length) Object.assign(cache, found);
+    } catch (_) {}
+  }
+
+  localStorage.setItem('wow_mn_item_icons', JSON.stringify(cache));
+  render();
+}
+
 function openBisModal() {
   _bisClass = null;
   _bisSpec  = null;
   document.getElementById('modal-bis').classList.add('open');
   _renderBisPhase('class');
+  _prefetchAllBisIcons();
 }
 
 function closeBisModal() {
