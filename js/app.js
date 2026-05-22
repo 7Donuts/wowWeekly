@@ -1034,17 +1034,17 @@ function renderChars() {
     const groupDot = gm ? `<span style="font-size:9px;color:${gm.color};line-height:1;" title="${gm.label.replace(/[⭐◆🌿]/g,'').trim()}">${gm.dot}</span>` : '';
     const armory = loadArmoryData(c);
     const ilvlBadge = armory && armory.ilvl
-      ? `<span class="char-ilvl-badge" title="${armory.guild ? armory.guild + ' · ' : ''}iLvl ${armory.ilvl} · synced ${new Date(armory.lastSync).toLocaleDateString()}">${armory.ilvl}</span>`
+      ? `<span class="char-ilvl-badge" title="iLvl ${armory.ilvl} · synced ${new Date(armory.lastSync).toLocaleDateString()}">${armory.ilvl}</span>`
       : '';
-    const hasRealm = !!loadCharRealm(c);
-    const syncBtn = `<button class="char-btn-del char-sync-btn" title="${hasRealm ? 'Sync from Armory' : 'Set realm to enable Armory sync'}" data-armory-char="${c}" onclick="armorySync('${c}')" ${hasRealm?'':'style="opacity:0.4;"'}>🔄</button>`;
+    const mythicBadge = armory && armory.mythicRating
+      ? `<span class="char-ilvl-badge" style="color:${armory.mythicColor||'var(--void-glow)'};" title="Mythic+ Rating ${armory.mythicRating}">${armory.mythicRating}</span>`
+      : '';
     return `
     <span style="display:inline-flex;align-items:center;gap:2px;">
       <button class="char-btn${c===currentChar?' active':''}" onclick="switchChar('${c}')" style="display:inline-flex;align-items:center;gap:5px;${borderStyle}">
-        ${def ? `<img src="${def.icon}" style="width:16px;height:16px;flex-shrink:0;image-rendering:auto;">` : ''}${c}${groupDot}${ilvlBadge}
+        ${def ? `<img src="${def.icon}" style="width:16px;height:16px;flex-shrink:0;image-rendering:auto;">` : ''}${c}${groupDot}${ilvlBadge}${mythicBadge}
       </button>
       <button class="char-btn-del" title="Edit ${c}" onclick="openRenameChar('${c}')">✏️</button>
-      ${syncBtn}
       ${characters.length>1?`<button class="char-btn-del" title="Remove ${c}" onclick="deleteChar('${c}')">✕</button>`:''}
     </span>`;
   }).join('');
@@ -1140,7 +1140,9 @@ function saveChar() {
     }
     saveCharClass(newName, _modalSelectedClass);
     saveCharGroupFor(newName, _modalSelectedGroup);
-    saveCharRealm(newName, document.getElementById('char-realm-input').value.trim());
+    const _realmInput = document.getElementById('char-realm-input').value.trim();
+    saveCharRealm(newName, _realmInput);
+    if (_realmInput) saveCharRealmSlug(newName, realmToSlug(_realmInput));
     closeModal(); switchChar(newName);
   }
 }
@@ -3085,7 +3087,8 @@ function confirmImport() {
     localStorage.setItem('wow_midnight_chars', JSON.stringify(characters));
     const classId = _BNET_CLASS_MAP[c.className] || '';
     if (classId) saveCharClass(c.name, classId);
-    if (c.realm) saveCharRealm(c.name, c.realm);
+    if (c.realm)     saveCharRealm(c.name, c.realm);
+    if (c.realmSlug) saveCharRealmSlug(c.name, c.realmSlug);
     added++;
   });
   closeImportModal();

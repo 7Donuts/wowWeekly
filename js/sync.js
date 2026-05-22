@@ -104,7 +104,10 @@
       const { user } = await res.json();
       syncUser = user;
       updateAuthUI(user);
-      if (user) await pullFromCloud();
+      if (user) {
+        await pullFromCloud();
+        if (typeof autoSyncArmory === 'function') autoSyncArmory();
+      }
     } catch (_) {}
   }
 

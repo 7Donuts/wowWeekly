@@ -164,6 +164,81 @@ async function handleApiUser(request, env) {
   );
 }
 
+// ── WoW week key (mirrors frontend getWeekKey) ───────────────────────────────
+function getWowWeekKey() {
+  const now = new Date();
+  const d   = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 15, 0, 0));
+  while (d.getUTCDay() !== 2) d.setUTCDate(d.getUTCDate() - 1);
+  if (now < d) d.setUTCDate(d.getUTCDate() - 7);
+  return d.toISOString().slice(0, 10);
+}
+
+// ── Armory sync via Battle.net ────────────────────────────────────────────────
+
+async function handleGetArmory(request, env) {
+  const payload = await verifyJWT(getSessionCookie(request), env.SESSION_SECRET);
+  if (!payload) return new Response('Unauthorized', { status: 401 });
+  if (!env.USER_DATA) return new Response('KV not configured', { status: 503 });
+
+  const accessToken = await env.USER_DATA.get('token:' + payload.sub);
+  if (!accessToken) return new Response('Token expired', { status: 401 });
+
+  const url   = new URL(request.url);
+  const char  = url.searchParams.get('char');
+  const realm = url.searchParams.get('realm');
+  if (!char || !realm) return new Response('Missing char or realm', { status: 400 });
+
+  const region  = payload.region || 'us';
+  const apiBase = `https://${region}.api.blizzard.com`;
+  const headers = {
+    'Authorization':       `Bearer ${accessToken}`,
+    'Battlenet-Namespace': `profile-${region}`,
+  };
+  const charPath = `${apiBase}/profile/wow/character/${encodeURIComponent(realm)}/${encodeURIComponent(char)}`;
+
+  const [profileRes, keystoneRes] = await Promise.all([
+    fetch(`${charPath}?locale=en_US`,                              { headers }),
+    fetch(`${charPath}/mythic-keystone-profile?locale=en_US`,      { headers }),
+  ]);
+
+  if (profileRes.status === 404) return new Response('Character not found', { status: 404 });
+  if (profileRes.status === 401) return new Response('Token expired',       { status: 401 });
+  if (!profileRes.ok)            return new Response('Battle.net API error', { status: 502 });
+
+  const bnetStr = v => (typeof v === 'string' ? v : v?.en_US ?? '');
+  const profile = await profileRes.json();
+
+  let mythicRating = null, mythicColor = null, weeklyRuns = null;
+  if (keystoneRes.ok) {
+    const ks = await keystoneRes.json();
+    if (ks.current_mythic_rating?.rating) {
+      mythicRating = Math.round(ks.current_mythic_rating.rating);
+      const col = ks.current_mythic_rating.color;
+      if (col) mythicColor = '#' + [col.r, col.g, col.b].map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
+    }
+    if (ks.current_period?.best_runs) {
+      weeklyRuns = {
+        week: getWowWeekKey(),
+        runs: ks.current_period.best_runs.map(r => ({
+          mythic_level: r.keystone_level,
+          dungeon:      bnetStr(r.dungeon?.name),
+          completed_at: r.completed_timestamp ? new Date(r.completed_timestamp).toISOString() : null,
+        })),
+      };
+    }
+  }
+
+  return Response.json({
+    ilvl:         profile.equipped_item_level || profile.average_item_level || 0,
+    spec:         bnetStr(profile.active_spec?.name),
+    className:    bnetStr(profile.character_class?.name),
+    mythicRating,
+    mythicColor,
+    weeklyRuns,
+    lastSync:     Date.now(),
+  });
+}
+
 // ── Battle.net character import ───────────────────────────────────────────────
 
 async function handleGetCharacters(request, env) {
@@ -236,6 +311,7 @@ export default {
     if (pathname === '/auth/callback') return handleCallback(request, env);
     if (pathname === '/auth/logout')   return handleLogout(request);
     if (pathname === '/api/user')      return handleApiUser(request, env);
+    if (pathname === '/api/armory')      return handleGetArmory(request, env);
     if (pathname === '/api/characters')  return handleGetCharacters(request, env);
     if (pathname === '/api/data') {
       if (request.method === 'GET') return handleGetData(request, env);
