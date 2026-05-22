@@ -412,6 +412,37 @@ async function getClientToken(env) {
   return access_token;
 }
 
+async function handleItemIconsById(request, env) {
+  let ids;
+  try { ({ ids } = await request.json()); } catch (_) { return Response.json({}); }
+  if (!Array.isArray(ids) || !ids.length) return Response.json({});
+
+  const token = await getClientToken(env);
+  if (!token) return Response.json({});
+
+  const apiBase = 'https://us.api.blizzard.com';
+  const headers = {
+    'Authorization':       `Bearer ${token}`,
+    'Battlenet-Namespace': 'static-us',
+  };
+
+  const results = {};
+  await Promise.all(ids.slice(0, 40).map(async id => {
+    try {
+      const res = await fetch(
+        `${apiBase}/data/wow/media/item/${id}?locale=en_US`,
+        { headers }
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+      const icon = data.assets?.find(a => a.key === 'icon')?.value;
+      if (icon) results[String(id)] = icon;
+    } catch (_) {}
+  }));
+
+  return Response.json(results);
+}
+
 async function handleItemIcons(request, env) {
   let names;
   try { ({ names } = await request.json()); } catch (_) { return Response.json({}); }
@@ -473,7 +504,8 @@ export default {
       if (request.method === 'GET') return handleGetData(request, env);
       if (request.method === 'PUT') return handlePutData(request, env);
     }
-    if (pathname === '/api/item-icons' && request.method === 'POST') return handleItemIcons(request, env);
+    if (pathname === '/api/item-icons'      && request.method === 'POST') return handleItemIcons(request, env);
+    if (pathname === '/api/item-icons-by-id' && request.method === 'POST') return handleItemIconsById(request, env);
 
     // Fall through to static assets
     return env.ASSETS.fetch(request);

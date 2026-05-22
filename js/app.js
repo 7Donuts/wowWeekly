@@ -1728,21 +1728,60 @@ function _renderBisPhase(phase) {
 
 async function _fetchMissingBisIcons(items) {
   const cache = JSON.parse(localStorage.getItem('wow_mn_item_icons') || '{}');
-  const missing = items.map(i => i.item).filter(n => !cache[n.toLowerCase()]);
-  if (!missing.length) return;
-  try {
-    const res = await fetch('/api/item-icons', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ names: missing }),
-    });
-    if (!res.ok) return;
-    const found = await res.json();
-    if (!Object.keys(found).length) return;
-    localStorage.setItem('wow_mn_item_icons', JSON.stringify({ ...cache, ...found }));
-    // Re-render the gear list so new icons appear
+
+  // Split uncached items into those with known IDs vs name-only
+  const byId   = [];  // { name, id }
+  const byName = [];  // name strings
+  for (const { item } of items) {
+    if (cache[item.toLowerCase()]) continue;
+    const id = (typeof BIS_ITEM_IDS !== 'undefined') && BIS_ITEM_IDS[item];
+    if (id) byId.push({ name: item, id });
+    else    byName.push(item);
+  }
+  if (!byId.length && !byName.length) return;
+
+  let anyFound = false;
+
+  // Direct ID-based lookup (reliable — no name matching needed)
+  if (byId.length) {
+    try {
+      const res = await fetch('/api/item-icons-by-id', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ ids: byId.map(x => x.id) }),
+      });
+      if (res.ok) {
+        const found = await res.json(); // { "249343": "https://...", ... }
+        for (const { name, id } of byId) {
+          const url = found[String(id)];
+          if (url) { cache[name.toLowerCase()] = url; anyFound = true; }
+        }
+      }
+    } catch (_) {}
+  }
+
+  // Name-based fallback for items without known IDs
+  if (byName.length) {
+    try {
+      const res = await fetch('/api/item-icons', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ names: byName }),
+      });
+      if (res.ok) {
+        const found = await res.json();
+        if (Object.keys(found).length) {
+          Object.assign(cache, found);
+          anyFound = true;
+        }
+      }
+    } catch (_) {}
+  }
+
+  if (anyFound) {
+    localStorage.setItem('wow_mn_item_icons', JSON.stringify(cache));
     _renderBisPhase('gear');
-  } catch (_) {}
+  }
 }
 
 function _bisPickClass(classKey) {
