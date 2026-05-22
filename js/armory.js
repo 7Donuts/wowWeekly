@@ -27,6 +27,7 @@ async function armorySync(charName) {
 
     armoryAutoCheckBis(charName);
     armoryAutoTrackMythicPlus(charName);
+    armoryAutoCheckRaidBosses(charName);
 
     if (armory.className && !loadCharClass(charName)) {
       const classId = _ARMORY_CLASS_MAP[armory.className];
@@ -57,8 +58,8 @@ async function autoSyncArmory() {
 
     const existing = loadArmoryData(charName);
     const age = existing?.lastSync ? (now - existing.lastSync) : Infinity;
-    // Also re-sync if gearItems is missing (data predates gear sync feature)
-    if (age < staleMs && existing?.gearItems) continue;
+    // Re-sync if data is stale OR missing fields added in later releases
+    if (age < staleMs && existing?.gearItems && 'raidKills' in (existing || {})) continue;
 
     const slug = loadCharRealmSlug(charName) || realmToSlug(realm);
     try {
@@ -70,6 +71,7 @@ async function autoSyncArmory() {
       saveArmoryData(charName, armory);
       armoryAutoCheckBis(charName);
       armoryAutoTrackMythicPlus(charName);
+      armoryAutoCheckRaidBosses(charName);
 
       if (armory.className && !loadCharClass(charName)) {
         const classId = _ARMORY_CLASS_MAP[armory.className];
@@ -167,6 +169,38 @@ function armoryAutoTrackMythicPlus(charName) {
   localStorage.setItem(goalsKey, JSON.stringify(goals));
   localStorage.setItem(doneKey,  JSON.stringify(done));
   return { total, highKeys };
+}
+
+/* ── RAID BOSS AUTO-CHECK ── */
+function armoryAutoCheckRaidBosses(charName) {
+  const armory = loadArmoryData(charName);
+  if (!armory?.raidKills || !Object.keys(armory.raidKills).length) return;
+
+  const weekKey  = getWeekKey();
+  const bossKey  = 'wow_mn_bosses_' + charName + '_' + weekKey;
+  const doneKey  = 'wow_mn_' + charName + '_' + weekKey;
+  const kills    = JSON.parse(localStorage.getItem(bossKey) || '{}');
+  const done     = JSON.parse(localStorage.getItem(doneKey) || '{}');
+  let bossChanged = false, doneChanged = false;
+
+  for (const [taskId, bosses] of Object.entries(armory.raidKills)) {
+    for (const [bossId, killed] of Object.entries(bosses)) {
+      if (!killed) continue;
+      const k = taskId + '_' + bossId;
+      if (!kills[k]) { kills[k] = true; bossChanged = true; }
+    }
+    // Auto-complete task if every boss in that task is now killed
+    const task = (typeof SECTIONS !== 'undefined')
+      ? SECTIONS.flatMap(s => s.tasks).find(t => t.id === taskId)
+      : null;
+    if (task?.bosses) {
+      const allKilled = task.bosses.every(b => kills[taskId + '_' + b.id]);
+      if (allKilled && !done[taskId]) { done[taskId] = true; doneChanged = true; }
+    }
+  }
+
+  if (bossChanged) localStorage.setItem(bossKey, JSON.stringify(kills));
+  if (doneChanged) localStorage.setItem(doneKey,  JSON.stringify(done));
 }
 
 /* ── TOAST ── */

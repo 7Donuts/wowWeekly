@@ -173,6 +173,33 @@ function getWowWeekKey() {
   return d.toISOString().slice(0, 10);
 }
 
+// Tuesday 15:00 UTC reset as a ms timestamp — used to filter this-week kills
+function getWowWeekResetMs() {
+  return new Date(getWowWeekKey() + 'T15:00:00Z').getTime();
+}
+
+// Maps Battle.net raid instance names → our task ID prefix
+const RAID_INSTANCE_MAP = {
+  'The Dreamrift':         'rd',
+  'The Voidspire':         'vs',
+  "March on Quel'Danas":   'mq',
+};
+
+// Maps Battle.net encounter names → our boss ID
+const RAID_BOSS_ID_MAP = {
+  'Chimaerus':                  'chimaerus',
+  'Imperator Averzian':         'averzian',
+  'Vorasius':                   'vorasius',
+  'Fallen-King Salhadaar':      'salhadaar',
+  'Vaelgor & Ezzorak':          'vaelgor',
+  'Lightblinded Vanguard':      'vanguard',
+  'Crown of the Cosmos':        'cosmos',
+  "Belo'ren, Child of A'lar":   'beloren',
+  'Midnight Falls':             'midnight',
+};
+
+const RAID_DIFF_MAP = { LFR: 'lfr', NORMAL: 'n', HEROIC: 'h', MYTHIC: 'm' };
+
 // ── Armory sync via Battle.net ────────────────────────────────────────────────
 
 async function handleGetArmory(request, env) {
@@ -196,10 +223,11 @@ async function handleGetArmory(request, env) {
   };
   const charPath = `${apiBase}/profile/wow/character/${encodeURIComponent(realm)}/${encodeURIComponent(char)}`;
 
-  const [profileRes, keystoneRes, equipmentRes] = await Promise.all([
+  const [profileRes, keystoneRes, equipmentRes, raidsRes] = await Promise.all([
     fetch(`${charPath}?locale=en_US`,                              { headers }),
     fetch(`${charPath}/mythic-keystone-profile?locale=en_US`,      { headers }),
     fetch(`${charPath}/equipment?locale=en_US`,                    { headers }),
+    fetch(`${charPath}/encounters/raids?locale=en_US`,             { headers }),
   ]);
 
   if (profileRes.status === 404) return new Response('Character not found', { status: 404 });
@@ -246,6 +274,33 @@ async function handleGetArmory(request, env) {
     }
   }
 
+  // ── Raid boss kills this reset ────────────────────────────────────────────
+  // raidKills: { 'vs_h': { averzian: true, vorasius: true, ... }, 'rd_n': { chimaerus: true }, ... }
+  let raidKills = {};
+  if (raidsRes.ok) {
+    const raidsData  = await raidsRes.json();
+    const weekReset  = getWowWeekResetMs();
+    for (const exp of (raidsData.expansions || [])) {
+      for (const inst of (exp.instances || [])) {
+        const prefix = RAID_INSTANCE_MAP[bnetStr(inst.instance?.name)];
+        if (!prefix) continue;
+        for (const mode of (inst.modes || [])) {
+          const diff = RAID_DIFF_MAP[mode.difficulty?.type];
+          if (!diff) continue;
+          const taskId = `${prefix}_${diff}`;
+          for (const enc of (mode.progress?.encounters || [])) {
+            const bossId = RAID_BOSS_ID_MAP[bnetStr(enc.encounter?.name)];
+            if (!bossId) continue;
+            if (enc.last_kill_timestamp && enc.last_kill_timestamp >= weekReset) {
+              if (!raidKills[taskId]) raidKills[taskId] = {};
+              raidKills[taskId][bossId] = true;
+            }
+          }
+        }
+      }
+    }
+  }
+
   return Response.json({
     ilvl:         profile.equipped_item_level || profile.average_item_level || 0,
     spec:         bnetStr(profile.active_spec?.name),
@@ -254,6 +309,7 @@ async function handleGetArmory(request, env) {
     mythicColor,
     weeklyRuns,
     gearItems,
+    raidKills,
     lastSync:     Date.now(),
   });
 }
