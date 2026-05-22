@@ -148,6 +148,25 @@ async function handleApiUser(request, env) {
   );
 }
 
+// ── Cloud data sync (KV) ─────────────────────────────────────────────────────
+
+async function handleGetData(request, env) {
+  const payload = await verifyJWT(getSessionCookie(request), env.SESSION_SECRET);
+  if (!payload) return new Response('Unauthorized', { status: 401 });
+  if (!env.USER_DATA) return Response.json({});
+  const raw = await env.USER_DATA.get('user:' + payload.sub);
+  return Response.json(raw ? JSON.parse(raw) : {});
+}
+
+async function handlePutData(request, env) {
+  const payload = await verifyJWT(getSessionCookie(request), env.SESSION_SECRET);
+  if (!payload) return new Response('Unauthorized', { status: 401 });
+  if (!env.USER_DATA) return new Response('KV not configured', { status: 503 });
+  const body = await request.json();
+  await env.USER_DATA.put('user:' + payload.sub, JSON.stringify(body));
+  return Response.json({ ok: true });
+}
+
 // ── Main fetch handler ────────────────────────────────────────────────────────
 
 export default {
@@ -158,6 +177,10 @@ export default {
     if (pathname === '/auth/callback') return handleCallback(request, env);
     if (pathname === '/auth/logout')   return handleLogout(request);
     if (pathname === '/api/user')      return handleApiUser(request, env);
+    if (pathname === '/api/data') {
+      if (request.method === 'GET') return handleGetData(request, env);
+      if (request.method === 'PUT') return handlePutData(request, env);
+    }
 
     // Fall through to static assets
     return env.ASSETS.fetch(request);
