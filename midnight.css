@@ -507,6 +507,24 @@ h1 span { color: var(--void-glow); }
 }
 .char-add:hover { border-color: var(--border-bright); color: var(--text-primary); }
 
+.armory-btn {
+  font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.07em;
+  color: var(--text-secondary); background: rgba(124,92,191,0.08);
+  border: 1px solid rgba(124,92,191,0.35); border-radius: 5px;
+  padding: 0 10px; height: 30px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  white-space: nowrap;
+}
+.armory-btn:hover {
+  background: rgba(124,92,191,0.18); border-color: rgba(124,92,191,0.7);
+  color: var(--void-glow);
+}
+.armory-btn:disabled {
+  opacity: 0.55; cursor: default;
+  background: rgba(124,92,191,0.05); border-color: rgba(124,92,191,0.2);
+}
+
 .filter-tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.75rem; }
 
 .tab-btn {
