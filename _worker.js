@@ -412,10 +412,15 @@ async function getClientToken(env) {
   return access_token;
 }
 
+async function handleItemIconsCache(request, env) {
+  const raw = await env.USER_DATA.get('__item_icons__');
+  return Response.json(raw ? JSON.parse(raw) : {});
+}
+
 async function handleItemIconsById(request, env) {
-  let ids;
-  try { ({ ids } = await request.json()); } catch (_) { return Response.json({}); }
-  if (!Array.isArray(ids) || !ids.length) return Response.json({});
+  let items;
+  try { ({ items } = await request.json()); } catch (_) { return Response.json({}); }
+  if (!Array.isArray(items) || !items.length) return Response.json({});
 
   const token = await getClientToken(env);
   if (!token) return Response.json({});
@@ -427,7 +432,7 @@ async function handleItemIconsById(request, env) {
   };
 
   const results = {};
-  await Promise.all(ids.slice(0, 40).map(async id => {
+  await Promise.all(items.slice(0, 40).map(async ({ name, id }) => {
     try {
       const res = await fetch(
         `${apiBase}/data/wow/media/item/${id}?locale=en_US`,
@@ -436,9 +441,15 @@ async function handleItemIconsById(request, env) {
       if (!res.ok) return;
       const data = await res.json();
       const icon = data.assets?.find(a => a.key === 'icon')?.value;
-      if (icon) results[String(id)] = icon;
+      if (icon) results[name.toLowerCase()] = icon;
     } catch (_) {}
   }));
+
+  if (Object.keys(results).length) {
+    const existing = await env.USER_DATA.get('__item_icons__');
+    const merged = Object.assign(existing ? JSON.parse(existing) : {}, results);
+    await env.USER_DATA.put('__item_icons__', JSON.stringify(merged));
+  }
 
   return Response.json(results);
 }
@@ -504,8 +515,9 @@ export default {
       if (request.method === 'GET') return handleGetData(request, env);
       if (request.method === 'PUT') return handlePutData(request, env);
     }
-    if (pathname === '/api/item-icons'      && request.method === 'POST') return handleItemIcons(request, env);
-    if (pathname === '/api/item-icons-by-id' && request.method === 'POST') return handleItemIconsById(request, env);
+    if (pathname === '/api/item-icons-cache'  && request.method === 'GET')  return handleItemIconsCache(request, env);
+    if (pathname === '/api/item-icons'        && request.method === 'POST') return handleItemIcons(request, env);
+    if (pathname === '/api/item-icons-by-id'  && request.method === 'POST') return handleItemIconsById(request, env);
 
     // Fall through to static assets
     return env.ASSETS.fetch(request);

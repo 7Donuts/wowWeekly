@@ -1726,7 +1726,25 @@ function _renderBisPhase(phase) {
   }
 }
 
+let _kvIconCacheSeeded = false;
+
+async function _seedIconCacheFromKV() {
+  if (_kvIconCacheSeeded) return;
+  _kvIconCacheSeeded = true;
+  try {
+    const res = await fetch('/api/item-icons-cache');
+    if (!res.ok) return;
+    const remote = await res.json();
+    if (!Object.keys(remote).length) return;
+    const local = JSON.parse(localStorage.getItem('wow_mn_item_icons') || '{}');
+    const merged = Object.assign({}, remote, local);
+    localStorage.setItem('wow_mn_item_icons', JSON.stringify(merged));
+  } catch (_) {}
+}
+
 async function _fetchMissingBisIcons(items) {
+  await _seedIconCacheFromKV();
+
   const cache = JSON.parse(localStorage.getItem('wow_mn_item_icons') || '{}');
 
   // Split uncached items into those with known IDs vs name-only
@@ -1742,19 +1760,19 @@ async function _fetchMissingBisIcons(items) {
 
   let anyFound = false;
 
-  // Direct ID-based lookup (reliable — no name matching needed)
+  // Direct ID-based lookup — worker also persists results to KV
   if (byId.length) {
     try {
       const res = await fetch('/api/item-icons-by-id', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ ids: byId.map(x => x.id) }),
+        body:    JSON.stringify({ items: byId }),
       });
       if (res.ok) {
-        const found = await res.json(); // { "249343": "https://...", ... }
-        for (const { name, id } of byId) {
-          const url = found[String(id)];
-          if (url) { cache[name.toLowerCase()] = url; anyFound = true; }
+        const found = await res.json(); // { "name lowercase": "https://...", ... }
+        if (Object.keys(found).length) {
+          Object.assign(cache, found);
+          anyFound = true;
         }
       }
     } catch (_) {}
