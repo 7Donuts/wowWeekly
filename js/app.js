@@ -1144,6 +1144,7 @@ function saveChar() {
     saveCharRealm(newName, _realmInput);
     if (_realmInput) saveCharRealmSlug(newName, realmToSlug(_realmInput));
     closeModal(); switchChar(newName);
+    if (_realmInput && typeof autoSyncArmory === 'function') autoSyncArmory();
   }
 }
 
@@ -3092,7 +3093,10 @@ function confirmImport() {
     added++;
   });
   closeImportModal();
-  if (added > 0) { renderChars(); render(); }
+  if (added > 0) {
+    renderChars(); render();
+    if (typeof autoSyncArmory === 'function') autoSyncArmory();
+  }
 }
 
 function closeImportModal() {
