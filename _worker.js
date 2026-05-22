@@ -437,9 +437,11 @@ async function handleItemIcons(request, env) {
       const searchData = await searchRes.json();
       const hit = searchData.results?.[0]?.data;
       if (!hit) return;
-      // Exact name match only — avoid wrong items with similar names
       const foundName = typeof hit.name === 'string' ? hit.name : hit.name?.en_US;
-      if (!foundName || foundName.toLowerCase() !== name.toLowerCase()) return;
+      if (!foundName) return;
+      // Normalize apostrophe variants before comparing
+      const norm = s => s.toLowerCase().replace(/[''ʼ`]/g, "'").replace(/\s+/g, ' ').trim();
+      if (norm(foundName) !== norm(name)) return;
 
       const mediaRes = await fetch(
         `${apiBase}/data/wow/media/item/${hit.id}?namespace=static-us&locale=en_US`,

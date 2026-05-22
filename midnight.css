@@ -2640,8 +2640,17 @@ body.light-mode .hm-char { color: var(--text-primary); }
   border-radius: 4px;
   flex-shrink: 0;
 }
-.bis-slot-icon--placeholder { opacity: 0.6; }
-.bis-gear-row:hover .bis-slot-icon--placeholder { opacity: 0.9; }
+.bis-slot-icon--placeholder {
+  filter: sepia(1) hue-rotate(220deg) saturate(2.5) brightness(0.65);
+  opacity: 0.85;
+  border-radius: 6px;
+  box-shadow: 0 0 6px rgba(160, 125, 224, 0.4);
+}
+.bis-gear-row:hover .bis-slot-icon--placeholder {
+  filter: sepia(1) hue-rotate(220deg) saturate(3) brightness(0.85);
+  opacity: 1;
+  box-shadow: 0 0 10px rgba(160, 125, 224, 0.6);
+}
 
 /* slot icon inside task cards */
 .bis-task-name-wrap {
@@ -2656,7 +2665,10 @@ body.light-mode .hm-char { color: var(--text-primary); }
   flex-shrink: 0;
   border-radius: 3px;
 }
-.bis-task-icon--placeholder { opacity: 0.7; }
+.bis-task-icon--placeholder {
+  filter: sepia(1) hue-rotate(220deg) saturate(2.5) brightness(0.65);
+  opacity: 0.85;
+}
 .bis-item-name { color: var(--light-gold); font-weight: 600; }
 .bis-item-source {
   font-size: 11px;
