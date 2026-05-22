@@ -57,7 +57,8 @@ async function autoSyncArmory() {
 
     const existing = loadArmoryData(charName);
     const age = existing?.lastSync ? (now - existing.lastSync) : Infinity;
-    if (age < staleMs) continue;
+    // Also re-sync if gearItems is missing (data predates gear sync feature)
+    if (age < staleMs && existing?.gearItems) continue;
 
     const slug = loadCharRealmSlug(charName) || realmToSlug(realm);
     try {
@@ -67,6 +68,7 @@ async function autoSyncArmory() {
 
       const armory = await res.json();
       saveArmoryData(charName, armory);
+      armoryAutoCheckBis(charName);
       armoryAutoTrackMythicPlus(charName);
 
       if (armory.className && !loadCharClass(charName)) {
