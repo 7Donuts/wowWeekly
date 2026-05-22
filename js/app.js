@@ -2778,15 +2778,15 @@ const WELCOME_STEPS = [
   {
     icon: '🔄',
     title: 'Armory Sync',
-    body: 'Connect your characters to Raider.IO for automatic stat tracking. No accounts, API keys, or setup required — just your realm name.'
+    body: 'Log in with Battle.net to sync your character stats automatically — no extra setup required.'
       + '<ul class="welcome-feature-list" style="margin-top:0.75rem;">'
-      + '<li>Click the <strong>✏️ edit button</strong> on your character and enter your realm name, then hit <strong>🔄</strong> to sync</li>'
-      + '<li>Pulls your <strong>spec, class, guild, item level, and Mythic+ rating</strong> and displays them in the class bar</li>'
+      + '<li>Click <strong>🔑 Battle.net</strong> to log in, then use <strong>⬇ Import</strong> to add your characters directly from your account</li>'
+      + '<li>Pulls your <strong>spec, class, item level, and Mythic+ rating</strong> directly from Blizzard and displays them in the class bar</li>'
       + '<li>Automatically <strong>checks off BiS items</strong> in Your List that you already have equipped</li>'
       + '<li>Fills your <strong>Mythic+ run counters</strong> from this week\'s completed keys and shows a <strong>Vault Preview</strong> with expected reward per slot</li>'
-      + '<li>Your <strong>Raider.IO profile</strong> link appears in the class resource bar for quick access</li>'
+      + '<li>Your <strong>WoW Armory</strong> link appears in the class resource bar for quick access</li>'
       + '</ul>',
-    note: 'Sync as often as you like. Data updates every time you hit the 🔄 button on a character.',
+    note: 'Armory data refreshes automatically on login if more than 1 hour old. You can also sync any character via the ✏️ edit button.',
   },
   {
     icon: '🌟',

@@ -145,12 +145,12 @@ function renderClassLinksBar() {
   const specLabel   = armory?.spec ? armory.spec + ' ' + def.name : def.name;
   const guildLabel  = armory?.guild ? ` <span style="color:${resClr};font-size:11px;font-family:sans-serif;font-style:italic;">(${armory.guild})</span>` : '';
 
-  // Raider.IO profile link — only shown if realm is set
+  // WoW Armory link — only shown if realm is set
   const realm       = (typeof loadCharRealm === 'function') ? loadCharRealm(currentChar) : '';
   const region      = (typeof loadBnetCreds === 'function') ? (loadBnetCreds()?.region || 'us') : 'us';
   const realmSlug   = realm.toLowerCase().replace(/\s+/g, '-');
   const charSlug    = currentChar.toLowerCase();
-  const rioProfileUrl = realm ? `https://raider.io/characters/${region}/${realmSlug}/${charSlug}` : '';
+  const armoryUrl   = realm ? `https://worldofwarcraft.blizzard.com/en-us/character/${region}/${realmSlug}/${charSlug}` : '';
 
   const ilvlHtml = armory?.ilvl ? `
     <span style="
@@ -199,8 +199,8 @@ function renderClassLinksBar() {
        onmouseover="this.style.background='${linkBgHov}'" onmouseout="this.style.background='${linkBg}'">🔍 Wowhead</a>
     <a href="${blizzUrl}"   target="_blank" rel="noopener" style="${linkStyle}"
        onmouseover="this.style.background='${linkBgHov}'" onmouseout="this.style.background='${linkBg}'">🌐 Blizzard</a>
-    ${rioProfileUrl ? `<a href="${rioProfileUrl}" target="_blank" rel="noopener" style="${linkStyle}"
-       onmouseover="this.style.background='${linkBgHov}'" onmouseout="this.style.background='${linkBg}'">📈 Raider.IO</a>` : ''}
+    ${armoryUrl ? `<a href="${armoryUrl}" target="_blank" rel="noopener" style="${linkStyle}"
+       onmouseover="this.style.background='${linkBgHov}'" onmouseout="this.style.background='${linkBg}'">🛡 Armory</a>` : ''}
     <span style="flex:1;min-width:0.5rem;"></span>
     ${ilvlHtml}
     ${mythicHtml}

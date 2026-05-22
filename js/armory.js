@@ -127,10 +127,10 @@ function armoryAutoCheckBis(charName) {
     if (!task) return;
     const nameMatch = task.name.match(/^\[([^\]]+)\]\s*(.+)$/);
     if (!nameMatch) return;
-    const rioSlot     = _BIS_SLOT_MAP[nameMatch[1].toLowerCase().trim()];
+    const gearSlot    = _BIS_SLOT_MAP[nameMatch[1].toLowerCase().trim()];
     const bisItemName = nameMatch[2].trim();
-    if (!rioSlot) return;
-    const equipped = armory.gearItems[rioSlot];
+    if (!gearSlot) return;
+    const equipped = armory.gearItems[gearSlot];
     if (!equipped?.name) return;
     if (equipped.name.toLowerCase() === bisItemName.toLowerCase()) {
       if (!done[ylId]) { done[ylId] = true; autoChecked++; }

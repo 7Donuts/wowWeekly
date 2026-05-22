@@ -196,9 +196,10 @@ async function handleGetArmory(request, env) {
   };
   const charPath = `${apiBase}/profile/wow/character/${encodeURIComponent(realm)}/${encodeURIComponent(char)}`;
 
-  const [profileRes, keystoneRes] = await Promise.all([
+  const [profileRes, keystoneRes, equipmentRes] = await Promise.all([
     fetch(`${charPath}?locale=en_US`,                              { headers }),
     fetch(`${charPath}/mythic-keystone-profile?locale=en_US`,      { headers }),
+    fetch(`${charPath}/equipment?locale=en_US`,                    { headers }),
   ]);
 
   if (profileRes.status === 404) return new Response('Character not found', { status: 404 });
@@ -228,6 +229,23 @@ async function handleGetArmory(request, env) {
     }
   }
 
+  const GEAR_SLOT_MAP = {
+    HEAD: 'head', NECK: 'neck', SHOULDER: 'shoulder', BACK: 'back',
+    CHEST: 'chest', WRIST: 'wrist', HANDS: 'hands', WAIST: 'waist',
+    LEGS: 'legs', FEET: 'feet',
+    FINGER_1: 'finger1', FINGER_2: 'finger2',
+    TRINKET_1: 'trinket1', TRINKET_2: 'trinket2',
+    MAIN_HAND: 'main_hand', OFF_HAND: 'off_hand',
+  };
+  let gearItems = {};
+  if (equipmentRes.ok) {
+    const eq = await equipmentRes.json();
+    for (const item of (eq.equipped_items || [])) {
+      const slot = GEAR_SLOT_MAP[item.slot?.type];
+      if (slot) gearItems[slot] = { name: bnetStr(item.name), id: item.item?.id || 0 };
+    }
+  }
+
   return Response.json({
     ilvl:         profile.equipped_item_level || profile.average_item_level || 0,
     spec:         bnetStr(profile.active_spec?.name),
@@ -235,6 +253,7 @@ async function handleGetArmory(request, env) {
     mythicRating,
     mythicColor,
     weeklyRuns,
+    gearItems,
     lastSync:     Date.now(),
   });
 }
