@@ -81,6 +81,7 @@
     const nameEl   = document.getElementById('auth-battletag');
     const dotEl    = document.getElementById('auth-dot');
     const importEl = document.getElementById('btn-import-chars');
+    const syncEl   = document.getElementById('btn-sync-all');
     if (!loginEl) return;
     if (user) {
       loginEl.style.display = 'none';
@@ -88,12 +89,14 @@
       if (dotEl)     dotEl.style.display      = '';
       if (nameEl)    { nameEl.textContent = user.battletag; nameEl.style.display = ''; }
       if (importEl)  importEl.style.display   = '';
+      if (syncEl)    syncEl.style.display     = '';
     } else {
       loginEl.style.display = '';
       if (logoutEl)  logoutEl.style.display  = 'none';
       if (dotEl)     dotEl.style.display      = 'none';
       if (importEl)  importEl.style.display   = 'none';
-      if (nameEl)   nameEl.style.display   = 'none';
+      if (syncEl)    syncEl.style.display     = 'none';
+      if (nameEl)    nameEl.style.display     = 'none';
     }
   }
 

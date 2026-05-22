@@ -272,6 +272,19 @@ async function handleGetArmory(request, env) {
       const slot = GEAR_SLOT_MAP[item.slot?.type];
       if (slot) gearItems[slot] = { name: bnetStr(item.name), id: item.item?.id || 0 };
     }
+    // Fetch icons for all equipped items in parallel (static namespace)
+    const staticHeaders = { 'Authorization': `Bearer ${accessToken}`, 'Battlenet-Namespace': `static-${region}` };
+    const slots = Object.keys(gearItems).filter(s => gearItems[s].id);
+    const iconResults = await Promise.all(
+      slots.map(s =>
+        fetch(`${apiBase}/data/wow/media/item/${gearItems[s].id}?locale=en_US`, { headers: staticHeaders })
+          .then(r => r.ok ? r.json() : null).catch(() => null)
+      )
+    );
+    slots.forEach((s, i) => {
+      const url = iconResults[i]?.assets?.find(a => a.key === 'icon')?.value;
+      if (url) gearItems[s].icon = url;
+    });
   }
 
   // ── Raid boss kills this reset ────────────────────────────────────────────

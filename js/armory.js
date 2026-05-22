@@ -203,6 +203,52 @@ function armoryAutoCheckRaidBosses(charName) {
   if (doneChanged) localStorage.setItem(doneKey,  JSON.stringify(done));
 }
 
+/* ── SYNC ALL BUTTON ── */
+async function syncAllCharsButton() {
+  const btn = document.getElementById('btn-sync-all');
+  const chars = JSON.parse(localStorage.getItem('wow_midnight_chars') || '["Main"]');
+  const toSync = chars.filter(c => loadCharRealm(c));
+
+  if (!toSync.length) {
+    showToast('No characters with a realm set — use ✏️ to add realm names first.');
+    return;
+  }
+
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Syncing…'; }
+
+  let synced = 0;
+  for (let i = 0; i < toSync.length; i++) {
+    const charName = toSync[i];
+    try {
+      const slug   = loadCharRealmSlug(charName) || realmToSlug(loadCharRealm(charName));
+      const params = new URLSearchParams({ char: charName.toLowerCase(), realm: slug });
+      const res    = await fetch('/api/armory?' + params);
+      if (res.status === 401) { showToast('Session expired — please log in again.'); break; }
+      if (!res.ok) continue;
+
+      const armory = await res.json();
+      saveArmoryData(charName, armory);
+      armoryAutoCheckBis(charName);
+      armoryAutoTrackMythicPlus(charName);
+      armoryAutoCheckRaidBosses(charName);
+
+      if (armory.className && !loadCharClass(charName)) {
+        const classId = _ARMORY_CLASS_MAP[armory.className];
+        if (classId) saveCharClass(charName, classId);
+      }
+      synced++;
+    } catch (_) {}
+
+    if (i < toSync.length - 1) await new Promise(r => setTimeout(r, 400));
+  }
+
+  if (btn) { btn.disabled = false; btn.textContent = '🔄 Sync'; }
+  if (typeof renderChars === 'function') renderChars();
+  if (typeof renderClassLinksBar === 'function') renderClassLinksBar();
+  if (typeof render === 'function') render();
+  showToast(synced ? `Synced ${synced} character${synced !== 1 ? 's' : ''}` : 'Sync failed — check your connection.');
+}
+
 /* ── TOAST ── */
 function showToast(msg) {
   const t = document.getElementById('share-toast');
