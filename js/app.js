@@ -2728,71 +2728,53 @@ const WELCOME_STEPS = [
   {
     icon: '⚜️',
     title: 'Welcome to The Azeroth Agenda',
-    body: 'Your all-in-one weekly task tracker for World of Warcraft. Built to help you make every reset count — no spreadsheets, no guesswork.',
+    body: 'Your weekly reset tracker for World of Warcraft. Every character, every task, every boss — in one place. Make every Tuesday count.',
     note: null,
   },
   {
+    icon: '🔑',
+    title: 'Choose Your Experience',
+    body: 'Connect Battle.net for automatic syncing, or dive in offline and track manually.',
+    note: null,
+    interactive: 'bnet-choice',
+  },
+  {
     icon: '🧝',
-    title: 'Set Up Your Characters',
-    body: 'Add your first character below to get started. Each character tracks its own progress independently — you can always add more later.',
-    note: 'Assign class &amp; role afterward with the ✏️ button in the character bar.',
+    title: 'Add Your Characters',
+    body: 'Each character tracks its own progress independently. Add your main to get started — you can add alts anytime from the character bar.',
+    note: null,
     interactive: 'char-setup',
   },
   {
     icon: '📜',
     title: 'Build Your List',
-    body: '<strong>Your List</strong> is your personal weekly checklist — only the tasks that matter to your character. Pick a preset below to get started instantly, or skip and build it manually.',
+    body: '<strong>Your List</strong> is your personal weekly checklist — only the tasks that matter to you. Pick a preset to get started instantly, or skip and build it yourself.',
     note: null,
     interactive: 'list-setup',
   },
   {
     icon: '🏆',
-    title: 'Track Your Progress',
-    body: 'Check off tasks as you complete them. Raids have per-boss, per-difficulty bubble tracking. Mythic+ and Delves use <strong>+/−</strong> goal counters with milestone rewards shown on hover. Everything resets automatically each Tuesday at 15:00 UTC.',
-    note: 'Use compact mode (⊟) to see more tasks at once.',
-  },
-  {
-    icon: '⚙️',
-    title: 'Smart Tools Built In',
+    title: 'Everything That\'s Tracked',
     body: '<ul class="welcome-feature-list">'
-      + '<li><strong>📊 Summary</strong> — per-section progress, weekly history &amp; streaks, efficiency scores</li>'
-      + '<li><strong>⚠️ Event Alerts</strong> — warns you when world events are ending soon</li>'
-      + '<li><strong>⚡ Last Chance</strong> — focus view showing only incomplete tasks under 6h to reset</li>'
-      + '<li><strong>🔗 Share Plan</strong> — copy a link to your list and send it to a guildie</li>'
-      + '<li><strong>⇅ Data</strong> — export, import, and back up all your progress</li>'
+      + '<li><strong>Raids</strong> — per-boss bubble tracking across all four difficulties; boss kills auto-checked from Battle.net after each reset</li>'
+      + '<li><strong>Mythic+</strong> — weekly run counter with Vault Preview showing reward tiers per key level; auto-filled from your API data</li>'
+      + '<li><strong>Delves</strong> — tier selector and run counting toward the Great Vault</li>'
+      + '<li><strong>⚔️ BiS Gear</strong> — all 40 specs covered; items auto-checked off when you equip them via armory sync</li>'
+      + '<li><strong>Custom Tasks</strong> — add anything not in the default list</li>'
+      + '<li><strong>📊 Summary · ⚡ Last Chance · 🔗 Share Plan</strong> — weekly history, focus mode, and shareable links</li>'
       + '</ul>',
-    note: null,
-  },
-  {
-    icon: '⚔️',
-    title: 'Best in Slot Gear Tracker',
-    body: 'Click <strong>⚔️ BiS Gear</strong> in the toolbar to browse Best in Slot gear for your class and spec. Select individual items and import them as trackable tasks under a dedicated <strong>Best in Slot Gear</strong> section in Your List.'
-      + '<ul class="welcome-feature-list" style="margin-top:0.75rem;">'
-      + '<li>All <strong>40 specs</strong> covered for Patch 12.0.5 · Lingering Shadows</li>'
-      + '<li>Each item shows its <strong>slot icon</strong>, item name, and boss/location</li>'
-      + '<li>BiS tasks are a <strong>separate system</strong> — they don\'t count toward your weekly progress bar</li>'
-      + '<li>Click the <strong>✏️ button</strong> on any BiS card to swap in your own item if your BiS differs</li>'
-      + '</ul>',
-    note: null,
-  },
-  {
-    icon: '🔄',
-    title: 'Armory Sync',
-    body: 'Log in with Battle.net to sync your character stats automatically — no extra setup required.'
-      + '<ul class="welcome-feature-list" style="margin-top:0.75rem;">'
-      + '<li>Click <strong>🔑 Battle.net</strong> to log in, then use <strong>⬇ Import</strong> to add your characters directly from your account</li>'
-      + '<li>Pulls your <strong>spec, class, item level, and Mythic+ rating</strong> directly from Blizzard and displays them in the class bar</li>'
-      + '<li>Automatically <strong>checks off BiS items</strong> in Your List that you already have equipped</li>'
-      + '<li>Fills your <strong>Mythic+ run counters</strong> from this week\'s completed keys and shows a <strong>Vault Preview</strong> with expected reward per slot</li>'
-      + '<li>Your <strong>WoW Armory</strong> link appears in the class resource bar for quick access</li>'
-      + '</ul>',
-    note: 'Armory data refreshes automatically on login if more than 1 hour old. You can also sync any character via the ✏️ edit button.',
+    note: 'Everything resets automatically each Tuesday at 15:00 UTC.',
   },
   {
     icon: '🌟',
     title: "You're All Set!",
-    body: 'Your progress saves automatically in your browser — nothing to sign in to. Check the <strong>📅 Events</strong> calendar and <strong>📋 Changelog</strong> links in the header to stay up to date.',
-    note: 'You can reopen this guide anytime from the ⇅ Data menu.',
+    body: 'Your progress saves automatically every time you check something off. Come back after each reset and work through your list.'
+      + '<ul class="welcome-feature-list" style="margin-top:0.75rem;">'
+      + '<li>Use <strong>🔑 Battle.net</strong> in the header to connect your account at any time</li>'
+      + '<li>Once connected, hit <strong>🔄 Sync</strong> to pull your latest data from Blizzard</li>'
+      + '<li>Check <strong>📅 Events</strong> and <strong>📋 Changelog</strong> in the header to stay up to date</li>'
+      + '</ul>',
+    note: 'Reopen this guide anytime from the ⇅ Data menu.',
   },
 ];
 
@@ -2839,7 +2821,49 @@ function renderWelcomeStep() {
 
   // Interactive elements
   const interactEl = document.getElementById('welcome-interactive');
-  if (step.interactive === 'list-setup') {
+  const _isLoggedIn = () => {
+    const el = document.getElementById('auth-logout');
+    return el && el.style.display !== 'none';
+  };
+  if (step.interactive === 'bnet-choice') {
+    if (_isLoggedIn()) {
+      const tag = document.getElementById('auth-battletag')?.textContent || 'your account';
+      interactEl.innerHTML =
+        '<div class="welcome-bnet-connected">'
+        + '<div class="welcome-bnet-check">✓</div>'
+        + '<div class="welcome-bnet-name">Connected as <strong>' + tag + '</strong></div>'
+        + '<div class="welcome-bnet-sub">Your characters, gear, and raid progress will sync automatically each reset.</div>'
+        + '</div>';
+    } else {
+      interactEl.innerHTML =
+        '<div class="welcome-bnet-cards">'
+        + '<div class="welcome-bnet-card welcome-bnet-card--primary">'
+        + '<div class="welcome-bnet-card-tag">Recommended</div>'
+        + '<div class="welcome-bnet-card-title">Battle.net Connected</div>'
+        + '<ul class="welcome-feature-list welcome-bnet-list">'
+        + '<li>Import all level 80+ characters from your account</li>'
+        + '<li>Gear, item level &amp; M+ rating sync from Blizzard</li>'
+        + '<li>Raid boss kills auto-checked each reset</li>'
+        + '<li>BiS items checked off when you equip them</li>'
+        + '<li>Progress backed up to the cloud</li>'
+        + '</ul>'
+        + '<a href="/auth/login?region=us" class="welcome-bnet-login-btn">Connect Battle.net →</a>'
+        + '</div>'
+        + '<div class="welcome-bnet-card">'
+        + '<div class="welcome-bnet-card-tag" style="color:var(--text-muted);">No account needed</div>'
+        + '<div class="welcome-bnet-card-title">Offline Mode</div>'
+        + '<ul class="welcome-feature-list welcome-bnet-list">'
+        + '<li>Add characters by name manually</li>'
+        + '<li>Full task tracker — raids, M+, Delves</li>'
+        + '<li>BiS gear browser for all 40 specs</li>'
+        + '<li>Weekly history &amp; streaks</li>'
+        + '<li>Saves locally in your browser</li>'
+        + '</ul>'
+        + '<button class="welcome-offline-btn" onclick="welcomeNext()">Continue Offline →</button>'
+        + '</div>'
+        + '</div>';
+    }
+  } else if (step.interactive === 'list-setup') {
     interactEl.innerHTML = '<div class="welcome-stage-list">'
       + BEGINNER_STAGES.map(s =>
           '<div class="beginner-stage-card" onclick="welcomeApplyStage(\'' + s.id + '\')">'
@@ -2854,13 +2878,17 @@ function renderWelcomeStep() {
       + '</div>'
       + '<div class="welcome-stage-skip">or <button class="welcome-skip-inline" onclick="welcomeNext()">skip — I\'ll build it manually</button></div>';
   } else if (step.interactive === 'char-setup') {
+    const hint = _isLoggedIn()
+      ? '<div class="welcome-import-hint">💡 After setup, use <strong>⬇ Import</strong> in the character bar to pull all your alts from Battle.net automatically.</div>'
+      : '';
     interactEl.innerHTML =
       '<div class="welcome-char-form" id="welcome-char-form">'
       + '<div class="welcome-char-row">'
       + '<input id="welcome-char-input" type="text" class="welcome-char-input" placeholder="Character name…" maxlength="24"'
       + ' onkeydown="if(event.key===\'Enter\')welcomeAddChar()" />'
-      + '<button class="btn-primary welcome-char-btn" onclick="welcomeAddChar()">Add Character</button>'
+      + '<button class="btn-primary welcome-char-btn" onclick="welcomeAddChar()">Add</button>'
       + '</div>'
+      + hint
       + '</div>';
     setTimeout(() => {
       const inp = document.getElementById('welcome-char-input');

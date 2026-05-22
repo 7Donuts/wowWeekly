@@ -2271,6 +2271,76 @@ body.light-mode .ev-filter-btn.active  { background: rgba(139,26,26,0.11); }
 body.light-mode .welcome-feature-list li { background: rgba(139,26,26,0.04); border-color: rgba(139,26,26,0.14); }
 body.light-mode .welcome-note { border-color: rgba(139,26,26,0.35); }
 
+/* ── Welcome — Battle.net choice cards ── */
+.welcome-bnet-cards {
+  display: flex; gap: 0.75rem; margin-top: 0.25rem; text-align: left;
+}
+.welcome-bnet-card {
+  flex: 1; padding: 1rem 0.875rem;
+  background: var(--bg-deep); border: 1px solid var(--border);
+  border-radius: 8px; display: flex; flex-direction: column;
+}
+.welcome-bnet-card--primary {
+  border-color: rgba(124,92,191,0.55);
+  background: rgba(124,92,191,0.07);
+}
+.welcome-bnet-card-tag {
+  font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--void-glow); margin-bottom: 0.25rem;
+}
+.welcome-bnet-card-title {
+  font-family: 'Cinzel', serif; font-size: 13px; letter-spacing: 0.04em;
+  color: var(--text-primary); margin-bottom: 0.6rem;
+}
+.welcome-bnet-list { margin-bottom: 0.85rem !important; }
+.welcome-bnet-list li { font-size: 13px !important; padding: 0.3rem 0.6rem !important; }
+.welcome-bnet-login-btn {
+  display: block; text-align: center; margin-top: auto;
+  background: rgba(124,92,191,0.2); border: 1px solid rgba(124,92,191,0.55);
+  color: var(--void-glow); border-radius: 5px; padding: 0.5rem 1rem;
+  text-decoration: none; font-family: 'Cinzel', serif;
+  font-size: 12px; letter-spacing: 0.07em;
+  transition: background 0.2s, border-color 0.2s;
+}
+.welcome-bnet-login-btn:hover {
+  background: rgba(124,92,191,0.35); border-color: var(--void-glow);
+}
+.welcome-offline-btn {
+  margin-top: auto; width: 100%; background: none;
+  border: 1px solid var(--border); color: var(--text-muted);
+  border-radius: 5px; padding: 0.5rem 1rem; cursor: pointer;
+  font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 0.07em;
+  transition: border-color 0.2s, color 0.2s;
+}
+.welcome-offline-btn:hover { border-color: var(--border-bright); color: var(--text-secondary); }
+.welcome-bnet-connected {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 0.5rem; padding: 1.25rem 0.5rem;
+}
+.welcome-bnet-check {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: rgba(74,174,94,0.15); border: 2px solid var(--success-bright);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; color: var(--success-bright);
+}
+.welcome-bnet-name {
+  font-family: 'Cinzel', serif; font-size: 14px; color: var(--text-primary);
+}
+.welcome-bnet-name strong { color: var(--success-bright); }
+.welcome-bnet-sub {
+  font-size: 13px; color: var(--text-muted); text-align: center; line-height: 1.5;
+}
+.welcome-import-hint {
+  margin-top: 0.6rem; padding: 0.5rem 0.75rem; font-size: 13px;
+  color: var(--text-muted); line-height: 1.5;
+  background: rgba(124,92,191,0.07); border: 1px solid rgba(124,92,191,0.25);
+  border-radius: 5px;
+}
+.welcome-import-hint strong { color: var(--void-glow); }
+@media (max-width: 520px) {
+  .welcome-bnet-cards { flex-direction: column; }
+}
+
 /* ── WHAT'S NEW MODAL ── */
 .wn-modal { padding-bottom: 1.25rem; }
 .wn-meta {
