@@ -1,13 +1,10 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "azerothagenda",
-  "main": "worker.js",
+  "pages_build_output_dir": ".",
   "compatibility_date": "2026-05-22",
   "observability": {
     "enabled": true
-  },
-  "assets": {
-    "directory": "."
   },
   "compatibility_flags": [
     "nodejs_compat"
