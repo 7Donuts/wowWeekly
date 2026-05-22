@@ -13,6 +13,7 @@
     if (key === 'wow_midnight_chars') return true;
     if (!key.startsWith('wow_mn_')) return false;
     if (key.startsWith('wow_mn_armory_')) return false; // Battle.net armory cache — skip
+    if (key === 'wow_mn_item_icons')    return false;   // item icon cache — derived, skip
     if (key === 'wow_mn_bnet_creds')    return false;   // region pref only, skip
     if (key === 'wow_mn_light_mode')    return false;   // device-local UI pref
     if (key === 'wow_mn_compact')       return false;   // device-local UI pref

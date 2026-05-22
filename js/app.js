@@ -1535,19 +1535,32 @@ const _BIS_SLOT_ICONS = {
 };
 
 // Used in the BiS gear list modal rows
-function _bisSlotIcon(slot) {
+function _bisSlotIcon(slot, itemName) {
+  const cache = JSON.parse(localStorage.getItem('wow_mn_item_icons') || '{}');
+  const apiIcon = itemName && cache[itemName.toLowerCase()];
+  if (apiIcon) return `<img src="${apiIcon}" class="bis-slot-icon" title="${itemName}" alt="${slot}">`;
   const src = _BIS_SLOT_ICONS[slot];
   if (!src) return `<span class="bis-slot-label">${slot}</span>`;
-  return `<img src="${src}" class="bis-slot-icon" title="${slot}" alt="${slot}">`;
+  return `<img src="${src}" class="bis-slot-icon bis-slot-icon--placeholder" title="${slot}" alt="${slot}">`;
 }
 
 // Used in task cards for imported BiS items — replaces "[Head] Item" with icon + name
 function _bisTaskNameHtml(name, searchQuery) {
   const m = (name || '').match(/^\[([^\]]+)\]\s*(.+)$/);
-  if (m && _BIS_SLOT_ICONS[m[1]]) {
-    const iconHtml = `<img src="${_BIS_SLOT_ICONS[m[1]]}" class="bis-task-icon" title="${m[1]}" alt="${m[1]}">`;
-    const itemHtml = searchQuery ? highlightMatch(m[2], searchQuery) : escHtml(m[2]);
-    return `<span class="bis-task-name-wrap">${iconHtml}${itemHtml}</span>`;
+  if (m) {
+    const slot = m[1], itemName = m[2];
+    const cache = JSON.parse(localStorage.getItem('wow_mn_item_icons') || '{}');
+    const apiIcon = cache[itemName.toLowerCase()];
+    let iconHtml;
+    if (apiIcon) {
+      iconHtml = `<img src="${apiIcon}" class="bis-task-icon" title="${itemName}" alt="${slot}">`;
+    } else if (_BIS_SLOT_ICONS[slot]) {
+      iconHtml = `<img src="${_BIS_SLOT_ICONS[slot]}" class="bis-task-icon bis-task-icon--placeholder" title="${slot}" alt="${slot}">`;
+    }
+    if (iconHtml) {
+      const itemHtml = searchQuery ? highlightMatch(itemName, searchQuery) : escHtml(itemName);
+      return `<span class="bis-task-name-wrap">${iconHtml}${itemHtml}</span>`;
+    }
   }
   return searchQuery ? highlightMatch(name, searchQuery) : escHtml(name);
 }
@@ -1690,7 +1703,7 @@ function _renderBisPhase(phase) {
       return `<label class="bis-gear-row ${selClass}" id="bis-row-${i}">
         <input type="checkbox" class="bis-gear-check" id="bis-chk-${i}" ${checked}
                onchange="_bisRowToggle(${i})" onclick="event.stopPropagation()">
-        ${_bisSlotIcon(item.slot)}
+        ${_bisSlotIcon(item.slot, item.item)}
         <span class="bis-item-name">${item.item}</span>
         <span class="bis-item-source" title="${item.source} · ${item.location}">${item.source}</span>
       </label>`;

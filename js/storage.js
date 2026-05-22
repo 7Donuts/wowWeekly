@@ -139,6 +139,20 @@ function loadCharRealmSlug(n)     { return localStorage.getItem('wow_mn_realmslu
 function saveCharRealmSlug(n, s)  { if (s) localStorage.setItem('wow_mn_realmslug_' + n, s); else localStorage.removeItem('wow_mn_realmslug_' + n); }
 function realmToSlug(name)        { return (name||'').toLowerCase().replace(/['‘’]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''); }
 function loadArmoryData(n)   { return JSON.parse(localStorage.getItem('wow_mn_armory_' + n) || 'null'); }
-function saveArmoryData(n, d){ localStorage.setItem('wow_mn_armory_' + n, JSON.stringify(d)); }
+function saveArmoryData(n, d){
+  localStorage.setItem('wow_mn_armory_' + n, JSON.stringify(d));
+  if (d?.gearItems) _cacheItemIcons(d.gearItems);
+}
+function _cacheItemIcons(gearItems) {
+  const cache = JSON.parse(localStorage.getItem('wow_mn_item_icons') || '{}');
+  let changed = false;
+  for (const item of Object.values(gearItems)) {
+    if (item.name && item.icon) {
+      const key = item.name.toLowerCase();
+      if (cache[key] !== item.icon) { cache[key] = item.icon; changed = true; }
+    }
+  }
+  if (changed) localStorage.setItem('wow_mn_item_icons', JSON.stringify(cache));
+}
 function loadBnetCreds()     { return JSON.parse(localStorage.getItem('wow_mn_bnet_creds') || 'null'); }
 function saveBnetCreds(d)    { localStorage.setItem('wow_mn_bnet_creds', JSON.stringify(d)); }
