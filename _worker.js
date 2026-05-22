@@ -389,6 +389,72 @@ async function handlePutData(request, env) {
   return Response.json({ ok: true });
 }
 
+// ── Item icon lookup via client credentials (no user session required) ─────────
+
+async function getClientToken(env) {
+  if (env.USER_DATA) {
+    const cached = await env.USER_DATA.get('client_token');
+    if (cached) return cached;
+  }
+  const res = await fetch('https://oauth.battle.net/token', {
+    method:  'POST',
+    headers: {
+      'Content-Type':  'application/x-www-form-urlencoded',
+      'Authorization': `Basic ${btoa(`${env.BNET_CLIENT_ID}:${env.BNET_CLIENT_SECRET}`)}`,
+    },
+    body: 'grant_type=client_credentials',
+  });
+  if (!res.ok) return null;
+  const { access_token, expires_in } = await res.json();
+  if (env.USER_DATA) {
+    await env.USER_DATA.put('client_token', access_token, { expirationTtl: (expires_in || 86400) - 300 });
+  }
+  return access_token;
+}
+
+async function handleItemIcons(request, env) {
+  let names;
+  try { ({ names } = await request.json()); } catch (_) { return Response.json({}); }
+  if (!Array.isArray(names) || !names.length) return Response.json({});
+
+  const token = await getClientToken(env);
+  if (!token) return Response.json({});
+
+  const apiBase = 'https://us.api.blizzard.com';
+  const headers = {
+    'Authorization':       `Bearer ${token}`,
+    'Battlenet-Namespace': 'static-us',
+  };
+
+  const results = {};
+  await Promise.all(names.slice(0, 20).map(async name => {
+    try {
+      const searchRes = await fetch(
+        `${apiBase}/data/wow/search/item?namespace=static-us&name.en_US=${encodeURIComponent(name)}&_pageSize=1&locale=en_US`,
+        { headers }
+      );
+      if (!searchRes.ok) return;
+      const searchData = await searchRes.json();
+      const hit = searchData.results?.[0]?.data;
+      if (!hit) return;
+      // Exact name match only — avoid wrong items with similar names
+      const foundName = typeof hit.name === 'string' ? hit.name : hit.name?.en_US;
+      if (!foundName || foundName.toLowerCase() !== name.toLowerCase()) return;
+
+      const mediaRes = await fetch(
+        `${apiBase}/data/wow/media/item/${hit.id}?namespace=static-us&locale=en_US`,
+        { headers }
+      );
+      if (!mediaRes.ok) return;
+      const mediaData = await mediaRes.json();
+      const icon = mediaData.assets?.find(a => a.key === 'icon')?.value;
+      if (icon) results[name.toLowerCase()] = icon;
+    } catch (_) {}
+  }));
+
+  return Response.json(results);
+}
+
 // ── Main fetch handler ────────────────────────────────────────────────────────
 
 export default {
@@ -405,6 +471,7 @@ export default {
       if (request.method === 'GET') return handleGetData(request, env);
       if (request.method === 'PUT') return handlePutData(request, env);
     }
+    if (pathname === '/api/item-icons' && request.method === 'POST') return handleItemIcons(request, env);
 
     // Fall through to static assets
     return env.ASSETS.fetch(request);

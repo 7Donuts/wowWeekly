@@ -1720,7 +1720,29 @@ function _renderBisPhase(phase) {
     footer.innerHTML = `
       <button class="btn-cancel" onclick="_renderBisPhase('spec')">← Back</button>
       <button class="btn-primary" onclick="_bisImportSelected()">⚔ Import Selected</button>`;
+
+    // Fetch icons for items not yet in cache, then re-render if any found
+    _fetchMissingBisIcons(data);
   }
+}
+
+async function _fetchMissingBisIcons(items) {
+  const cache = JSON.parse(localStorage.getItem('wow_mn_item_icons') || '{}');
+  const missing = items.map(i => i.item).filter(n => !cache[n.toLowerCase()]);
+  if (!missing.length) return;
+  try {
+    const res = await fetch('/api/item-icons', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ names: missing }),
+    });
+    if (!res.ok) return;
+    const found = await res.json();
+    if (!Object.keys(found).length) return;
+    localStorage.setItem('wow_mn_item_icons', JSON.stringify({ ...cache, ...found }));
+    // Re-render the gear list so new icons appear
+    _renderBisPhase('gear');
+  } catch (_) {}
 }
 
 function _bisPickClass(classKey) {
