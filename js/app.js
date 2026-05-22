@@ -2984,7 +2984,17 @@ renderChars(); renderClassLinksBar(); render(); renderInlineHistory(); renderInl
 updateLastChanceBtn(); renderLastChanceBanner();
 renderEventAlerts();
 checkShareablePlanURL();
-if (!localStorage.getItem('wow_mn_welcomed')) {
+function shouldShowWelcome() {
+  if (!localStorage.getItem('wow_mn_welcomed')) return true;
+  const chars = JSON.parse(localStorage.getItem('wow_midnight_chars') || '["Main"]');
+  if (chars.length === 1 && chars[0] === 'Main') {
+    const yourList = JSON.parse(localStorage.getItem('wow_mn_yourlist_Main') || '[]');
+    if (yourList.length === 0) return true;
+  }
+  return false;
+}
+
+if (shouldShowWelcome()) {
   openWelcome();
 } else if (shouldShowWhatsNew()) {
   openWhatsNew();
