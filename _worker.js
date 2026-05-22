@@ -57,13 +57,19 @@ function setSessionCookie(token, clear = false) {
 
 // ── Route handlers ────────────────────────────────────────────────────────────
 
-async function handleLogin(request, env) {
-  const state       = crypto.randomUUID();
-  const redirectUri = new URL('/auth/callback', new URL(request.url).origin).href;
+function bnetOAuthBase(region) {
+  return region === 'us' ? 'https://oauth.battle.net' : `https://${region}.battle.net/oauth`;
+}
 
+async function handleLogin(request, env) {
+  const url    = new URL(request.url);
+  const region = url.searchParams.get('region') || 'us';
+  const state  = crypto.randomUUID() + '|' + region;
+
+  const redirectUri = new URL('/auth/callback', url.origin).href;
   const params = new URLSearchParams({
     client_id:     env.BNET_CLIENT_ID,
-    scope:         'openid',
+    scope:         'openid wow.profile',
     redirect_uri:  redirectUri,
     response_type: 'code',
     state,
@@ -72,7 +78,7 @@ async function handleLogin(request, env) {
   return new Response(null, {
     status: 302,
     headers: {
-      Location:     `https://oauth.battle.net/authorize?${params}`,
+      Location:     `${bnetOAuthBase(region)}/authorize?${params}`,
       'Set-Cookie': `oauth_state=${state}; HttpOnly; Secure; SameSite=Lax; Max-Age=600; Path=/`,
     },
   });
@@ -90,7 +96,10 @@ async function handleCallback(request, env) {
     return new Response('Invalid OAuth state', { status: 400 });
   }
 
-  const tokenRes = await fetch('https://oauth.battle.net/token', {
+  const [, region = 'us'] = cookieState.split('|');
+  const oauthBase = bnetOAuthBase(region);
+
+  const tokenRes = await fetch(`${oauthBase}/token`, {
     method:  'POST',
     headers: {
       'Content-Type':  'application/x-www-form-urlencoded',
@@ -105,17 +114,24 @@ async function handleCallback(request, env) {
 
   if (!tokenRes.ok) return new Response('Token exchange failed', { status: 502 });
 
-  const { access_token } = await tokenRes.json();
+  const { access_token, expires_in } = await tokenRes.json();
 
-  const userRes = await fetch('https://oauth.battle.net/userinfo', {
+  const userRes = await fetch(`${oauthBase}/userinfo`, {
     headers: { Authorization: `Bearer ${access_token}` },
   });
 
   if (!userRes.ok) return new Response('Failed to fetch user info', { status: 502 });
 
-  const user  = await userRes.json();
+  const user = await userRes.json();
+
+  if (env.USER_DATA) {
+    await env.USER_DATA.put('token:' + user.sub, access_token, {
+      expirationTtl: expires_in || 86400,
+    });
+  }
+
   const token = await signJWT(
-    { sub: String(user.sub), battletag: user.battletag },
+    { sub: String(user.sub), battletag: user.battletag, region },
     env.SESSION_SECRET
   );
 
@@ -148,6 +164,46 @@ async function handleApiUser(request, env) {
   );
 }
 
+// ── Battle.net character import ───────────────────────────────────────────────
+
+async function handleGetCharacters(request, env) {
+  const payload = await verifyJWT(getSessionCookie(request), env.SESSION_SECRET);
+  if (!payload) return new Response('Unauthorized', { status: 401 });
+  if (!env.USER_DATA) return new Response('KV not configured', { status: 503 });
+
+  const accessToken = await env.USER_DATA.get('token:' + payload.sub);
+  if (!accessToken) return new Response('Token expired', { status: 401 });
+
+  const region  = payload.region || 'us';
+  const apiBase = `https://${region}.api.blizzard.com`;
+
+  const res = await fetch(`${apiBase}/profile/user/wow`, {
+    headers: {
+      'Authorization':       `Bearer ${accessToken}`,
+      'Battlenet-Namespace': `profile-${region}`,
+    },
+  });
+
+  if (res.status === 401) return new Response('Token expired', { status: 401 });
+  if (!res.ok)            return new Response('Battle.net API error', { status: 502 });
+
+  const data = await res.json();
+  const chars = (data.wow_accounts || [])
+    .flatMap(a => a.characters || [])
+    .filter(c => c.level >= 80)
+    .map(c => ({
+      name:      c.name,
+      realm:     c.realm?.name     || '',
+      realmSlug: c.realm?.slug     || '',
+      level:     c.level,
+      className: c.playable_class?.name || '',
+      faction:   c.faction?.type   || '',
+    }))
+    .sort((a, b) => b.level - a.level || a.name.localeCompare(b.name));
+
+  return Response.json(chars);
+}
+
 // ── Cloud data sync (KV) ─────────────────────────────────────────────────────
 
 async function handleGetData(request, env) {
@@ -177,6 +233,7 @@ export default {
     if (pathname === '/auth/callback') return handleCallback(request, env);
     if (pathname === '/auth/logout')   return handleLogout(request);
     if (pathname === '/api/user')      return handleApiUser(request, env);
+    if (pathname === '/api/characters')  return handleGetCharacters(request, env);
     if (pathname === '/api/data') {
       if (request.method === 'GET') return handleGetData(request, env);
       if (request.method === 'PUT') return handlePutData(request, env);

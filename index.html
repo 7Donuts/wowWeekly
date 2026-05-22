@@ -22,7 +22,7 @@
       <a href="changelog.html" class="byline-link">📋 Changelog</a>
       <span class="byline-dot" id="auth-dot" style="margin:0 0.4rem;display:none;">·</span>
       <span id="auth-battletag" class="credit-name" style="display:none;font-size:12px;"></span>
-      <a href="/auth/login" id="auth-login" class="byline-link">🔑 Battle.net</a>
+      <a href="/auth/login?region=us" id="auth-login" class="byline-link">🔑 Battle.net</a>
       <a href="/auth/logout" id="auth-logout" class="byline-link" style="display:none;">Sign Out</a>
     </div>
   </header>
@@ -73,6 +73,7 @@
     <span class="char-label">Character:</span>
     <div id="char-list" style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;"></div>
     <button class="char-add" title="Add character" onclick="openAddChar()">+</button>
+    <button class="char-add" id="btn-import-chars" title="Import characters from Battle.net" onclick="openImportChars()" style="display:none;padding:0 10px;font-size:12px;">⬇ Import</button>
   </div>
   <div id="class-links-bar" style="display:none;"></div>
 
@@ -187,6 +188,19 @@
     <h3 id="data-modal-title">Character Data</h3>
     <div id="data-modal-content"></div>
     <div class="modal-btns" style="margin-top:1.25rem;" id="data-modal-btns"></div>
+  </div>
+</div>
+
+<!-- BATTLE.NET CHARACTER IMPORT MODAL -->
+<div class="modal-overlay" id="modal-import">
+  <div class="modal" style="width:520px;max-width:95vw;">
+    <h3>Import from Battle.net</h3>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:1rem;">Select level 80+ characters to add to the tracker.</p>
+    <div id="import-chars-content" style="min-height:80px;"></div>
+    <div class="modal-btns" style="margin-top:1.25rem;">
+      <button class="btn-cancel" onclick="closeImportModal()">Cancel</button>
+      <button class="btn-primary" id="btn-confirm-import" onclick="confirmImport()" style="display:none;">Add Selected</button>
+    </div>
   </div>
 </div>
 
