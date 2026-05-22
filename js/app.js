@@ -2993,17 +2993,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
 const _BNET_CLASS_MAP = {
   'Death Knight': 'death-knight', 'Demon Hunter': 'demon-hunter',
-  'Druid': 'druid',     'Evoker': 'evoker',   'Hunter': 'hunter',
-  'Mage':  'mage',      'Monk':   'monk',      'Paladin': 'paladin',
-  'Priest':'priest',    'Rogue':  'rogue',      'Shaman': 'shaman',
-  'Warlock':'warlock',  'Warrior':'warrior',
+  'Druid': 'druid',    'Evoker': 'evoker',    'Hunter': 'hunter',
+  'Mage':  'mage',     'Monk':   'monk',       'Paladin': 'paladin',
+  'Priest':'priest',   'Rogue':  'rogue',       'Shaman': 'shaman',
+  'Warlock':'warlock', 'Warrior':'warrior',
 };
+
+const _BNET_FACTION_COLOR = { ALLIANCE: '#4a8cc4', HORDE: '#c44a4a' };
 
 let _importChars = [];
 
 async function openImportChars() {
-  const overlay = document.getElementById('modal-import');
-  const content = document.getElementById('import-chars-content');
+  const overlay    = document.getElementById('modal-import');
+  const content    = document.getElementById('import-chars-content');
   const confirmBtn = document.getElementById('btn-confirm-import');
   overlay.classList.add('open');
   confirmBtn.style.display = 'none';
@@ -3012,11 +3014,11 @@ async function openImportChars() {
   try {
     const res = await fetch('/api/characters');
     if (res.status === 401) {
-      content.innerHTML = '<div style="color:var(--color-danger);padding:0.5rem 0;">Session expired — please sign out and log in again.</div>';
+      content.innerHTML = '<div style="color:var(--color-danger);padding:0.5rem 0;">Session expired — please sign out and log in again to use character import.</div>';
       return;
     }
     if (!res.ok) throw new Error('API error');
-    _importChars = await res.json();
+    _importChars = (await res.json()).map(c => ({ ...c, selected: false }));
     renderImportList();
   } catch (_) {
     content.innerHTML = '<div style="color:var(--color-danger);padding:0.5rem 0;">Failed to load characters. Please try again.</div>';
@@ -3032,33 +3034,53 @@ function renderImportList() {
     return;
   }
 
-  const factionColor = { ALLIANCE: '#4a8cc4', HORDE: '#c44a4a' };
-
-  let html = '<div style="max-height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;">';
+  let html = '<div style="max-height:360px;overflow-y:auto;">';
   _importChars.forEach((c, i) => {
-    const already = characters.includes(c.name);
-    const fc      = factionColor[c.faction] || 'var(--text-muted)';
-    html += '<label style="display:flex;align-items:center;gap:0.75rem;padding:0.45rem 0.5rem;border-radius:4px;'
-      + 'background:var(--bg-card);cursor:' + (already ? 'default' : 'pointer') + ';opacity:' + (already ? 0.45 : 1) + ';">'
-      + '<input type="checkbox" data-i="' + i + '" ' + (already ? 'disabled checked' : '') + ' />'
-      + '<span style="flex:1;font-family:\'Cinzel\',serif;font-size:13px;">' + c.name + '</span>'
-      + '<span style="font-size:12px;color:var(--text-secondary);">' + c.className + '</span>'
-      + '<span style="font-size:11px;color:' + fc + ';min-width:52px;text-align:right;">' + c.realm + '</span>'
-      + '<span style="font-size:11px;color:var(--text-muted);min-width:36px;text-align:right;">Lv ' + c.level + '</span>'
-      + '</label>';
+    const already  = characters.includes(c.name);
+    const classId  = _BNET_CLASS_MAP[c.className] || '';
+    const classDef = CLASSES.find(x => x.id === classId);
+    const iconHtml = classDef
+      ? '<img src="' + classDef.icon + '" style="width:18px;height:18px;flex-shrink:0;image-rendering:auto;" title="' + c.className + '">'
+      : '<span style="width:18px;height:18px;flex-shrink:0;display:inline-block;"></span>';
+    const fc = _BNET_FACTION_COLOR[c.faction] || 'var(--text-secondary)';
+
+    if (already) {
+      html += '<div class="task done" style="display:flex;align-items:center;gap:0.6rem;padding:0.45rem 0.6rem;">'
+        + '<div class="task-check"></div>'
+        + iconHtml
+        + '<span style="flex:1;font-family:\'Cinzel\',serif;font-size:13px;">' + c.name + '</span>'
+        + '<span style="font-size:12px;color:var(--text-secondary);">' + c.className + '</span>'
+        + '<span style="font-size:11px;color:' + fc + ';min-width:60px;text-align:right;">' + c.realm + '</span>'
+        + '<span style="font-size:11px;color:var(--text-muted);min-width:36px;text-align:right;">Lv ' + c.level + '</span>'
+        + '</div>';
+    } else {
+      html += '<div class="task import-row" id="import-row-' + i + '" onclick="toggleImportChar(' + i + ')" style="display:flex;align-items:center;gap:0.6rem;padding:0.45rem 0.6rem;cursor:pointer;">'
+        + '<div class="task-check"></div>'
+        + iconHtml
+        + '<span style="flex:1;font-family:\'Cinzel\',serif;font-size:13px;">' + c.name + '</span>'
+        + '<span style="font-size:12px;color:var(--text-secondary);">' + c.className + '</span>'
+        + '<span style="font-size:11px;color:' + fc + ';min-width:60px;text-align:right;">' + c.realm + '</span>'
+        + '<span style="font-size:11px;color:var(--text-muted);min-width:36px;text-align:right;">Lv ' + c.level + '</span>'
+        + '</div>';
+    }
   });
   html += '</div>';
   content.innerHTML = html;
   confirmBtn.style.display = '';
 }
 
+function toggleImportChar(i) {
+  const c = _importChars[i];
+  if (!c) return;
+  c.selected = !c.selected;
+  const row = document.getElementById('import-row-' + i);
+  if (row) row.classList.toggle('selected', c.selected);
+}
+
 function confirmImport() {
-  const content = document.getElementById('import-chars-content');
-  const checked = content.querySelectorAll('input[type="checkbox"]:not(:disabled):checked');
   let added = 0;
-  checked.forEach(cb => {
-    const c = _importChars[parseInt(cb.dataset.i)];
-    if (!c || characters.includes(c.name)) return;
+  _importChars.forEach(c => {
+    if (!c.selected || characters.includes(c.name)) return;
     characters.push(c.name);
     localStorage.setItem('wow_midnight_chars', JSON.stringify(characters));
     const classId = _BNET_CLASS_MAP[c.className] || '';

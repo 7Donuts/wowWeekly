@@ -177,7 +177,7 @@ async function handleGetCharacters(request, env) {
   const region  = payload.region || 'us';
   const apiBase = `https://${region}.api.blizzard.com`;
 
-  const res = await fetch(`${apiBase}/profile/user/wow`, {
+  const res = await fetch(`${apiBase}/profile/user/wow?locale=en_US`, {
     headers: {
       'Authorization':       `Bearer ${accessToken}`,
       'Battlenet-Namespace': `profile-${region}`,
@@ -187,17 +187,20 @@ async function handleGetCharacters(request, env) {
   if (res.status === 401) return new Response('Token expired', { status: 401 });
   if (!res.ok)            return new Response('Battle.net API error', { status: 502 });
 
+  // locale=en_US makes name fields strings, but guard against object form just in case
+  const bnetStr = v => (typeof v === 'string' ? v : v?.en_US ?? v?.name ?? '');
+
   const data = await res.json();
   const chars = (data.wow_accounts || [])
     .flatMap(a => a.characters || [])
     .filter(c => c.level >= 80)
     .map(c => ({
       name:      c.name,
-      realm:     c.realm?.name     || '',
-      realmSlug: c.realm?.slug     || '',
+      realm:     bnetStr(c.realm?.name) || c.realm?.slug || '',
+      realmSlug: c.realm?.slug || '',
       level:     c.level,
-      className: c.playable_class?.name || '',
-      faction:   c.faction?.type   || '',
+      className: bnetStr(c.playable_class?.name),
+      faction:   c.faction?.type || '',
     }))
     .sort((a, b) => b.level - a.level || a.name.localeCompare(b.name));
 

@@ -651,6 +651,8 @@ h1 span { color: var(--void-glow); }
   transform: rotate(45deg) translateY(-1px);
 }
 .task.done .task-check::after { display: block; }
+.import-row.selected .task-check { background: var(--success); border-color: var(--success); }
+.import-row.selected .task-check::after { display: block; }
 
 .task-body { flex: 1; min-width: 0; }
 .task-name { font-size: 17px; color: var(--text-primary); line-height: 1.4; }
