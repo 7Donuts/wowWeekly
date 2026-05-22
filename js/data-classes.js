@@ -162,8 +162,8 @@ function renderClassLinksBar() {
       ⚔ iLvl ${armory.ilvl}
     </span>` : '';
 
-  const mScore     = armory?.mythicScore || 0;
-  const mColor     = _mythicScoreColor(mScore);
+  const mScore     = armory?.mythicRating || 0;
+  const mColor     = armory?.mythicColor || _mythicScoreColor(mScore);
   const mythicHtml = armory ? `
     <span style="
       font-family:'Cinzel',serif; font-size:11px; letter-spacing:0.05em;
