@@ -9,6 +9,42 @@
 ------------------------------------------- */
 const VERSIONS = [
   {
+    version: 'v2.2.0',
+    date: 'May 22, 2026',
+    summary: 'Redesigned welcome walkthrough with Battle.net onboarding path',
+    entries: [
+      { type: 'new',     text: 'Welcome guide now presents two clear paths: connect Battle.net for the full experience, or continue in offline mode — no account needed', detail: 'The Battle.net card lists exactly what you get from connecting. The offline card shows what is always available without an account.' },
+      { type: 'improve', text: 'Welcome detects if you are already logged in and shows a connected confirmation with your battletag instead of the login prompt', detail: '' },
+      { type: 'improve', text: 'Character setup step shows a hint about using ⬇ Import to pull all your alts automatically when logged in via Battle.net', detail: '' },
+      { type: 'improve', text: 'Feature overview updated to accurately describe all current tracking — raids, M+, BiS auto-check, Delves, and tools', detail: '' },
+    ]
+  },
+  {
+    version: 'v2.1.0',
+    date: 'May 22, 2026',
+    summary: 'Full armory sync via Blizzard API — gear, icons, raid kills, and M+ all auto-tracked',
+    entries: [
+      { type: 'new',     text: 'Raid boss kills auto-checked after each reset. The tracker reads your kill history from Battle.net and marks every boss you\'ve already cleared this week', detail: 'Compares each kill timestamp against the Tuesday 15:00 UTC reset. Works for LFR, Normal, Heroic, and Mythic across all three current raids.' },
+      { type: 'new',     text: 'Equipped gear icons fetched from the Blizzard media API and stored with armory data for all 16 equipment slots', detail: '' },
+      { type: 'new',     text: '🔄 Sync button in the character bar force-refreshes all characters regardless of cache age — runs BiS checks, M+ counters, and raid auto-checks immediately', detail: 'Shows ⏳ Syncing… while running and reports how many characters were updated.' },
+      { type: 'new',     text: 'Mythic+ rating and color displayed in the character bar badge and class resource bar, sourced directly from Blizzard', detail: '' },
+      { type: 'improve', text: 'Armory sync now uses the Blizzard Battle.net API directly instead of Raider.IO — item level, spec, class, Mythic+ rating, equipped gear, and weekly M+ runs all come from Blizzard', detail: 'Raider.IO profile link is kept in the class resource bar as a useful community reference.' },
+      { type: 'improve', text: 'BiS gear tasks in Your List are auto-checked when your synced gear matches the item — works on both manual sync and auto-sync at login', detail: '' },
+      { type: 'improve', text: 'Auto-sync on login now re-fetches characters whose cached data is missing gear or raid kill fields, not just data older than one hour', detail: '' },
+    ]
+  },
+  {
+    version: 'v2.0.0',
+    date: 'May 22, 2026',
+    summary: 'Battle.net account login, cloud save, and character import',
+    entries: [
+      { type: 'new',     text: '🔑 Log in with Battle.net — connect your account for automatic syncing and cross-device cloud saves', detail: 'Uses Blizzard\'s official OAuth 2.0 flow. The site only requests read access to your WoW profile — no write permissions.' },
+      { type: 'new',     text: 'Cloud save — your characters, task lists, and progress are backed up to the cloud when logged in and synced to any device you sign into', detail: 'Local saves are always the source of truth; the cloud backup is pulled on first load and pushed whenever you make changes.' },
+      { type: 'new',     text: '⬇ Import — pull all your level 80+ characters directly from Battle.net with one click. Realm and class are set automatically', detail: 'Character class icons are shown in the import picker. After import, armory sync runs automatically for any character with a realm set.' },
+      { type: 'improve', text: 'Sync and Import buttons in the character bar now use a styled purple button matching the app aesthetic instead of the dashed add-character style', detail: '' },
+    ]
+  },
+  {
     version: 'v1.9.1',
     date: 'May 21, 2026',
     summary: 'Mythic+ weekly run tracker with vault preview and auto-filled counters',
