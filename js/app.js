@@ -1043,16 +1043,88 @@ function renderChars() {
     const iconHtml = portrait
       ? `<img src="${portrait}" class="char-portrait" alt="${c}">`
       : def ? `<img src="${def.icon}" class="char-class-icon" alt="${c}">` : '';
-    return `
-    <span style="display:inline-flex;align-items:center;gap:2px;">
-      <button class="char-btn${c===currentChar?' active':''}" onclick="switchChar('${c}')" style="display:inline-flex;align-items:center;gap:6px;${borderStyle}">
+    return `<button class="char-btn${c===currentChar?' active':''}" onclick="switchChar('${c}')" style="display:inline-flex;align-items:center;gap:6px;${borderStyle}">
         ${iconHtml}${c}${groupDot}${ilvlBadge}${mythicBadge}
-      </button>
-      <button class="char-btn-del" title="Edit ${c}" onclick="openRenameChar('${c}')">✏️</button>
-      ${characters.length>1?`<button class="char-btn-del" title="Remove ${c}" onclick="deleteChar('${c}')">✕</button>`:''}
-    </span>`;
+      </button>`;
   }).join('');
 }
+let _charMenuOpen = false;
+
+function toggleCharMenu(e) {
+  e.stopPropagation();
+  _charMenuOpen = !_charMenuOpen;
+  const menu = document.getElementById('char-manage-menu');
+  const btn  = document.getElementById('char-manage-btn');
+  if (_charMenuOpen) {
+    const isSynced  = !!loadArmoryData(currentChar);
+    const multiChar = characters.length > 1;
+    menu.innerHTML =
+      `<button class="char-manage-item${isSynced ? ' char-manage-item--disabled' : ''}"
+          onclick="${isSynced ? '' : `openRenameChar('${currentChar}');closeCharMenu()`}">
+        ✏ Edit character
+        ${isSynced ? '<span class="char-manage-hint">synced via Battle.net</span>' : ''}
+      </button>`
+      + (multiChar
+        ? `<button class="char-manage-item char-manage-item--danger" onclick="deleteChar('${currentChar}');closeCharMenu()">
+            ✕ Remove character
+           </button>
+           <button class="char-manage-item" onclick="openRearrangeModal();closeCharMenu()">
+            ⇅ Rearrange list
+           </button>`
+        : '');
+    menu.classList.add('open');
+    btn.classList.add('active');
+  } else {
+    closeCharMenu();
+  }
+}
+
+function closeCharMenu() {
+  _charMenuOpen = false;
+  document.getElementById('char-manage-menu').classList.remove('open');
+  document.getElementById('char-manage-btn').classList.remove('active');
+}
+
+function openRearrangeModal() {
+  renderRearrangeList();
+  document.getElementById('modal-rearrange').classList.add('open');
+}
+
+function closeRearrangeModal() {
+  document.getElementById('modal-rearrange').classList.remove('open');
+}
+
+function renderRearrangeList() {
+  document.getElementById('rearrange-list').innerHTML = characters.map((c, i) => {
+    const armory  = loadArmoryData(c);
+    const portrait = armory?.portrait;
+    const cls = loadCharClass(c);
+    const def = cls ? CLASSES.find(x => x.id === cls) : null;
+    const imgHtml = portrait
+      ? `<img src="${portrait}" class="char-portrait" style="width:28px;height:28px;" alt="${c}">`
+      : def ? `<img src="${def.icon}" class="char-class-icon" alt="${c}">` : '';
+    return `<div class="rearrange-row">
+      ${imgHtml}
+      <span class="rearrange-name">${escHtml(c)}</span>
+      <div class="rearrange-arrows">
+        <button class="rearrange-btn" ${i===0?'disabled':''} onclick="moveChar(${i},-1)">↑</button>
+        <button class="rearrange-btn" ${i===characters.length-1?'disabled':''} onclick="moveChar(${i},1)">↓</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function moveChar(idx, dir) {
+  const swapIdx = idx + dir;
+  if (swapIdx < 0 || swapIdx >= characters.length) return;
+  [characters[idx], characters[swapIdx]] = [characters[swapIdx], characters[idx]];
+  localStorage.setItem('wow_midnight_chars', JSON.stringify(characters));
+  renderChars();
+  renderRearrangeList();
+}
+
+document.addEventListener('click', () => { if (_charMenuOpen) closeCharMenu(); });
+
 function switchChar(name) {
   currentChar = name;
   revealHidden = false;

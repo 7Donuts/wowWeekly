@@ -73,6 +73,10 @@
     <span class="char-label">Character:</span>
     <button class="armory-btn" id="btn-sync-all" title="Sync all characters from Battle.net" onclick="syncAllCharsButton()" style="display:none;">🔄 Sync</button>
     <button class="armory-btn" id="btn-import-chars" title="Import characters from Battle.net" onclick="openImportChars()" style="display:none;">⬇ Import</button>
+    <div class="char-manage-wrap" id="char-manage-wrap">
+      <button class="char-manage-btn" id="char-manage-btn" onclick="toggleCharMenu(event)">Edit ▾</button>
+      <div class="char-manage-menu" id="char-manage-menu"></div>
+    </div>
     <div id="char-list" style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;"></div>
     <button class="char-add" title="Add character" onclick="openAddChar()">+</button>
   </div>
@@ -277,6 +281,17 @@
 </div>
 
 
+
+<!-- REARRANGE CHARACTERS MODAL -->
+<div class="modal-overlay" id="modal-rearrange">
+  <div class="modal" style="width:340px;max-width:95vw;">
+    <h3>Rearrange Characters</h3>
+    <div id="rearrange-list" style="display:flex;flex-direction:column;gap:0.5rem;margin:1rem 0;"></div>
+    <div class="modal-btns">
+      <button class="btn-primary" onclick="closeRearrangeModal()">Done</button>
+    </div>
+  </div>
+</div>
 
 <!-- ARMORY REGION MODAL -->
 <div class="modal-overlay" id="modal-armory-region">

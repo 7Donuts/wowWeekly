@@ -426,13 +426,57 @@ h1 span { color: var(--void-glow); }
 }
 .char-class-icon { width: 20px; height: 20px; flex-shrink: 0; image-rendering: auto; }
 
-.char-btn-del {
-  font-size: 11px; color: var(--text-muted); background: none;
-  border: none; cursor: pointer; margin-left: 3px;
-  padding: 0 2px; transition: color 0.2s; vertical-align: middle;
-}
-.char-btn-del:hover { color: #c0534a; }
 .char-sync-btn:hover { color: var(--void-glow) !important; }
+
+/* ── Character manage menu ── */
+.char-manage-wrap { position: relative; flex-shrink: 0; }
+.char-manage-btn {
+  font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.07em;
+  color: var(--text-secondary); background: var(--bg-panel);
+  border: 1px solid var(--border); border-radius: 5px;
+  padding: 0 10px; height: 48px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 4px;
+  transition: all 0.2s; white-space: nowrap;
+}
+.char-manage-btn:hover,
+.char-manage-btn.active { border-color: var(--void-purple); color: var(--void-glow); background: rgba(124,92,191,0.1); }
+.char-manage-menu {
+  display: none; position: absolute; top: calc(100% + 4px); left: 0;
+  background: var(--bg-panel); border: 1px solid var(--border-bright);
+  border-radius: 6px; min-width: 190px; z-index: 200;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5); overflow: hidden;
+}
+.char-manage-menu.open { display: block; }
+.char-manage-item {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; padding: 0.65rem 1rem; font-size: 13px;
+  background: none; border: none; color: var(--text-primary);
+  cursor: pointer; text-align: left; gap: 0.5rem;
+  transition: background 0.15s;
+}
+.char-manage-item:hover { background: rgba(255,255,255,0.06); }
+.char-manage-item + .char-manage-item { border-top: 1px solid var(--border); }
+.char-manage-item--disabled { color: var(--text-muted); cursor: default; pointer-events: none; }
+.char-manage-item--danger:hover { background: rgba(192,83,74,0.12); color: #e07070; }
+.char-manage-hint { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+
+/* ── Rearrange modal ── */
+.rearrange-row {
+  display: flex; align-items: center; gap: 0.6rem;
+  background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: 6px; padding: 0.4rem 0.6rem;
+}
+.rearrange-name { flex: 1; font-family: 'Cinzel', serif; font-size: 13px; }
+.rearrange-arrows { display: flex; gap: 4px; }
+.rearrange-btn {
+  background: var(--bg-panel); border: 1px solid var(--border);
+  border-radius: 4px; color: var(--text-secondary); cursor: pointer;
+  width: 28px; height: 28px; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.rearrange-btn:hover:not(:disabled) { border-color: var(--void-purple); color: var(--void-glow); }
+.rearrange-btn:disabled { opacity: 0.3; cursor: default; }
 .char-ilvl-badge {
   font-size: 10px; font-family: 'Cinzel', serif;
   color: var(--success-bright); background: rgba(74,174,94,0.15);
