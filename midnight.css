@@ -484,6 +484,8 @@ h1 span { color: var(--void-glow); }
 }
 .rearrange-btn:hover:not(:disabled) { border-color: var(--void-purple); color: var(--void-glow); }
 .rearrange-btn:disabled { opacity: 0.3; cursor: default; }
+.rearrange-btn--danger { margin-left: auto; }
+.rearrange-btn--danger:hover:not(:disabled) { border-color: var(--error, #c94040); color: var(--error, #c94040); }
 .char-ilvl-badge {
   font-size: 10px; font-family: 'Cinzel', serif;
   color: var(--success-bright); background: rgba(74,174,94,0.15);

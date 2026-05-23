@@ -1069,7 +1069,7 @@ function toggleCharMenu(e) {
         ${isSynced ? '<span class="char-manage-hint">synced via Battle.net</span>' : ''}
       </button>`
       + (multiChar
-        ? `<button class="char-manage-item char-manage-item--danger" onclick="deleteChar('${currentChar}');closeCharMenu()">
+        ? `<button class="char-manage-item char-manage-item--danger" onclick="openRemoveCharModal();closeCharMenu()">
             ✕ Remove character
            </button>
            <button class="char-manage-item" onclick="openRearrangeModal();closeCharMenu()">
@@ -1116,6 +1116,41 @@ function renderRearrangeList() {
       </div>
     </div>`;
   }).join('');
+}
+
+function openRemoveCharModal() {
+  renderRemoveList();
+  document.getElementById('modal-remove-char').classList.add('open');
+}
+
+function closeRemoveCharModal() {
+  document.getElementById('modal-remove-char').classList.remove('open');
+}
+
+function renderRemoveList() {
+  document.getElementById('remove-char-list').innerHTML = characters.map(c => {
+    const armory  = loadArmoryData(c);
+    const portrait = armory?.portrait;
+    const cls = loadCharClass(c);
+    const def = cls ? CLASSES.find(x => x.id === cls) : null;
+    const imgHtml = portrait
+      ? `<img src="${portrait}" class="char-portrait" style="width:28px;height:28px;" alt="${charDisplayName(c)}">`
+      : def ? `<img src="${def.icon}" class="char-class-icon" alt="${charDisplayName(c)}">` : '';
+    const realmBadge = charRealmSlugFromId(c)
+      ? `<span class="char-realm-badge" style="margin-left:4px;">${charRealmSlugFromId(c).replace(/-/g,' ')}</span>` : '';
+    return `<div class="rearrange-row">
+      ${imgHtml}
+      <span class="rearrange-name">${escHtml(charDisplayName(c))}${realmBadge}</span>
+      <button class="rearrange-btn rearrange-btn--danger" onclick="deleteCharFromList('${escHtml(c)}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function deleteCharFromList(name) {
+  if (!confirm('Remove ' + charDisplayName(name) + ' and all saved data?')) return;
+  deleteChar(name);
+  if (characters.length === 0) { closeRemoveCharModal(); return; }
+  renderRemoveList();
 }
 
 function moveChar(idx, dir) {
