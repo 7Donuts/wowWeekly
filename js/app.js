@@ -1039,10 +1039,14 @@ function renderChars() {
     const mythicBadge = armory && armory.mythicRating
       ? `<span class="char-ilvl-badge" style="color:${armory.mythicColor||'var(--void-glow)'};" title="Mythic+ Rating ${armory.mythicRating}">${armory.mythicRating}</span>`
       : '';
+    const portrait = armory?.portrait;
+    const iconHtml = portrait
+      ? `<img src="${portrait}" class="char-portrait" alt="${c}">`
+      : def ? `<img src="${def.icon}" class="char-class-icon" alt="${c}">` : '';
     return `
     <span style="display:inline-flex;align-items:center;gap:2px;">
-      <button class="char-btn${c===currentChar?' active':''}" onclick="switchChar('${c}')" style="display:inline-flex;align-items:center;gap:5px;${borderStyle}">
-        ${def ? `<img src="${def.icon}" style="width:16px;height:16px;flex-shrink:0;image-rendering:auto;">` : ''}${c}${groupDot}${ilvlBadge}${mythicBadge}
+      <button class="char-btn${c===currentChar?' active':''}" onclick="switchChar('${c}')" style="display:inline-flex;align-items:center;gap:6px;${borderStyle}">
+        ${iconHtml}${c}${groupDot}${ilvlBadge}${mythicBadge}
       </button>
       <button class="char-btn-del" title="Edit ${c}" onclick="openRenameChar('${c}')">✏️</button>
       ${characters.length>1?`<button class="char-btn-del" title="Remove ${c}" onclick="deleteChar('${c}')">✕</button>`:''}

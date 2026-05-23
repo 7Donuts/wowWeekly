@@ -223,11 +223,12 @@ async function handleGetArmory(request, env) {
   };
   const charPath = `${apiBase}/profile/wow/character/${encodeURIComponent(realm)}/${encodeURIComponent(char)}`;
 
-  const [profileRes, keystoneRes, equipmentRes, raidsRes] = await Promise.all([
+  const [profileRes, keystoneRes, equipmentRes, raidsRes, mediaRes] = await Promise.all([
     fetch(`${charPath}?locale=en_US`,                              { headers }),
     fetch(`${charPath}/mythic-keystone-profile?locale=en_US`,      { headers }),
     fetch(`${charPath}/equipment?locale=en_US`,                    { headers }),
     fetch(`${charPath}/encounters/raids?locale=en_US`,             { headers }),
+    fetch(`${charPath}/character-media?locale=en_US`,              { headers }),
   ]);
 
   if (profileRes.status === 404) return new Response('Character not found', { status: 404 });
@@ -314,6 +315,12 @@ async function handleGetArmory(request, env) {
     }
   }
 
+  let portrait = null;
+  if (mediaRes.ok) {
+    const media = await mediaRes.json();
+    portrait = media.assets?.find(a => a.key === 'avatar')?.value || null;
+  }
+
   return Response.json({
     ilvl:         profile.equipped_item_level || profile.average_item_level || 0,
     spec:         bnetStr(profile.active_spec?.name),
@@ -323,6 +330,7 @@ async function handleGetArmory(request, env) {
     weeklyRuns,
     gearItems,
     raidKills,
+    portrait,
     lastSync:     Date.now(),
   });
 }
