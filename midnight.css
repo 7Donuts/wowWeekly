@@ -408,6 +408,7 @@ h1 span { color: var(--void-glow); }
 .btn-reset-all:hover { background: var(--bg-card-hover); color: var(--text-primary); border-color: var(--void-purple); }
 
 .char-bar { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.char-list-row { flex: 0 0 100%; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 .char-label { font-family: 'Cinzel', serif; font-size: 13px; letter-spacing: 0.15em; color: var(--text-muted); text-transform: uppercase; }
 
 .char-btn {
