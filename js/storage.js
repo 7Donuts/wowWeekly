@@ -134,20 +134,20 @@ function saveCustomTasks(t) { localStorage.setItem(customStorageKey(), JSON.stri
 
 /* ── CHARACTER IDENTITY ── */
 // Identifiers are "Name" (legacy/no realm) or "Name@realm-slug" (realm-aware).
-function charDisplayName(id)      { const i = (id||’’).indexOf(‘@’); return i !== -1 ? id.slice(0, i) : id; }
-function charRealmSlugFromId(id)  { const i = (id||’’).indexOf(‘@’); return i !== -1 ? id.slice(i + 1) : null; }
-function charIdentifier(name, realmSlug) { return realmSlug ? name + ‘@’ + realmSlug : name; }
+function charDisplayName(id)      { const i = (id||'').indexOf('@'); return i !== -1 ? id.slice(0, i) : id; }
+function charRealmSlugFromId(id)  { const i = (id||'').indexOf('@'); return i !== -1 ? id.slice(i + 1) : null; }
+function charIdentifier(name, realmSlug) { return realmSlug ? name + '@' + realmSlug : name; }
 
 /* ── ARMORY ── */
-function loadCharRealm(n)         { return localStorage.getItem(‘wow_mn_realm_’ + n) || ‘’; }
-function saveCharRealm(n, r)      { if (r) localStorage.setItem(‘wow_mn_realm_’ + n, r); else localStorage.removeItem(‘wow_mn_realm_’ + n); }
+function loadCharRealm(n)         { return localStorage.getItem('wow_mn_realm_' + n) || ''; }
+function saveCharRealm(n, r)      { if (r) localStorage.setItem('wow_mn_realm_' + n, r); else localStorage.removeItem('wow_mn_realm_' + n); }
 function loadCharRealmSlug(n)     {
   const embedded = charRealmSlugFromId(n);
   if (embedded) return embedded;
-  return localStorage.getItem(‘wow_mn_realmslug_’ + n) || realmToSlug(loadCharRealm(n));
+  return localStorage.getItem('wow_mn_realmslug_' + n) || realmToSlug(loadCharRealm(n));
 }
-function saveCharRealmSlug(n, s)  { if (s) localStorage.setItem(‘wow_mn_realmslug_’ + n, s); else localStorage.removeItem(‘wow_mn_realmslug_’ + n); }
-function realmToSlug(name)        { return (name||’’).toLowerCase().replace(/[‘’’]/g,’’).replace(/\s+/g,’-’).replace(/[^a-z0-9-]/g,’’); }
+function saveCharRealmSlug(n, s)  { if (s) localStorage.setItem('wow_mn_realmslug_' + n, s); else localStorage.removeItem('wow_mn_realmslug_' + n); }
+function realmToSlug(name)        { return (name||'').toLowerCase().replace(/[''']/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''); }
 function loadArmoryData(n)   { return JSON.parse(localStorage.getItem('wow_mn_armory_' + n) || 'null'); }
 function saveArmoryData(n, d){
   localStorage.setItem('wow_mn_armory_' + n, JSON.stringify(d));
