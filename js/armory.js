@@ -6,13 +6,11 @@
 
 /* ── SYNC ── */
 async function armorySync(charName) {
-  const realm = loadCharRealm(charName);
-  if (!realm) {
+  const slug = loadCharRealmSlug(charName);
+  if (!slug) {
     showToast('Set a realm for ' + charDisplayName(charName) + ' via the ✏️ edit button first.');
     return;
   }
-
-  const slug = loadCharRealmSlug(charName) || realmToSlug(realm);
 
   try {
     const params = new URLSearchParams({ char: charDisplayName(charName).toLowerCase(), realm: slug });
@@ -53,15 +51,14 @@ async function autoSyncArmory() {
   let   anyUpdated = false;
 
   for (const charName of chars) {
-    const realm = loadCharRealm(charName);
-    if (!realm) continue;
+    const slug = loadCharRealmSlug(charName);
+    if (!slug) continue;
 
     const existing = loadArmoryData(charName);
     const age = existing?.lastSync ? (now - existing.lastSync) : Infinity;
     // Re-sync if data is stale OR missing fields added in later releases
     if (age < staleMs && existing?.gearItems && 'raidKills' in (existing || {})) continue;
 
-    const slug = loadCharRealmSlug(charName) || realmToSlug(realm);
     try {
       const params = new URLSearchParams({ char: charDisplayName(charName).toLowerCase(), realm: slug });
       const res    = await fetch('/api/armory?' + params);
@@ -207,7 +204,7 @@ function armoryAutoCheckRaidBosses(charName) {
 async function syncAllCharsButton() {
   const btn = document.getElementById('btn-sync-all');
   const chars = JSON.parse(localStorage.getItem('wow_midnight_chars') || '["Main"]');
-  const toSync = chars.filter(c => loadCharRealm(c));
+  const toSync = chars.filter(c => loadCharRealmSlug(c));
 
   if (!toSync.length) {
     showToast('No characters with a realm set — use ✏️ to add realm names first.');
@@ -220,7 +217,7 @@ async function syncAllCharsButton() {
   for (let i = 0; i < toSync.length; i++) {
     const charName = toSync[i];
     try {
-      const slug   = loadCharRealmSlug(charName) || realmToSlug(loadCharRealm(charName));
+      const slug   = loadCharRealmSlug(charName);
       const params = new URLSearchParams({ char: charDisplayName(charName).toLowerCase(), realm: slug });
       const res    = await fetch('/api/armory?' + params);
       if (res.status === 401) { showToast('Session expired — please log in again.'); break; }
