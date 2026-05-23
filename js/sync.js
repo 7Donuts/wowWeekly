@@ -60,18 +60,39 @@
       const serverData = await res.json();
       if (!serverData || Object.keys(serverData).length === 0) {
         sessionStorage.setItem('azeroth_synced', '1');
+        // Cloud is empty — push local data so other devices can pick it up.
+        await pushToCloud();
         return;
       }
-      let changed = false;
+      let changed   = false;
+      let needsPush = false;
       for (const [key, value] of Object.entries(serverData)) {
         if (!isSyncKey(key)) continue;
-        const stored = typeof value === 'string' ? value : JSON.stringify(value);
-        if (localStorage.getItem(key) !== stored) {
-          _origSetItem.call(localStorage, key, stored); // bypass push interceptor
-          changed = true;
+        if (key === 'wow_midnight_chars') {
+          // Union merge: cloud order first, then any local-only chars appended.
+          // This prevents either device from silently deleting the other's chars.
+          const cloudChars = Array.isArray(value) ? value : [];
+          const localChars = JSON.parse(localStorage.getItem(key) || '["Main"]');
+          const merged = [...cloudChars];
+          for (const c of localChars) {
+            if (!merged.includes(c)) { merged.push(c); needsPush = true; }
+          }
+          const mergedStr = JSON.stringify(merged);
+          if (localStorage.getItem(key) !== mergedStr) {
+            _origSetItem.call(localStorage, key, mergedStr);
+            changed = true;
+          }
+        } else {
+          const stored = typeof value === 'string' ? value : JSON.stringify(value);
+          if (localStorage.getItem(key) !== stored) {
+            _origSetItem.call(localStorage, key, stored);
+            changed = true;
+          }
         }
       }
       sessionStorage.setItem('azeroth_synced', '1');
+      // Push first so the merged char list reaches cloud before we reload.
+      if (needsPush) await pushToCloud();
       if (changed) location.reload();
     } catch (_) {}
   }
