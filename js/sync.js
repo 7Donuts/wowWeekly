@@ -10,6 +10,20 @@
   // to localStorage without triggering a push cycle.
   const _origSetItem = Storage.prototype.setItem;
 
+  // Pull at most once per 10 minutes within a session (prevents reload loops
+  // while still re-syncing when you return to the tab after a while).
+  const SYNC_SS_KEY = 'azeroth_last_sync_ts';
+  const SYNC_TTL_MS = 10 * 60 * 1000;
+
+  function shouldPull() {
+    const last = parseInt(sessionStorage.getItem(SYNC_SS_KEY) || '0', 10);
+    return Date.now() - last > SYNC_TTL_MS;
+  }
+
+  function markSynced() {
+    sessionStorage.setItem(SYNC_SS_KEY, String(Date.now()));
+  }
+
   function isSyncKey(key) {
     if (key === 'wow_midnight_chars') return true;
     if (!key.startsWith('wow_mn_')) return false;
@@ -53,9 +67,7 @@
   }
 
   async function pullFromCloud() {
-    // sessionStorage flag prevents re-pulling (and re-reloading) on the same
-    // tab after we already synced once this session.
-    if (sessionStorage.getItem('azeroth_synced')) { _hasPulled = true; return; }
+    if (!shouldPull()) { _hasPulled = true; return; }
     try {
       const res = await fetch('/api/data');
       if (!res.ok) { _hasPulled = true; return; }
@@ -63,7 +75,7 @@
       if (!serverData || Object.keys(serverData).length === 0) {
         // Cloud is empty — seed it with local state so other devices pick it up.
         _hasPulled = true;
-        sessionStorage.setItem('azeroth_synced', '1');
+        markSynced();
         await pushToCloud();
         return;
       }
@@ -77,10 +89,10 @@
         }
       }
       _hasPulled = true;
-      sessionStorage.setItem('azeroth_synced', '1');
+      markSynced();
       if (changed) location.reload();
     } catch (_) {
-      _hasPulled = true; // if cloud is unreachable, allow pushes from current local state
+      _hasPulled = true; // if cloud is unreachable allow pushes from current local state
     }
   }
 
@@ -129,10 +141,17 @@
     if (this === localStorage && isSyncKey(key)) schedulePush();
   };
 
-  // Push when tab hides or closes so nothing is lost.
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden && syncUser && pushPending) pushToCloud();
+  // Re-pull when the tab comes back into focus after the TTL has elapsed,
+  // so changes made on another device appear without a full page reload by the user.
+  document.addEventListener('visibilitychange', async () => {
+    if (!document.hidden && syncUser && shouldPull()) {
+      await pullFromCloud();
+    }
+    if (document.hidden && syncUser && pushPending) {
+      pushToCloud();
+    }
   });
+
   window.addEventListener('beforeunload', () => {
     if (syncUser && pushPending) pushToCloud();
   });
