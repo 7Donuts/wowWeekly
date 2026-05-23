@@ -3299,6 +3299,13 @@ document.addEventListener('DOMContentLoaded', function() {
    BATTLE.NET CHARACTER IMPORT
 ═══════════════════════════════════════════ */
 
+function isCharAlreadyAdded(name, slug) {
+  // Checks both the realm-aware identifier ("Name@realm-slug") and the legacy
+  // plain-name form ("Name") so characters imported before the realm-aware
+  // system was introduced are not offered for re-import.
+  return characters.includes(charIdentifier(name, slug)) || characters.includes(name);
+}
+
 const _BNET_CLASS_MAP = {
   'Death Knight': 'death-knight', 'Demon Hunter': 'demon-hunter',
   'Druid': 'druid',    'Evoker': 'evoker',    'Hunter': 'hunter',
@@ -3345,7 +3352,7 @@ function renderImportList() {
   let html = '<div style="max-height:360px;overflow-y:auto;">';
   _importChars.forEach((c, i) => {
     const slug     = c.realmSlug || realmToSlug(c.realm || '');
-    const already  = characters.includes(charIdentifier(c.name, slug));
+    const already  = isCharAlreadyAdded(c.name, slug);
     const classId  = _BNET_CLASS_MAP[c.className] || '';
     const classDef = CLASSES.find(x => x.id === classId);
     const iconHtml = classDef
@@ -3391,8 +3398,8 @@ function confirmImport() {
   _importChars.forEach(c => {
     if (!c.selected) return;
     const slug = c.realmSlug || realmToSlug(c.realm || '');
+    if (isCharAlreadyAdded(c.name, slug)) return;
     const id   = charIdentifier(c.name, slug);
-    if (characters.includes(id)) return;
     characters.push(id);
     localStorage.setItem('wow_midnight_chars', JSON.stringify(characters));
     const classId = _BNET_CLASS_MAP[c.className] || '';
