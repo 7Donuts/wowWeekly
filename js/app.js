@@ -3047,6 +3047,16 @@ const WELCOME_STEPS = [
 
 let _welcomeStep = 0;
 
+function _welcomeIsLoggedIn() {
+  const el = document.getElementById('auth-logout');
+  return el && el.style.display !== 'none';
+}
+
+// Index of the char-setup step — skipped for Battle.net users.
+const _WELCOME_CHAR_STEP = 2;
+// Index of the list-setup step — destination after bnet-choice for logged-in users.
+const _WELCOME_LIST_STEP = 3;
+
 function openWelcome() {
   _welcomeStep = 0;
   renderWelcomeStep();
@@ -3060,11 +3070,27 @@ function closeWelcome() {
 }
 
 function welcomeNext() {
+  // Char-setup: require at least one non-default character before proceeding.
+  if (_welcomeStep === _WELCOME_CHAR_STEP) {
+    if (!characters.some(c => c !== 'Main')) return;
+  }
+  // Battle.net users jump over char-setup.
+  if (_welcomeStep === _WELCOME_CHAR_STEP - 1 && _welcomeIsLoggedIn()) {
+    _welcomeStep = _WELCOME_LIST_STEP;
+    renderWelcomeStep();
+    return;
+  }
   if (_welcomeStep < WELCOME_STEPS.length - 1) { _welcomeStep++; renderWelcomeStep(); }
   else closeWelcome();
 }
 
 function welcomeBack() {
+  // Battle.net users jump back over char-setup.
+  if (_welcomeStep === _WELCOME_LIST_STEP && _welcomeIsLoggedIn()) {
+    _welcomeStep = _WELCOME_CHAR_STEP - 1;
+    renderWelcomeStep();
+    return;
+  }
   if (_welcomeStep > 0) { _welcomeStep--; renderWelcomeStep(); }
 }
 
@@ -3088,18 +3114,17 @@ function renderWelcomeStep() {
 
   // Interactive elements
   const interactEl = document.getElementById('welcome-interactive');
-  const _isLoggedIn = () => {
-    const el = document.getElementById('auth-logout');
-    return el && el.style.display !== 'none';
-  };
   if (step.interactive === 'bnet-choice') {
-    if (_isLoggedIn()) {
+    if (_welcomeIsLoggedIn()) {
       const tag = document.getElementById('auth-battletag')?.textContent || 'your account';
       interactEl.innerHTML =
         '<div class="welcome-bnet-connected">'
         + '<div class="welcome-bnet-check">✓</div>'
         + '<div class="welcome-bnet-name">Connected as <strong>' + tag + '</strong></div>'
         + '<div class="welcome-bnet-sub">Your characters, gear, and raid progress will sync automatically each reset.</div>'
+        + '<button class="armory-btn" style="margin-top:1rem;width:100%;justify-content:center;font-size:13px;" onclick="openImportChars()">'
+        + '⬇ Import Characters from Battle.net'
+        + '</button>'
         + '</div>';
     } else {
       interactEl.innerHTML =
@@ -3145,7 +3170,7 @@ function renderWelcomeStep() {
       + '</div>'
       + '<div class="welcome-stage-skip">or <button class="welcome-skip-inline" onclick="welcomeNext()">skip — I\'ll build it manually</button></div>';
   } else if (step.interactive === 'char-setup') {
-    const hint = _isLoggedIn()
+    const hint = _welcomeIsLoggedIn()
       ? '<div class="welcome-import-hint">💡 After setup, use <strong>⬇ Import</strong> in the character bar to pull all your alts from Battle.net automatically.</div>'
       : '';
     interactEl.innerHTML =
@@ -3170,6 +3195,12 @@ function renderWelcomeStep() {
 
   const nextBtn = document.getElementById('welcome-next');
   nextBtn.textContent = isLast ? "Let's Go!" : 'Next →';
+  // Char-setup: Next is locked until the user has added at least one real character.
+  nextBtn.disabled = (_welcomeStep === _WELCOME_CHAR_STEP && !characters.some(c => c !== 'Main'));
+
+  // Skip intro is hidden on char-setup — a character must be added to continue.
+  const skipBtn = document.querySelector('#modal-welcome .welcome-skip');
+  if (skipBtn) skipBtn.style.display = _welcomeStep === _WELCOME_CHAR_STEP ? 'none' : '';
 }
 
 function welcomeAddChar() {
@@ -3184,6 +3215,10 @@ function welcomeAddChar() {
   }
   switchChar(name);
   renderChars();
+
+  // Unlock the Next button now that a character exists.
+  const nextBtn = document.getElementById('welcome-next');
+  if (nextBtn) nextBtn.disabled = false;
 
   const form = document.getElementById('welcome-char-form');
   if (form) {

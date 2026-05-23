@@ -10,13 +10,20 @@
 const VERSIONS = [
   {
     version: 'v2.2.0',
-    date: 'May 22, 2026',
-    summary: 'Redesigned welcome walkthrough with Battle.net onboarding path',
+    date: 'May 23, 2026',
+    summary: 'Cross-device cloud sync, character management overhaul, realm-aware identifiers',
     entries: [
-      { type: 'new',     text: 'Welcome guide now presents two clear paths: connect Battle.net for the full experience, or continue in offline mode — no account needed', detail: 'The Battle.net card lists exactly what you get from connecting. The offline card shows what is always available without an account.' },
-      { type: 'improve', text: 'Welcome detects if you are already logged in and shows a connected confirmation with your battletag instead of the login prompt', detail: '' },
-      { type: 'improve', text: 'Character setup step shows a hint about using ⬇ Import to pull all your alts automatically when logged in via Battle.net', detail: '' },
-      { type: 'improve', text: 'Feature overview updated to accurately describe all current tracking — raids, M+, BiS auto-check, Delves, and tools', detail: '' },
+      { type: 'new',     text: 'Cross-device cloud sync — your characters, progress, and settings stay identical on every device you log into', detail: 'Cloud is the single source of truth. Logging in on a new device pulls your full profile. Any change you make is pushed to the cloud within a few seconds and picked up on your other devices the next time they load the page.' },
+      { type: 'new',     text: 'Realm-aware character identifiers — you can now track two characters with the same name on different realms as separate entries', detail: 'Characters imported from Battle.net are stored as Name@realm-slug. The realm badge appears on character cards only when a name conflict exists.' },
+      { type: 'new',     text: 'Character portrait shown in the character bar for each synced character, pulled from the Battle.net character media API', detail: '' },
+      { type: 'new',     text: 'Edit ▾ menu replaces the old inline edit and remove buttons on each character card — keeps the character bar clean', detail: 'Menu options: Edit character (blocked for Battle.net-synced characters), Remove character, and Rearrange list.' },
+      { type: 'new',     text: 'Remove Character shows a list of all characters with individual remove buttons instead of only targeting the active character', detail: '' },
+      { type: 'new',     text: 'Weekly reset countdown powered by the Blizzard Mythic Keystone API — shows the exact time remaining until the current M+ period ends', detail: 'Falls back to a calculated time if the API is unavailable.' },
+      { type: 'improve', text: 'Welcome guide Battle.net path now imports characters immediately — logged-in users go straight from the connection confirmation to Your List setup, skipping the manual character entry step', detail: '' },
+      { type: 'improve', text: 'Character creation step in the welcome guide is no longer skippable for offline users — a character name is required to continue', detail: '' },
+      { type: 'improve', text: 'After syncing characters to a new device, armory data (portrait, item level, Mythic+ rating) is fetched automatically using the embedded realm slug — no re-import needed', detail: '' },
+      { type: 'fix',     text: 'Battle.net import dialog no longer re-offers characters that are already in your list, including characters added before the realm-aware system', detail: '' },
+      { type: 'fix',     text: 'Sync was silently skipping cloud pulls due to a stale sessionStorage flag that persisted through hard refreshes — replaced with a 10-minute timestamp that correctly re-pulls on fresh sessions and tab focus', detail: '' },
     ]
   },
   {
