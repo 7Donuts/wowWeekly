@@ -1040,11 +1040,15 @@ function renderChars() {
       ? `<span class="char-ilvl-badge" style="color:${armory.mythicColor||'var(--void-glow)'};" title="Mythic+ Rating ${armory.mythicRating}">${armory.mythicRating}</span>`
       : '';
     const portrait = armory?.portrait;
+    const displayName = charDisplayName(c);
+    const realmSlug = charRealmSlugFromId(c);
+    const showRealm = realmSlug && characters.filter(x => charDisplayName(x) === displayName).length > 1;
+    const realmBadge = showRealm ? `<span class="char-realm-badge">${realmSlug.replace(/-/g, ' ')}</span>` : '';
     const iconHtml = portrait
-      ? `<img src="${portrait}" class="char-portrait" alt="${c}">`
-      : def ? `<img src="${def.icon}" class="char-class-icon" alt="${c}">` : '';
+      ? `<img src="${portrait}" class="char-portrait" alt="${displayName}">`
+      : def ? `<img src="${def.icon}" class="char-class-icon" alt="${displayName}">` : '';
     return `<button class="char-btn${c===currentChar?' active':''}" onclick="switchChar('${c}')" style="display:inline-flex;align-items:center;gap:6px;${borderStyle}">
-        ${iconHtml}${c}${groupDot}${ilvlBadge}${mythicBadge}
+        ${iconHtml}${displayName}${realmBadge}${groupDot}${ilvlBadge}${mythicBadge}
       </button>`;
   }).join('');
 }
@@ -1105,7 +1109,7 @@ function renderRearrangeList() {
       : def ? `<img src="${def.icon}" class="char-class-icon" alt="${c}">` : '';
     return `<div class="rearrange-row">
       ${imgHtml}
-      <span class="rearrange-name">${escHtml(c)}</span>
+      <span class="rearrange-name">${escHtml(charDisplayName(c))}${charRealmSlugFromId(c) ? `<span class="char-realm-badge" style="margin-left:4px;">${charRealmSlugFromId(c).replace(/-/g,' ')}</span>` : ''}</span>
       <div class="rearrange-arrows">
         <button class="rearrange-btn" ${i===0?'disabled':''} onclick="moveChar(${i},-1)">↑</button>
         <button class="rearrange-btn" ${i===characters.length-1?'disabled':''} onclick="moveChar(${i},1)">↓</button>
@@ -1142,7 +1146,7 @@ function switchChar(name) {
   renderInlineHistory();
 }
 function deleteChar(name) {
-  if (!confirm('Remove ' + name + ' and all saved data?')) return;
+  if (!confirm('Remove ' + charDisplayName(name) + ' and all saved data?')) return;
   Object.keys(localStorage).filter(k => k.startsWith('wow_mn_' + name + '_') || k === 'wow_mn_hidden_' + name || k === 'wow_mn_custom_' + name || k === 'wow_mn_yourlist_' + name || k === 'wow_mn_ylorder_' + name || k === 'wow_mn_notes_' + name || k === classKey(name) || k === 'wow_mn_realm_' + name || k === 'wow_mn_armory_' + name).forEach(k => localStorage.removeItem(k));
   characters = characters.filter(c => c !== name);
   localStorage.setItem('wow_midnight_chars', JSON.stringify(characters));
@@ -1162,7 +1166,7 @@ function openRenameChar(oldName) {
   document.getElementById('char-modal-title').textContent = 'Edit Character';
   document.getElementById('modal').dataset.renaming = oldName;
   document.getElementById('modal').classList.add('open');
-  document.getElementById('char-input').value = oldName;
+  document.getElementById('char-input').value = charDisplayName(oldName);
   document.getElementById('char-realm-input').value = loadCharRealm(oldName);
   renderClassPicker(loadCharClass(oldName));
   renderGroupPicker(loadCharGroupFor(oldName));
@@ -1174,53 +1178,54 @@ function saveChar() {
   if (!newName) return;
   const oldName  = document.getElementById('modal').dataset.renaming;
   const isRename = oldName && oldName !== '';
+  const realmInput   = document.getElementById('char-realm-input').value.trim();
+  const newRealmSlug = realmInput ? realmToSlug(realmInput) : (charRealmSlugFromId(oldName) || '');
+  const newId        = charIdentifier(newName, newRealmSlug);
 
   if (isRename) {
-    if (newName === oldName) {
-      // Name unchanged — still save class/group update
+    if (newId === oldName) {
+      // Identifier unchanged — just save class/group/realm display update
       saveCharClass(oldName, _modalSelectedClass);
       saveCharGroupFor(oldName, _modalSelectedGroup);
-      saveCharRealm(oldName, document.getElementById('char-realm-input').value.trim());
+      if (realmInput) saveCharRealm(oldName, realmInput);
       closeModal(); renderChars(); renderClassLinksBar();
       return;
     }
-    if (characters.includes(newName)) { alert('A character with that name already exists.'); return; }
+    if (characters.includes(newId)) { alert('A character with that name already exists.'); return; }
     const prefix = 'wow_mn_';
     Object.keys(localStorage)
       .filter(k => k.startsWith(prefix + oldName + '_') || k === prefix + 'hidden_' + oldName || k === prefix + 'custom_' + oldName)
       .forEach(k => {
-        const newKey = k.replace(prefix + oldName, prefix + newName);
+        const newKey = k.replace(prefix + oldName, prefix + newId);
         localStorage.setItem(newKey, localStorage.getItem(k));
         localStorage.removeItem(k);
       });
-    // Migrate class, realm, armory
-    const existingClass = loadCharClass(oldName);
-    const existingRealm = loadCharRealm(oldName);
+    const existingClass  = loadCharClass(oldName);
+    const existingRealm  = loadCharRealm(oldName);
     const existingArmory = loadArmoryData(oldName);
     localStorage.removeItem(classKey(oldName));
     localStorage.removeItem('wow_mn_realm_' + oldName);
     localStorage.removeItem('wow_mn_armory_' + oldName);
-    saveCharClass(newName, _modalSelectedClass || existingClass);
-    saveCharGroupFor(newName, _modalSelectedGroup);
-    saveCharRealm(newName, document.getElementById('char-realm-input').value.trim() || existingRealm);
-    if (existingArmory) saveArmoryData(newName, existingArmory);
+    saveCharClass(newId, _modalSelectedClass || existingClass);
+    saveCharGroupFor(newId, _modalSelectedGroup);
+    saveCharRealm(newId, realmInput || existingRealm);
+    if (existingArmory) saveArmoryData(newId, existingArmory);
     const idx = characters.indexOf(oldName);
-    characters[idx] = newName;
+    characters[idx] = newId;
     localStorage.setItem('wow_midnight_chars', JSON.stringify(characters));
-    if (currentChar === oldName) currentChar = newName;
+    if (currentChar === oldName) currentChar = newId;
     closeModal(); renderChars(); renderClassLinksBar(); render();
   } else {
-    if (!characters.includes(newName)) {
-      characters.push(newName);
+    if (!characters.includes(newId)) {
+      characters.push(newId);
       localStorage.setItem('wow_midnight_chars', JSON.stringify(characters));
     }
-    saveCharClass(newName, _modalSelectedClass);
-    saveCharGroupFor(newName, _modalSelectedGroup);
-    const _realmInput = document.getElementById('char-realm-input').value.trim();
-    saveCharRealm(newName, _realmInput);
-    if (_realmInput) saveCharRealmSlug(newName, realmToSlug(_realmInput));
-    closeModal(); switchChar(newName);
-    if (_realmInput && typeof autoSyncArmory === 'function') autoSyncArmory();
+    saveCharClass(newId, _modalSelectedClass);
+    saveCharGroupFor(newId, _modalSelectedGroup);
+    saveCharRealm(newId, realmInput);
+    if (newRealmSlug) saveCharRealmSlug(newId, newRealmSlug);
+    closeModal(); switchChar(newId);
+    if (realmInput && typeof autoSyncArmory === 'function') autoSyncArmory();
   }
 }
 
@@ -3304,7 +3309,8 @@ function renderImportList() {
 
   let html = '<div style="max-height:360px;overflow-y:auto;">';
   _importChars.forEach((c, i) => {
-    const already  = characters.includes(c.name);
+    const slug     = c.realmSlug || realmToSlug(c.realm || '');
+    const already  = characters.includes(charIdentifier(c.name, slug));
     const classId  = _BNET_CLASS_MAP[c.className] || '';
     const classDef = CLASSES.find(x => x.id === classId);
     const iconHtml = classDef
@@ -3348,13 +3354,16 @@ function toggleImportChar(i) {
 function confirmImport() {
   let added = 0;
   _importChars.forEach(c => {
-    if (!c.selected || characters.includes(c.name)) return;
-    characters.push(c.name);
+    if (!c.selected) return;
+    const slug = c.realmSlug || realmToSlug(c.realm || '');
+    const id   = charIdentifier(c.name, slug);
+    if (characters.includes(id)) return;
+    characters.push(id);
     localStorage.setItem('wow_midnight_chars', JSON.stringify(characters));
     const classId = _BNET_CLASS_MAP[c.className] || '';
-    if (classId) saveCharClass(c.name, classId);
-    if (c.realm)     saveCharRealm(c.name, c.realm);
-    if (c.realmSlug) saveCharRealmSlug(c.name, c.realmSlug);
+    if (classId) saveCharClass(id, classId);
+    if (c.realm)     saveCharRealm(id, c.realm);
+    if (c.realmSlug) saveCharRealmSlug(id, c.realmSlug);
     added++;
   });
   closeImportModal();

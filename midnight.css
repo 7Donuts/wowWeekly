@@ -428,6 +428,12 @@ h1 span { color: var(--void-glow); }
 .char-class-icon { width: 20px; height: 20px; flex-shrink: 0; image-rendering: auto; }
 
 .char-sync-btn:hover { color: var(--void-glow) !important; }
+.char-realm-badge {
+  font-size: 9px; font-family: 'Cinzel', serif; letter-spacing: 0.04em;
+  color: var(--text-muted); background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border); border-radius: 3px;
+  padding: 0 4px; line-height: 1.6; flex-shrink: 0; text-transform: capitalize;
+}
 
 /* ── Character manage menu ── */
 .char-manage-wrap { position: relative; flex-shrink: 0; display: inline-flex; align-items: center; }
