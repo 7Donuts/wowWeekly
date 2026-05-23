@@ -429,7 +429,7 @@ h1 span { color: var(--void-glow); }
 .char-sync-btn:hover { color: var(--void-glow) !important; }
 
 /* ── Character manage menu ── */
-.char-manage-wrap { position: relative; flex-shrink: 0; }
+.char-manage-wrap { position: relative; flex-shrink: 0; display: inline-flex; align-items: center; }
 .char-manage-btn {
   font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.07em;
   color: var(--text-secondary); background: rgba(124,92,191,0.08);
