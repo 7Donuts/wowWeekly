@@ -8,14 +8,14 @@
 async function armorySync(charName) {
   const realm = loadCharRealm(charName);
   if (!realm) {
-    showToast('Set a realm for ' + charName + ' via the ✏️ edit button first.');
+    showToast('Set a realm for ' + charDisplayName(charName) + ' via the ✏️ edit button first.');
     return;
   }
 
   const slug = loadCharRealmSlug(charName) || realmToSlug(realm);
 
   try {
-    const params = new URLSearchParams({ char: charName.toLowerCase(), realm: slug });
+    const params = new URLSearchParams({ char: charDisplayName(charName).toLowerCase(), realm: slug });
     const res    = await fetch('/api/armory?' + params);
 
     if (res.status === 401) { showToast('Session expired — please log in again.'); return; }
@@ -39,7 +39,7 @@ async function armorySync(charName) {
     render();
 
     const spec = [armory.spec, armory.className].filter(Boolean).join(' ');
-    showToast(charName + ' synced — ' + spec + ' · iLvl ' + armory.ilvl + (armory.mythicRating ? ' · M+ ' + armory.mythicRating : ''));
+    showToast(charDisplayName(charName) + ' synced — ' + spec + ' · iLvl ' + armory.ilvl + (armory.mythicRating ? ' · M+ ' + armory.mythicRating : ''));
   } catch (_) {
     showToast('Armory sync failed. Please try again.');
   }
@@ -63,7 +63,7 @@ async function autoSyncArmory() {
 
     const slug = loadCharRealmSlug(charName) || realmToSlug(realm);
     try {
-      const params = new URLSearchParams({ char: charName.toLowerCase(), realm: slug });
+      const params = new URLSearchParams({ char: charDisplayName(charName).toLowerCase(), realm: slug });
       const res    = await fetch('/api/armory?' + params);
       if (!res.ok) continue;
 
@@ -221,7 +221,7 @@ async function syncAllCharsButton() {
     const charName = toSync[i];
     try {
       const slug   = loadCharRealmSlug(charName) || realmToSlug(loadCharRealm(charName));
-      const params = new URLSearchParams({ char: charName.toLowerCase(), realm: slug });
+      const params = new URLSearchParams({ char: charDisplayName(charName).toLowerCase(), realm: slug });
       const res    = await fetch('/api/armory?' + params);
       if (res.status === 401) { showToast('Session expired — please log in again.'); break; }
       if (!res.ok) continue;
