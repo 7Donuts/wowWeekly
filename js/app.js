@@ -3061,6 +3061,16 @@ const _WELCOME_BNET_IMPORT_STEP = 2;
 const _WELCOME_CHAR_STEP = 3;
 const _WELCOME_LIST_STEP = 4;
 
+const _BNET_CLASS_MAP = {
+  'Death Knight': 'death-knight', 'Demon Hunter': 'demon-hunter',
+  'Druid': 'druid',    'Evoker': 'evoker',    'Hunter': 'hunter',
+  'Mage':  'mage',     'Monk':   'monk',       'Paladin': 'paladin',
+  'Priest':'priest',   'Rogue':  'rogue',       'Shaman': 'shaman',
+  'Warlock':'warlock', 'Warrior':'warrior',
+};
+const _BNET_FACTION_COLOR = { ALLIANCE: '#4a8cc4', HORDE: '#c44a4a' };
+let _importChars = [];
+
 function openWelcome() {
   // If the user just returned from Battle.net OAuth, restore the step they left from.
   // Do NOT remove the key here — initSync() removes it after auth is confirmed so that
@@ -3465,18 +3475,6 @@ function isCharAlreadyAdded(name, slug) {
   // system was introduced are not offered for re-import.
   return characters.includes(charIdentifier(name, slug)) || characters.includes(name);
 }
-
-const _BNET_CLASS_MAP = {
-  'Death Knight': 'death-knight', 'Demon Hunter': 'demon-hunter',
-  'Druid': 'druid',    'Evoker': 'evoker',    'Hunter': 'hunter',
-  'Mage':  'mage',     'Monk':   'monk',       'Paladin': 'paladin',
-  'Priest':'priest',   'Rogue':  'rogue',       'Shaman': 'shaman',
-  'Warlock':'warlock', 'Warrior':'warrior',
-};
-
-const _BNET_FACTION_COLOR = { ALLIANCE: '#4a8cc4', HORDE: '#c44a4a' };
-
-let _importChars = [];
 
 async function openImportChars() {
   const overlay    = document.getElementById('modal-import');
