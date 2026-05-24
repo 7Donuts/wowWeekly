@@ -163,6 +163,12 @@ const FUNCTIONAL_TAGS = new Set(['tag-vault', 'tag-gold', 'tag-new']);
 function onSearchInput(val) {
   searchQuery = val.trim().toLowerCase();
   document.getElementById('search-clear-btn').style.display = searchQuery ? '' : 'none';
+  if (searchQuery && !activeFilters.has('all') && !activeFilters.has('yourlist')) {
+    activeFilters = new Set(['all']);
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.toggle('active', b.getAttribute('data-filter') === 'all');
+    });
+  }
   render();
 }
 
@@ -987,15 +993,7 @@ function setFilter(f, btn) {
   } else if (f === 'yourlist') {
     activeFilters = new Set(['yourlist']);
   } else {
-    // Switching to a category tab — always leave Your List
-    activeFilters.delete('yourlist');
-    activeFilters.delete('all');
-    if (activeFilters.has(f)) {
-      activeFilters.delete(f);
-      if (activeFilters.size === 0) activeFilters = new Set(['all']);
-    } else {
-      activeFilters.add(f);
-    }
+    activeFilters = new Set([f]);
   }
 
   // When switching to Your List, ensure the first character is active
