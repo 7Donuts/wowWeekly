@@ -32,6 +32,8 @@
     if (key === 'wow_mn_bnet_creds')    return false;   // region pref only, skip
     if (key === 'wow_mn_light_mode')    return false;   // device-local UI pref
     if (key === 'wow_mn_compact')       return false;   // device-local UI pref
+    if (key === 'wow_mn_welcomed')      return false;   // device-local: has this device seen the welcome
+    if (key === 'wow_mn_seen_version')  return false;   // device-local: has this device seen the changelog
     return true;
   }
 

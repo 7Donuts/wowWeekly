@@ -3408,6 +3408,8 @@ updateLastChanceBtn(); renderLastChanceBanner();
 renderEventAlerts();
 checkShareablePlanURL();
 function shouldShowWelcome() {
+  // Always show if we're mid-welcome-flow (e.g. OAuth return that triggered a cloud reload).
+  if (sessionStorage.getItem('azeroth_welcome_return_step')) return true;
   if (!localStorage.getItem('wow_mn_welcomed')) return true;
   const chars = JSON.parse(localStorage.getItem('wow_midnight_chars') || '["Main"]');
   if (chars.length === 1 && chars[0] === 'Main') {
