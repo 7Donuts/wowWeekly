@@ -3300,6 +3300,8 @@ function _renderWelcomeImportList(el) {
     el.innerHTML = '<div style="color:var(--text-muted);padding:0.5rem 0;font-style:italic;">No level 80+ characters found on this account.</div>';
     return;
   }
+  var rowBase = 'display:flex;align-items:center;gap:0.55rem;padding:0.4rem 0.5rem;border-bottom:1px solid var(--border);';
+  var checkStyle = 'style="width:18px;height:18px;border:1.5px solid var(--border-bright);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:transparent;"';
   var html = '<div style="max-height:240px;overflow-y:auto;margin-bottom:0.75rem;">';
   _importChars.forEach(function(c, i) {
     var slug    = c.realmSlug || realmToSlug(c.realm || '');
@@ -3307,22 +3309,21 @@ function _renderWelcomeImportList(el) {
     var classId = _BNET_CLASS_MAP[c.className] || '';
     var classDef = CLASSES.find(function(x) { return x.id === classId; });
     var iconHtml = classDef
-      ? '<img src="' + classDef.icon + '" style="width:18px;height:18px;flex-shrink:0;image-rendering:auto;" title="' + c.className + '">'
-      : '<span style="width:18px;height:18px;flex-shrink:0;display:inline-block;"></span>';
+      ? '<img src="' + classDef.icon + '" style="width:17px;height:17px;flex-shrink:0;image-rendering:auto;" title="' + c.className + '">'
+      : '<span style="width:17px;height:17px;flex-shrink:0;display:inline-block;"></span>';
     var fc = _BNET_FACTION_COLOR[c.faction] || 'var(--text-secondary)';
+    var nameSpan  = '<span style="flex:1;min-width:0;font-family:\'Cinzel\',serif;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + c.name + '</span>';
+    var classSpan = '<span style="font-size:11px;color:var(--text-secondary);flex-shrink:0;white-space:nowrap;">' + (c.className || '') + '</span>';
+    var realmSpan = '<span style="font-size:11px;color:' + fc + ';flex-shrink:0;white-space:nowrap;max-width:90px;overflow:hidden;text-overflow:ellipsis;">' + (c.realm || '') + '</span>';
     if (already) {
-      html += '<div class="task done" style="display:flex;align-items:center;gap:0.6rem;padding:0.45rem 0.6rem;">'
-        + '<div class="task-check"></div>' + iconHtml
-        + '<span style="flex:1;font-family:\'Cinzel\',serif;font-size:13px;">' + c.name + '</span>'
-        + '<span style="font-size:12px;color:var(--text-secondary);">' + c.className + '</span>'
-        + '<span style="font-size:11px;color:' + fc + ';min-width:60px;text-align:right;">' + c.realm + '</span>'
+      html += '<div style="' + rowBase + 'opacity:0.5;">'
+        + '<div class="task-check" ' + checkStyle + '></div>'
+        + iconHtml + nameSpan + classSpan + realmSpan
         + '</div>';
     } else {
-      html += '<div class="task import-row" id="import-row-' + i + '" onclick="toggleImportChar(' + i + ')" style="display:flex;align-items:center;gap:0.6rem;padding:0.45rem 0.6rem;cursor:pointer;">'
-        + '<div class="task-check"></div>' + iconHtml
-        + '<span style="flex:1;font-family:\'Cinzel\',serif;font-size:13px;">' + c.name + '</span>'
-        + '<span style="font-size:12px;color:var(--text-secondary);">' + c.className + '</span>'
-        + '<span style="font-size:11px;color:' + fc + ';min-width:60px;text-align:right;">' + c.realm + '</span>'
+      html += '<div class="import-row" id="import-row-' + i + '" onclick="toggleImportChar(' + i + ')" style="' + rowBase + 'cursor:pointer;">'
+        + '<div class="task-check" ' + checkStyle + '></div>'
+        + iconHtml + nameSpan + classSpan + realmSpan
         + '</div>';
     }
   });
