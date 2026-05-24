@@ -15,7 +15,7 @@
 <meta name="twitter:description" content="WoW Midnight weekly task tracker — never miss a reset.">
 <meta name="twitter:image" content="https://agenda.7donuts.dev/img/og-image.png">
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
-<link rel="stylesheet" href="midnight.css?v=1.9.34">
+<link rel="stylesheet" href="midnight.css?v=1.9.35">
 
 </head>
 <body>
@@ -345,54 +345,19 @@
 </div>
 
 <!-- ── JS: load order matters — each file depends on the ones above it ── -->
-<script src="js/data-tasks.js?v=1.9.34"></script>
-<script src="js/data-events.js?v=1.9.34"></script>
-<script src="js/data-classes.js?v=1.9.34"></script>
-<script src="js/data-changelog.js?v=1.9.34"></script>
-<script src="js/data-bis.js?v=1.9.34"></script>
-<script src="js/data-item-ids.js?v=1.9.34"></script>
-<script src="js/storage.js?v=1.9.34"></script>
-<script src="js/armory.js?v=1.9.34"></script>
-<script src="js/confetti.js?v=1.9.34"></script>
-<script src="js/theme.js?v=1.9.34"></script>
-<script src="js/app.js?v=1.9.34"></script>
-<script src="js/sync.js?v=1.9.34"></script>
+<script src="js/data-tasks.js?v=1.9.35"></script>
+<script src="js/data-events.js?v=1.9.35"></script>
+<script src="js/data-classes.js?v=1.9.35"></script>
+<script src="js/data-changelog.js?v=1.9.35"></script>
+<script src="js/data-bis.js?v=1.9.35"></script>
+<script src="js/data-item-ids.js?v=1.9.35"></script>
+<script src="js/storage.js?v=1.9.35"></script>
+<script src="js/armory.js?v=1.9.35"></script>
+<script src="js/confetti.js?v=1.9.35"></script>
+<script src="js/theme.js?v=1.9.35"></script>
+<script src="js/app.js?v=1.9.35"></script>
+<script src="js/sync.js?v=1.9.35"></script>
 
-<script src='https://storage.ko-fi.com/cdn/scripts/overlay-widget.js'></script>
-<script>
-  (function() {
-    const KOFI_KEY = 'azeroth_kofi_hidden';
-    if (localStorage.getItem(KOFI_KEY)) return;
-
-    kofiWidgetOverlay.draw('7donuts', {
-      'type': 'floating-chat',
-      'floating-chat.donateButton.text': 'Tip Me',
-      'floating-chat.donateButton.background-color': '#323842',
-      'floating-chat.donateButton.text-color': '#fff'
-    });
-
-    // Add a small dismiss button near the widget after it renders
-    setTimeout(function() {
-      var dismiss = document.createElement('button');
-      dismiss.id = 'kofi-dismiss';
-      dismiss.title = 'Hide support button';
-      dismiss.innerHTML = '&times;';
-      dismiss.onclick = function() {
-        localStorage.setItem(KOFI_KEY, '1');
-        // Find and hide the Ko-fi widget container (targets its iframe by origin)
-        document.querySelectorAll('iframe').forEach(function(f) {
-          if ((f.src || '').includes('ko-fi.com')) {
-            var el = f;
-            while (el.parentElement && el.parentElement !== document.body) el = el.parentElement;
-            el.style.display = 'none';
-          }
-        });
-        dismiss.remove();
-      };
-      document.body.appendChild(dismiss);
-    }, 1800);
-  })();
-</script>
 
 </body>
 </html>

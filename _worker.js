@@ -348,20 +348,32 @@ async function handleGetCharacters(request, env) {
   const region  = payload.region || 'us';
   const apiBase = `https://${region}.api.blizzard.com`;
 
-  const res = await fetch(`${apiBase}/profile/user/wow?locale=en_US`, {
-    headers: {
-      'Authorization':       `Bearer ${accessToken}`,
-      'Battlenet-Namespace': `profile-${region}`,
-    },
-  });
+  let res;
+  try {
+    res = await fetch(`${apiBase}/profile/user/wow?locale=en_US`, {
+      headers: {
+        'Authorization':       `Bearer ${accessToken}`,
+        'Battlenet-Namespace': `profile-${region}`,
+      },
+    });
+  } catch (_) {
+    return new Response('Battle.net unreachable', { status: 502 });
+  }
 
-  if (res.status === 401) return new Response('Token expired', { status: 401 });
-  if (!res.ok)            return new Response('Battle.net API error', { status: 502 });
+  if (res.status === 401) {
+    // Access token rejected by Battle.net — evict it so re-login prompts correctly
+    await env.USER_DATA.delete('token:' + payload.sub);
+    return new Response('Token expired', { status: 401 });
+  }
+  if (!res.ok) return new Response('Battle.net API error: ' + res.status, { status: 502 });
 
   // locale=en_US makes name fields strings, but guard against object form just in case
   const bnetStr = v => (typeof v === 'string' ? v : v?.en_US ?? v?.name ?? '');
 
-  const data = await res.json();
+  let data;
+  try { data = await res.json(); }
+  catch (_) { return new Response('Battle.net returned invalid JSON', { status: 502 }); }
+
   const chars = (data.wow_accounts || [])
     .flatMap(a => a.characters || [])
     .filter(c => c.level >= 80)

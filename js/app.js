@@ -3487,16 +3487,23 @@ async function openImportChars() {
   content.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted);font-style:italic;">Loading characters…</div>';
 
   try {
-    const res = await fetch('/api/characters');
+    const res = await fetch('/api/characters', { credentials: 'same-origin' });
     if (res.status === 401) {
       content.innerHTML = '<div style="color:var(--color-danger);padding:0.5rem 0;">Session expired. Please sign out and log in again to use character import.</div>';
       return;
     }
-    if (!res.ok) throw new Error('API error');
+    if (!res.ok) {
+      const msg = await res.text().catch(() => '');
+      throw new Error('HTTP ' + res.status + (msg ? ': ' + msg : ''));
+    }
     _importChars = (await res.json()).map(c => ({ ...c, selected: false }));
     renderImportList();
-  } catch (_) {
-    content.innerHTML = '<div style="color:var(--color-danger);padding:0.5rem 0;">Failed to load characters. Please try again.</div>';
+  } catch (err) {
+    const detail = err && err.message ? ' (' + err.message + ')' : '';
+    content.innerHTML = '<div style="color:var(--color-danger);padding:0.5rem 0;">'
+      + 'Failed to load characters' + detail + '.'
+      + ' <button class="btn-reset-all" style="margin-top:0.4rem;" onclick="openImportChars()">↺ Retry</button>'
+      + '</div>';
   }
 }
 

@@ -69,8 +69,8 @@
     pushTimer = setTimeout(pushToCloud, 3000);
   }
 
-  async function pullFromCloud() {
-    if (!shouldPull()) { _hasPulled = true; return; }
+  async function pullFromCloud(force = false) {
+    if (!force && !shouldPull()) { _hasPulled = true; return; }
     try {
       const res = await fetch('/api/data');
       if (!res.ok) { _hasPulled = true; return; }
@@ -170,7 +170,7 @@
       // and advances from bnet-choice to bnet-import if returning from OAuth.
       if (typeof onSyncAuthConfirmed === 'function') onSyncAuthConfirmed(user);
       if (user) {
-        await pullFromCloud();
+        await pullFromCloud(true); // always pull on page load regardless of TTL
         // Open standalone import modal only when the welcome is not open.
         // When welcome is open the bnet-import step handles character import inline.
         if (sessionStorage.getItem('azeroth_pending_import')) {

@@ -2859,30 +2859,3 @@ body.light-mode .bis-spec-btn:hover { background: #f4f0e8; }
 body.light-mode .bis-gear-row { background: #faf8f4; }
 body.light-mode .bis-gear-row:hover { background: #f4f0e8; }
 body.light-mode .bis-gear-row.selected { background: rgba(180,130,20,0.10); }
-
-/* Ko-fi dismiss button */
-#kofi-dismiss {
-  position: fixed;
-  bottom: 68px;
-  left: 16px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(18,18,28,0.75);
-  color: rgba(255,255,255,0.4);
-  font-size: 12px;
-  line-height: 1;
-  cursor: pointer;
-  z-index: 9001;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
-}
-#kofi-dismiss:hover {
-  color: rgba(255,255,255,0.75);
-  border-color: rgba(255,255,255,0.3);
-  background: rgba(18,18,28,0.95);
-}
