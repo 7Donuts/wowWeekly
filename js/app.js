@@ -2398,10 +2398,10 @@ function showImportPreview(data) {
   window._pendingImport = data;
   btns.innerHTML = `
     <button class="btn-cancel" onclick="openExportImport()">← Back</button>
-    <button class="btn-primary" onclick="confirmImport()">✓ Confirm Import</button>`;
+    <button class="btn-primary" onclick="confirmFileImport()">✓ Confirm Import</button>`;
 }
 
-function confirmImport() {
+function confirmFileImport() {
   const data = window._pendingImport;
   if (!data) return;
   const prefix     = 'wow_mn_';
