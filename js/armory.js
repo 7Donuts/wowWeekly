@@ -44,11 +44,23 @@ async function armorySync(charName) {
 }
 
 /* ── AUTO-SYNC (called after login, refreshes stale data) ── */
+const _ARMORY_SESS_KEY = 'azeroth_armory_ts';
+const _ARMORY_STALE_MS = 60 * 60 * 1000; // 1 hour — per-char stale threshold
+const _ARMORY_SESS_MS  =  3 * 60 * 1000; // 3 minutes — debounce rapid re-calls within a session
+
 async function autoSyncArmory() {
-  const chars   = JSON.parse(localStorage.getItem('wow_midnight_chars') || '["Main"]');
-  const staleMs = 60 * 60 * 1000; // 1 hour
-  const now     = Date.now();
-  let   anyUpdated = false;
+  const chars = JSON.parse(localStorage.getItem('wow_midnight_chars') || '["Main"]');
+  const now   = Date.now();
+
+  // On the first call this session (new tab / browser open), sync all chars that
+  // have a realm set, regardless of the per-char stale threshold. Within the same
+  // session, fall back to the 1-hour stale check so quick refreshes don't hammer
+  // the Battle.net API.
+  const lastSess      = parseInt(sessionStorage.getItem(_ARMORY_SESS_KEY) || '0', 10);
+  const isFirstInSess = (now - lastSess) > _ARMORY_SESS_MS;
+  if (isFirstInSess) sessionStorage.setItem(_ARMORY_SESS_KEY, String(now));
+
+  let anyUpdated = false;
 
   for (const charName of chars) {
     const slug = loadCharRealmSlug(charName);
@@ -56,8 +68,12 @@ async function autoSyncArmory() {
 
     const existing = loadArmoryData(charName);
     const age = existing?.lastSync ? (now - existing.lastSync) : Infinity;
-    // Re-sync if data is stale OR missing fields added in later releases
-    if (age < staleMs && existing?.gearItems && 'raidKills' in (existing || {})) continue;
+
+    // Skip chars whose data is complete and fresh enough for this call site.
+    const hasFullData = existing?.gearItems && 'raidKills' in (existing || {});
+    if (hasFullData && age < _ARMORY_STALE_MS && !isFirstInSess) continue;
+    // Even on first-in-session, skip chars synced within the last 5 minutes.
+    if (hasFullData && age < 5 * 60 * 1000) continue;
 
     try {
       const params = new URLSearchParams({ char: charDisplayName(charName).toLowerCase(), realm: slug });
@@ -82,8 +98,9 @@ async function autoSyncArmory() {
   }
 
   if (anyUpdated) {
-    if (typeof renderChars === 'function') renderChars();
+    if (typeof renderChars      === 'function') renderChars();
     if (typeof renderClassLinksBar === 'function') renderClassLinksBar();
+    if (typeof render           === 'function') render();
   }
 }
 
