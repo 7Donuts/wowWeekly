@@ -128,24 +128,17 @@
       const { user } = await res.json();
       syncUser = user;
       updateAuthUI(user);
-
-      // Now that auth state is confirmed, consume the OAuth return-step key and
-      // re-render the welcome modal if it's open. openWelcome() runs synchronously
-      // on DOMContentLoaded before this fetch completes, so the welcome step that
-      // requires login state (bnet-choice) would have rendered as "not connected"
-      // without this re-render.
-      sessionStorage.removeItem('azeroth_welcome_return_step');
-      const welcomeEl = document.getElementById('modal-welcome');
-      if (welcomeEl?.classList.contains('open') && typeof renderWelcomeStep === 'function') {
-        renderWelcomeStep();
-      }
-
+      // Notify app — it re-renders the welcome step now that auth is confirmed,
+      // and advances from bnet-choice to bnet-import if returning from OAuth.
+      if (typeof onSyncAuthConfirmed === 'function') onSyncAuthConfirmed(user);
       if (user) {
         await pullFromCloud();
-        // Open import modal if the user was routed through loginWithBnet().
+        // Open standalone import modal only when the welcome is not open.
+        // When welcome is open the bnet-import step handles character import inline.
         if (sessionStorage.getItem('azeroth_pending_import')) {
           sessionStorage.removeItem('azeroth_pending_import');
-          if (typeof openImportChars === 'function') {
+          const welcomeOpen = document.getElementById('modal-welcome')?.classList.contains('open');
+          if (!welcomeOpen && typeof openImportChars === 'function') {
             setTimeout(openImportChars, 600);
           }
         }

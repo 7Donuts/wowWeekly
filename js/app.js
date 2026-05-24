@@ -3006,6 +3006,13 @@ const WELCOME_STEPS = [
     interactive: 'bnet-choice',
   },
   {
+    icon: '⬇️',
+    title: 'Import Your Characters',
+    body: 'Select the characters you want to track. All level 80+ characters on your account are listed below.',
+    note: null,
+    interactive: 'bnet-import',
+  },
+  {
     icon: '🧝',
     title: 'Add Your Characters',
     body: 'Each character tracks its own progress independently. Add your main to get started — you can add alts anytime from the character bar.',
@@ -3052,10 +3059,9 @@ function _welcomeIsLoggedIn() {
   return el && el.style.display !== 'none';
 }
 
-// Index of the char-setup step — skipped for Battle.net users.
-const _WELCOME_CHAR_STEP = 2;
-// Index of the list-setup step — destination after bnet-choice for logged-in users.
-const _WELCOME_LIST_STEP = 3;
+const _WELCOME_BNET_IMPORT_STEP = 2;
+const _WELCOME_CHAR_STEP = 3;
+const _WELCOME_LIST_STEP = 4;
 
 function openWelcome() {
   // If the user just returned from Battle.net OAuth, restore the step they left from.
@@ -3092,8 +3098,8 @@ function welcomeNext() {
   if (_welcomeStep === _WELCOME_CHAR_STEP) {
     if (!characters.some(c => c !== 'Main')) return;
   }
-  // Battle.net users jump over char-setup.
-  if (_welcomeStep === _WELCOME_CHAR_STEP - 1 && _welcomeIsLoggedIn()) {
+  // bnet-import and char-setup both jump to list-setup (skipping the other path's step).
+  if (_welcomeStep === _WELCOME_BNET_IMPORT_STEP || _welcomeStep === _WELCOME_CHAR_STEP) {
     _welcomeStep = _WELCOME_LIST_STEP;
     renderWelcomeStep();
     return;
@@ -3103,9 +3109,15 @@ function welcomeNext() {
 }
 
 function welcomeBack() {
-  // Battle.net users jump back over char-setup.
-  if (_welcomeStep === _WELCOME_LIST_STEP && _welcomeIsLoggedIn()) {
-    _welcomeStep = _WELCOME_CHAR_STEP - 1;
+  // bnet-import and char-setup both go back to the bnet-choice step.
+  if (_welcomeStep === _WELCOME_BNET_IMPORT_STEP || _welcomeStep === _WELCOME_CHAR_STEP) {
+    _welcomeStep = 1;
+    renderWelcomeStep();
+    return;
+  }
+  // list-setup goes back to whichever path step the user came from.
+  if (_welcomeStep === _WELCOME_LIST_STEP) {
+    _welcomeStep = _welcomeIsLoggedIn() ? _WELCOME_BNET_IMPORT_STEP : _WELCOME_CHAR_STEP;
     renderWelcomeStep();
     return;
   }
@@ -3133,46 +3145,47 @@ function renderWelcomeStep() {
   // Interactive elements
   const interactEl = document.getElementById('welcome-interactive');
   if (step.interactive === 'bnet-choice') {
-    if (_welcomeIsLoggedIn()) {
-      const tag = document.getElementById('auth-battletag')?.textContent || 'your account';
-      interactEl.innerHTML =
-        '<div class="welcome-bnet-connected">'
-        + '<div class="welcome-bnet-check">✓</div>'
-        + '<div class="welcome-bnet-name">Connected as <strong>' + tag + '</strong></div>'
-        + '<div class="welcome-bnet-sub">Your characters, gear, and raid progress will sync automatically each reset.</div>'
-        + '<button class="armory-btn" style="margin-top:1rem;width:100%;justify-content:center;font-size:13px;" onclick="openImportChars()">'
-        + '⬇ Import Characters from Battle.net'
-        + '</button>'
-        + '</div>';
-    } else {
-      interactEl.innerHTML =
-        '<div class="welcome-bnet-cards">'
-        + '<div class="welcome-bnet-card welcome-bnet-card--primary">'
-        + '<div class="welcome-bnet-card-tag">Recommended</div>'
-        + '<div class="welcome-bnet-card-title">Battle.net Connected</div>'
-        + '<ul class="welcome-feature-list welcome-bnet-list">'
-        + '<li>Import all level 80+ characters from your account</li>'
-        + '<li>Gear, item level &amp; M+ rating sync from Blizzard</li>'
-        + '<li>Raid boss kills auto-checked each reset</li>'
-        + '<li>BiS items checked off when you equip them</li>'
-        + '<li>Progress backed up to the cloud</li>'
-        + '</ul>'
-        + '<button class="welcome-bnet-login-btn" onclick="loginWithBnet()">Connect Battle.net →</button>'
-        + '</div>'
-        + '<div class="welcome-bnet-card">'
-        + '<div class="welcome-bnet-card-tag" style="color:var(--text-muted);">No account needed</div>'
-        + '<div class="welcome-bnet-card-title">Offline Mode</div>'
-        + '<ul class="welcome-feature-list welcome-bnet-list">'
-        + '<li>Add characters by name manually</li>'
-        + '<li>Full task tracker — raids, M+, Delves</li>'
-        + '<li>BiS gear browser for all 40 specs</li>'
-        + '<li>Weekly history &amp; streaks</li>'
-        + '<li>Saves locally in your browser</li>'
-        + '</ul>'
-        + '<button class="welcome-offline-btn" onclick="welcomeNext()">Continue Offline →</button>'
-        + '</div>'
-        + '</div>';
-    }
+    interactEl.innerHTML =
+      '<div class="welcome-bnet-cards">'
+      + '<div class="welcome-bnet-card welcome-bnet-card--primary">'
+      + '<div class="welcome-bnet-card-tag">Recommended</div>'
+      + '<div class="welcome-bnet-card-title">Battle.net Connected</div>'
+      + '<ul class="welcome-feature-list welcome-bnet-list">'
+      + '<li>Import all level 80+ characters from your account</li>'
+      + '<li>Gear, item level &amp; M+ rating sync from Blizzard</li>'
+      + '<li>Raid boss kills auto-checked each reset</li>'
+      + '<li>BiS items checked off when you equip them</li>'
+      + '<li>Progress backed up to the cloud</li>'
+      + '</ul>'
+      + '<button class="welcome-bnet-login-btn" onclick="loginWithBnet()">Connect Battle.net →</button>'
+      + '</div>'
+      + '<div class="welcome-bnet-card">'
+      + '<div class="welcome-bnet-card-tag" style="color:var(--text-muted);">No account needed</div>'
+      + '<div class="welcome-bnet-card-title">Offline Mode</div>'
+      + '<ul class="welcome-feature-list welcome-bnet-list">'
+      + '<li>Add characters by name manually</li>'
+      + '<li>Full task tracker — raids, M+, Delves</li>'
+      + '<li>BiS gear browser for all 40 specs</li>'
+      + '<li>Weekly history &amp; streaks</li>'
+      + '<li>Saves locally in your browser</li>'
+      + '</ul>'
+      + '<button class="welcome-offline-btn" onclick="_welcomeChooseOffline()">Continue Offline →</button>'
+      + '</div>'
+      + '</div>';
+  } else if (step.interactive === 'bnet-import') {
+    interactEl.innerHTML = '<div style="text-align:center;padding:1.5rem 0;color:var(--text-muted);font-style:italic;">Loading characters from Battle.net…</div>';
+    _importChars = [];
+    fetch('/api/characters').then(async function(res) {
+      if (res.status === 401) {
+        interactEl.innerHTML = '<div style="color:var(--color-danger);padding:0.5rem 0;">Session expired — please sign out and in again.</div>';
+        return;
+      }
+      if (!res.ok) throw new Error();
+      _importChars = (await res.json()).map(function(c) { return Object.assign({}, c, { selected: false }); });
+      _renderWelcomeImportList(interactEl);
+    }).catch(function() {
+      interactEl.innerHTML = '<div style="color:var(--color-danger);padding:0.5rem 0;">Could not load characters — check your connection and try again.</div>';
+    });
   } else if (step.interactive === 'list-setup') {
     interactEl.innerHTML = '<div class="welcome-stage-list">'
       + BEGINNER_STAGES.map(s =>
@@ -3212,13 +3225,22 @@ function renderWelcomeStep() {
   backBtn.style.visibility = _welcomeStep === 0 ? 'hidden' : '';
 
   const nextBtn = document.getElementById('welcome-next');
-  nextBtn.textContent = isLast ? "Let's Go!" : 'Next →';
-  // Char-setup: Next is locked until the user has added at least one real character.
-  nextBtn.disabled = (_welcomeStep === _WELCOME_CHAR_STEP && !characters.some(c => c !== 'Main'));
-
-  // Skip intro is hidden on char-setup — a character must be added to continue.
   const skipBtn = document.querySelector('#modal-welcome .welcome-skip');
-  if (skipBtn) skipBtn.style.display = _welcomeStep === _WELCOME_CHAR_STEP ? 'none' : '';
+
+  // bnet-choice: navigation is via the two card buttons — hide Next and Skip.
+  if (_welcomeStep === 1) {
+    nextBtn.style.display = 'none';
+    if (skipBtn) skipBtn.style.display = 'none';
+  } else {
+    nextBtn.style.display = '';
+    nextBtn.textContent = isLast ? "Let's Go!" : 'Next →';
+    // Char-setup: Next is locked until the user has added at least one real character.
+    nextBtn.disabled = (_welcomeStep === _WELCOME_CHAR_STEP && !characters.some(c => c !== 'Main'));
+    // Skip is hidden on char-setup (must add a char) and bnet-import (Next serves as skip).
+    if (skipBtn) {
+      skipBtn.style.display = (_welcomeStep === _WELCOME_CHAR_STEP || _welcomeStep === _WELCOME_BNET_IMPORT_STEP) ? 'none' : '';
+    }
+  }
 }
 
 function welcomeAddChar() {
@@ -3254,6 +3276,87 @@ function welcomeApplyStage(stageId) {
     interactEl.innerHTML = '<div class="welcome-char-success">✓ Your List set up for <strong>' + label + '</strong>!</div>';
   }
   setTimeout(welcomeNext, 900);
+}
+
+function _welcomeChooseOffline() {
+  _welcomeStep = _WELCOME_CHAR_STEP;
+  renderWelcomeStep();
+}
+
+function onSyncAuthConfirmed(user) {
+  const welcomeEl = document.getElementById('modal-welcome');
+  if (!welcomeEl?.classList.contains('open')) return;
+  if (user && _welcomeStep === 1) {
+    // User just authenticated — advance from bnet-choice to the import step.
+    _welcomeStep = _WELCOME_BNET_IMPORT_STEP;
+    // Persist so a cloud-pull reload reopens on bnet-import, not step 0.
+    sessionStorage.setItem('azeroth_welcome_return_step', String(_WELCOME_BNET_IMPORT_STEP));
+  }
+  renderWelcomeStep();
+}
+
+function _renderWelcomeImportList(el) {
+  if (!_importChars.length) {
+    el.innerHTML = '<div style="color:var(--text-muted);padding:0.5rem 0;font-style:italic;">No level 80+ characters found on this account.</div>';
+    return;
+  }
+  var html = '<div style="max-height:240px;overflow-y:auto;margin-bottom:0.75rem;">';
+  _importChars.forEach(function(c, i) {
+    var slug    = c.realmSlug || realmToSlug(c.realm || '');
+    var already = isCharAlreadyAdded(c.name, slug);
+    var classId = _BNET_CLASS_MAP[c.className] || '';
+    var classDef = CLASSES.find(function(x) { return x.id === classId; });
+    var iconHtml = classDef
+      ? '<img src="' + classDef.icon + '" style="width:18px;height:18px;flex-shrink:0;image-rendering:auto;" title="' + c.className + '">'
+      : '<span style="width:18px;height:18px;flex-shrink:0;display:inline-block;"></span>';
+    var fc = _BNET_FACTION_COLOR[c.faction] || 'var(--text-secondary)';
+    if (already) {
+      html += '<div class="task done" style="display:flex;align-items:center;gap:0.6rem;padding:0.45rem 0.6rem;">'
+        + '<div class="task-check"></div>' + iconHtml
+        + '<span style="flex:1;font-family:\'Cinzel\',serif;font-size:13px;">' + c.name + '</span>'
+        + '<span style="font-size:12px;color:var(--text-secondary);">' + c.className + '</span>'
+        + '<span style="font-size:11px;color:' + fc + ';min-width:60px;text-align:right;">' + c.realm + '</span>'
+        + '</div>';
+    } else {
+      html += '<div class="task import-row" id="import-row-' + i + '" onclick="toggleImportChar(' + i + ')" style="display:flex;align-items:center;gap:0.6rem;padding:0.45rem 0.6rem;cursor:pointer;">'
+        + '<div class="task-check"></div>' + iconHtml
+        + '<span style="flex:1;font-family:\'Cinzel\',serif;font-size:13px;">' + c.name + '</span>'
+        + '<span style="font-size:12px;color:var(--text-secondary);">' + c.className + '</span>'
+        + '<span style="font-size:11px;color:' + fc + ';min-width:60px;text-align:right;">' + c.realm + '</span>'
+        + '</div>';
+    }
+  });
+  html += '</div>'
+    + '<button class="btn-primary" style="width:100%;" onclick="_welcomeAddBnetChars()">✓ Add Selected Characters</button>';
+  el.innerHTML = html;
+}
+
+function _welcomeAddBnetChars() {
+  var added = 0;
+  _importChars.forEach(function(c) {
+    if (!c.selected) return;
+    var slug = c.realmSlug || realmToSlug(c.realm || '');
+    if (isCharAlreadyAdded(c.name, slug)) return;
+    var id = charIdentifier(c.name, slug);
+    characters.push(id);
+    localStorage.setItem('wow_midnight_chars', JSON.stringify(characters));
+    var classId = _BNET_CLASS_MAP[c.className] || '';
+    if (classId) saveCharClass(id, classId);
+    if (c.realm)     saveCharRealm(id, c.realm);
+    if (c.realmSlug) saveCharRealmSlug(id, c.realmSlug);
+    added++;
+  });
+  if (added > 0) {
+    renderChars(); render();
+    var interactEl = document.getElementById('welcome-interactive');
+    if (interactEl) {
+      interactEl.innerHTML = '<div class="welcome-char-success">✓ ' + added + ' character' + (added !== 1 ? 's' : '') + ' added — syncing armory data in the background…</div>';
+    }
+    if (typeof autoSyncArmory === 'function') autoSyncArmory();
+    setTimeout(welcomeNext, 1200);
+  } else {
+    welcomeNext();
+  }
 }
 
 /* ── WHAT'S NEW ── */
