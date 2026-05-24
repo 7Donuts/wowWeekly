@@ -69,7 +69,7 @@ header::before {
   position: absolute;
   inset: 0;
   background: url('/img/og-image.png') center 38% / cover no-repeat;
-  opacity: 0.18;
+  opacity: 0.32;
   pointer-events: none;
   z-index: 0;
 }
