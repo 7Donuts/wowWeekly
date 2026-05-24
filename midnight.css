@@ -2428,6 +2428,17 @@ body.light-mode .welcome-note { border-color: rgba(139,26,26,0.35); }
   transition: color 0.15s;
 }
 .wn-changelog-link:hover { color: var(--void-glow); }
+.wn-replay-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 0.25rem 0.75rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.wn-replay-btn:hover { color: var(--void-glow); border-color: var(--void-glow); }
 .wn-dismiss-wrap {
   text-align: center;
   margin-top: 0.75rem;
