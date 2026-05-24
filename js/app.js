@@ -3059,9 +3059,10 @@ const _WELCOME_LIST_STEP = 3;
 
 function openWelcome() {
   // If the user just returned from Battle.net OAuth, restore the step they left from.
+  // Do NOT remove the key here — initSync() removes it after auth is confirmed so that
+  // a cloud-pull reload doesn't lose the step before auth has been checked.
   const savedStep = sessionStorage.getItem('azeroth_welcome_return_step');
   if (savedStep !== null) {
-    sessionStorage.removeItem('azeroth_welcome_return_step');
     _welcomeStep = parseInt(savedStep, 10) || 0;
   } else {
     _welcomeStep = 0;
