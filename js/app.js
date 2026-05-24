@@ -3087,6 +3087,7 @@ function openWelcome() {
 
 function closeWelcome() {
   localStorage.setItem('wow_mn_welcomed', '1');
+  sessionStorage.removeItem('azeroth_welcome_return_step');
   document.getElementById('modal-welcome').classList.remove('open');
   if (shouldShowWhatsNew()) openWhatsNew();
 }
