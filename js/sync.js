@@ -130,6 +130,15 @@
       updateAuthUI(user);
       if (user) {
         await pullFromCloud();
+        // Open import modal if the user was routed through loginWithBnet().
+        // Skip if the welcome modal is already open — it has its own Import button.
+        if (sessionStorage.getItem('azeroth_pending_import')) {
+          sessionStorage.removeItem('azeroth_pending_import');
+          const welcomeOpen = document.getElementById('modal-welcome')?.classList.contains('open');
+          if (!welcomeOpen && typeof openImportChars === 'function') {
+            setTimeout(openImportChars, 600);
+          }
+        }
         if (typeof autoSyncArmory === 'function') autoSyncArmory();
       }
     } catch (_) {}

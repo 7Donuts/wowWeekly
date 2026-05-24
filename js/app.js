@@ -3058,7 +3058,14 @@ const _WELCOME_CHAR_STEP = 2;
 const _WELCOME_LIST_STEP = 3;
 
 function openWelcome() {
-  _welcomeStep = 0;
+  // If the user just returned from Battle.net OAuth, restore the step they left from.
+  const savedStep = sessionStorage.getItem('azeroth_welcome_return_step');
+  if (savedStep !== null) {
+    sessionStorage.removeItem('azeroth_welcome_return_step');
+    _welcomeStep = parseInt(savedStep, 10) || 0;
+  } else {
+    _welcomeStep = 0;
+  }
   renderWelcomeStep();
   document.getElementById('modal-welcome').classList.add('open');
 }
@@ -3067,6 +3074,16 @@ function closeWelcome() {
   localStorage.setItem('wow_mn_welcomed', '1');
   document.getElementById('modal-welcome').classList.remove('open');
   if (shouldShowWhatsNew()) openWhatsNew();
+}
+
+function loginWithBnet() {
+  // Flag tells initSync to open the import modal after OAuth returns.
+  sessionStorage.setItem('azeroth_pending_import', '1');
+  // If inside the welcome flow, remember which step to return to.
+  if (document.getElementById('modal-welcome')?.classList.contains('open')) {
+    sessionStorage.setItem('azeroth_welcome_return_step', String(_welcomeStep));
+  }
+  window.location.href = '/auth/login?region=us';
 }
 
 function welcomeNext() {
@@ -3139,7 +3156,7 @@ function renderWelcomeStep() {
         + '<li>BiS items checked off when you equip them</li>'
         + '<li>Progress backed up to the cloud</li>'
         + '</ul>'
-        + '<a href="/auth/login?region=us" class="welcome-bnet-login-btn">Connect Battle.net →</a>'
+        + '<button class="welcome-bnet-login-btn" onclick="loginWithBnet()">Connect Battle.net →</button>'
         + '</div>'
         + '<div class="welcome-bnet-card">'
         + '<div class="welcome-bnet-card-tag" style="color:var(--text-muted);">No account needed</div>'
