@@ -25,7 +25,7 @@ const SECTIONS = [
     categories: ['voidforge', 'currency'],
     priority: 1,
     tasks: [
-      { id: 'vf1', name: 'Check Voidforge quest status — visit Decimus at 51.2, 68.4 in The Voidstorm',
+      { id: 'vf1', name: 'Check Voidforge quest status: visit Decimus at 51.2, 68.4 in The Voidstorm',
         desc: 'Requires campaign completion up to "Domus Penumbra." If behind, Decimus offers all 6 catch-up weeks at once.',
         tags: ['tag-void', 'tag-new'] },
       { id: 'vf2', name: 'Complete this week\'s Voidforge quest',
@@ -68,7 +68,7 @@ const SECTIONS = [
           {at:2, note:'2 / 3 Nightmare hunts done'},
           {at:3, note:'✓ Weekly Prey quest complete'},
         ]},
-        name: 'Nightmare Prey Hunts (weekly quest — 3 kills)',
+        name: 'Nightmare Prey Hunts (weekly quest: 3 kills)',
         desc: 'Rewards Champion-level gear (ilvl 246–263). Also drops Nebulous Voidcores for bonus rolls. Core Icy Veins weekly priority.',
         tags: ['tag-world', 'tag-void'] },
       { id: 'pr3', name: 'Check Prey target list for transmog / mount / housing drops',
@@ -87,7 +87,7 @@ const SECTIONS = [
     priority: 1,
     tasks: [
       { id: 'd1', name: 'Use Trovehunter\'s Bounty in highest tier Delve possible',
-        desc: 'Trovehunter\'s Bounty reveals the Hidden Trove inside a Delve. Always use it at your highest manageable tier — Champion gear at T1–T7, Hero gear at T8+. One use per week.',
+        desc: 'Trovehunter\'s Bounty reveals the Hidden Trove inside a Delve. Always use it at your highest manageable tier: Champion gear at T1–T7, Hero gear at T8+. One use per week.',
         tags: ['tag-delve', 'tag-gold'] },
       { id: 'd_bountiful', goal: {max:4, label:'delves', milestones:[
           {at:1, note:'1 / 4 Bountiful Delves done'},
@@ -110,7 +110,7 @@ const SECTIONS = [
     icon: '', iconClass: 'icon-currency',
     title: 'Upgrades',
     url: 'https://www.icy-veins.com/wow/midnight-pve-gearing-guide',
-    meta: 'Weekly caps — spend before reset or lose value',
+    meta: 'Weekly caps: spend before reset or lose value',
     categories: ['currency'],
     priority: 1,
     tasks: [
@@ -137,7 +137,7 @@ const SECTIONS = [
     icon: '', iconClass: 'icon-vault',
     title: 'Great Vault',
     url: 'https://www.icy-veins.com/wow/great-vault-guide',
-    meta: 'Opens Tuesday reset — claim before doing anything else',
+    meta: 'Opens Tuesday reset. Claim before anything else.',
     categories: ['currency'],
     priority: 1,
     tasks: [
@@ -157,7 +157,7 @@ const SECTIONS = [
     icon: '', iconClass: 'icon-mythic',
     title: 'Mythic+ Dungeons',
     url: 'https://www.icy-veins.com/wow/midnight-mythic-season-1-guide',
-    meta: 'No lockout — farm freely · Vault slots unlock at 1 / 4 / 8 runs',
+    meta: 'No lockout. Farm freely. Vault slots unlock at 1 / 4 / 8 runs.',
     categories: ['mythic'],
     priority: 2,
     tasks: [
@@ -199,7 +199,7 @@ const SECTIONS = [
     icon: '', iconClass: 'icon-bazaar',
     title: 'Bazaar Weekly Quests',
     url: 'https://www.icy-veins.com/wow/weekly-to-do-list',
-    meta: 'Free weekly value — easy to forget, never skip',
+    meta: 'Free weekly value. Easy to forget; never skip.',
     categories: ['world', 'currency'],
     priority: 2,
     tasks: [
@@ -210,13 +210,13 @@ const SECTIONS = [
         desc: 'Second free Ranger\'s Cache weekly. Takes minutes and runs naturally alongside Void Assault activity.',
         tags: ['tag-world', 'tag-gold'] },
       { id: 'bq3', name: 'Complete Weekly World Event quest from Lady Liadrin',
-        desc: 'Rewards a Spark — used for crafted gear progression.',
+        desc: 'Rewards a Spark (used for crafted gear progression).',
         tags: ['tag-world', 'tag-gold'] },
       { id: 'bq4', name: 'Complete Housing Weekly quest from Vaeli (outside Silvermoon bank)',
         desc: 'Weekly housing quest for decor rewards and housing progression.',
         tags: ['tag-housing', 'tag-world'] },
       { id: 'bq5', name: "Complete Halduron Brightwing's Renown Dungeon Quest",
-        desc: "Weekly dungeon assigned by Halduron Brightwing at The Bazaar. Completing the specified dungeon rewards 1,500 Renown rep with your chosen faction. The dungeon rotates each reset — check Halduron for this week's assignment.",
+        desc: "Weekly dungeon assigned by Halduron Brightwing at The Bazaar. Completing the specified dungeon rewards 1,500 Renown rep with your chosen faction. The dungeon rotates each reset. Check Halduron for this week's assignment.",
         tags: ['tag-world', 'tag-gold'] },
     ]
   },
@@ -226,7 +226,7 @@ const SECTIONS = [
     icon: '⚒️', iconClass: 'icon-crafting',
     title: 'Professions',
     url: 'https://www.icy-veins.com/wow/professions-guide',
-    meta: 'Weekly profession content — knowledge points, crafting orders, contracts',
+    meta: 'Weekly profession content: knowledge points, crafting orders, contracts',
     categories: ['professions'],
     priority: 2,
     tasks: [
