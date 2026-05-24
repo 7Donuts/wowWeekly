@@ -1,5 +1,6 @@
 /* -----------------------------------------------------------
-   TASK DATA  —  Patch 12.0.5 Lingering Shadows  (May 2026)
+   TASK DATA  —  Patches 12.0.5–12.0.6 Lingering Shadows  (May 2026)
+   12.0.7 content (Showdown Zones) arrives June 16.
    Sources: Icy Veins weekly to-do list, Icy Veins world
    events guide, Mythic-Store weekly checklist.
    No raid content included by design.
@@ -214,6 +215,33 @@ const SECTIONS = [
       { id: 'bq4', name: 'Complete Housing Weekly quest from Vaeli (outside Silvermoon bank)',
         desc: 'Weekly housing quest for decor rewards and housing progression.',
         tags: ['tag-housing', 'tag-world'] },
+      { id: 'bq5', name: "Complete Halduron Brightwing's Renown Dungeon Quest",
+        desc: "Weekly dungeon assigned by Halduron Brightwing at The Bazaar. Completing the specified dungeon rewards 1,500 Renown rep with your chosen faction. The dungeon rotates each reset — check Halduron for this week's assignment.",
+        tags: ['tag-world', 'tag-gold'] },
+    ]
+  },
+
+  {
+    id: 'professions',
+    icon: '⚒️', iconClass: 'icon-crafting',
+    title: 'Professions',
+    url: 'https://www.icy-veins.com/wow/professions-guide',
+    meta: 'Weekly profession content — knowledge points, crafting orders, contracts',
+    categories: ['professions'],
+    priority: 2,
+    tasks: [
+      { id: 'pf1', name: 'Complete Weekly Profession Quest (Silvermoon trainer)',
+        desc: 'Pick up from your profession trainer near the Silvermoon Forgegrounds. Rewards Knowledge Points to advance your profession skill tree. One quest per profession per week.',
+        tags: ['tag-world', 'tag-gold'] },
+      { id: 'pf2', goal: {max:5, label:'orders'}, name: 'Fill Crafting Orders at the Forgegrounds',
+        desc: 'Public and guild crafting orders available at the Forgegrounds in Silvermoon. Fill orders to earn tips, crafting experience, and Patron Order completions for special rewards.',
+        tags: ['tag-world', 'tag-gold'] },
+      { id: 'pf3', name: 'Complete Darkmoon Faire profession quests (once per month)',
+        desc: 'When Darkmoon Faire is active (first week of each month), complete your profession quests at the Faire for +2 skill points and +3 Knowledge Points per profession.',
+        tags: ['tag-world', 'tag-optional'] },
+      { id: 'pf4', name: 'Renew Inscription Contracts (if applicable)',
+        desc: 'Inscriptionists: craft and apply faction Contracts to earn bonus reputation on every World Quest completion. Contracts expire weekly — reapply each reset.',
+        tags: ['tag-gold', 'tag-optional'] },
     ]
   },
 
@@ -247,6 +275,12 @@ const SECTIONS = [
       { id: 'we5', name: 'Legends of the Haranir — complete Lost Legends weekly (Harandar)',
         desc: 'Choose one of 7 Hara\'ti relics and play through its history in a scenario. Rewards Avid Learner\'s Supply Pack (counts as a Midnight Weekly Cache) + 1,000 Hara\'ti rep + a housing decor item based on your relic choice.',
         tags: ['tag-world', 'tag-housing'] },
+      { id: 'we6', name: 'Timewalking — complete 5 Timewalking dungeons for weekly quest',
+        desc: 'When Timewalking is the active bonus event (check Adventure Guide), complete 5 Timewalking dungeons to earn the weekly quest reward — a piece of current-tier loot. Uses a scaled version of your character in classic dungeons.',
+        tags: ['tag-world', 'tag-gold'] },
+      { id: 'we7', name: 'Turbulent Timeways — complete Timewalking bonus event quest (if active)',
+        desc: 'Special event rotating through Dragonflight Timewalking. Complete the weekly quest for a mount reward. Check the Adventure Guide to see if this event is currently active this week.',
+        tags: ['tag-world', 'tag-optional'] },
     ]
   },
 
@@ -413,6 +447,18 @@ const SECTIONS = [
       { id: 'pv3', name: 'Complete PvP Weekly Bonus Event quest (if active)',
         desc: 'Check Adventure Guide. Rewards Honor + gear when PvP is the featured weekly activity.',
         tags: ['tag-pvp', 'tag-gold'] },
+      { id: 'pv4', name: 'Queue Rated Arena — 2v2 for accessible rated play',
+        desc: 'Most accessible rated PvP format. Awards Conquest toward the weekly cap, gear, and contributes to your rating. A few matches each week keeps progression moving.',
+        tags: ['tag-pvp'] },
+      { id: 'pv5', name: 'Queue Rated Arena — 3v3 for Conquest and rating',
+        desc: 'Higher skill ceiling than 2v2 with the same Conquest rewards. Best for players with a consistent two-partner group.',
+        tags: ['tag-pvp'] },
+      { id: 'pv6', name: 'Queue Solo Shuffle for solo rated PvP',
+        desc: '6-player round-robin rated format — each player scores independently, no premade partner needed. Rewards Conquest and a personal rating. Ideal for solo players.',
+        tags: ['tag-pvp'] },
+      { id: 'pv7', name: 'Queue Rated Battlegrounds for team play',
+        desc: '10v10 rated format (Epic BGs at 40v40). Best Conquest per hour for organised groups. Rewards Conquest, gear, and battleground-exclusive cosmetics.',
+        tags: ['tag-pvp'] },
     ]
   },
 
@@ -437,6 +483,27 @@ const SECTIONS = [
       { id: 'va4', name: 'Complete Void Assault weekly quest',
         desc: 'Rewards Ranger\'s Cache Pinnacle cache. Worth doing even if you no longer need Veteran-quality gear.',
         tags: ['tag-void', 'tag-gold'] },
+    ]
+  },
+
+  {
+    id: 'showdown-zones',
+    icon: '⚔️', iconClass: 'icon-pvp',
+    title: 'Showdown Zones',
+    url: 'https://www.icy-veins.com/wow/showdown-zones-guide',
+    meta: '🚧 Coming June 16 · Patch 12.0.7 · Open-world PvPvE content rotating weekly',
+    categories: ['world', 'pvp'],
+    priority: 3,
+    tasks: [
+      { id: 'sz1', name: '[Coming June 16] Check active Showdown Zone — follow portal from Silvermoon',
+        desc: 'Patch 12.0.7 · Showdown Zones are rotating open-world areas with mixed PvPvE objectives. A new zone activates each weekly reset. Access via the portal in Silvermoon City.',
+        tags: ['tag-world', 'tag-pvp'] },
+      { id: 'sz2', name: '[Coming June 16] Complete Showdown Zone activities',
+        desc: 'Patch 12.0.7 · Each zone has unique objectives — capture points, supply runs, and player elimination targets. Rewards gear, currency, and zone-exclusive cosmetics.',
+        tags: ['tag-world', 'tag-pvp', 'tag-gold'] },
+      { id: 'sz3', name: '[Coming June 16] Kill World Boss in the active Showdown Zone',
+        desc: 'Patch 12.0.7 · Each active Showdown Zone contains a World Boss encounter, unlocked by completing zone activities. Rewards Champion-quality loot. One kill per character per week.',
+        tags: ['tag-world', 'tag-pvp', 'tag-gold'] },
     ]
   },
 
@@ -486,7 +553,7 @@ const BEGINNER_STAGES = [
     sublabel: 'ilvl 220–232 · Pushing into Veteran content',
     color: 'var(--light-gold)',
     tasks: [
-      'bq1','bq2','bq3',
+      'bq1','bq2','bq3','bq5',     // Bazaar weeklies incl. Halduron
       'we0a','we0b',
       'va2','va3','va4',
       'we1','we4','we2','we3',
@@ -495,6 +562,7 @@ const BEGINNER_STAGES = [
       'd1',                        // Trovehunter's Bounty
       'd_bountiful',
       'd3',
+      'pf1','pf2',                 // Weekly Profession Quest + Crafting Orders
       'v1','v2',
       'cu1','cu2','cu5',           // Crests + Catalyst + Dawncrest crafting
       'vf1','vf2','vf3',           // Voidforge questline
@@ -506,15 +574,17 @@ const BEGINNER_STAGES = [
     sublabel: 'ilvl 233–249 · Solo content fully unlocked',
     color: 'var(--void-glow)',
     tasks: [
-      'bq1','bq2','bq3',
+      'bq1','bq2','bq3','bq5',
       'we0a','we0b',
       'va2','va3','va4',
-      'we1','we4','we2','we3','we5',
+      'we1','we4','we2','we3','we5','we6',
       'pr_norm','pr_hard','pr_nm', // All three Prey difficulties
       'pr3',                       // Prey transmog check
       'rs1',
       'd1','d_bountiful','d3',
       'm1','m4','m5',              // Mythic+ for vault + Crests
+      'pf1','pf2','pf3','pf4',     // Full professions
+      'pv4','pv6',                 // Rated Arena 2v2 + Solo Shuffle
       'v1','v2',
       'cu1','cu2','cu3','cu4','cu5',
       'vf1','vf2','vf3','vf4',
@@ -526,10 +596,10 @@ const BEGINNER_STAGES = [
     sublabel: 'ilvl 250+ · Maximising every weekly system',
     color: '#c0b8d8',
     tasks: [
-      'bq1','bq2','bq3',
+      'bq1','bq2','bq3','bq5',
       'we0a','we0b',
       'va2','va3','va4',
-      'we1','we4','we2','we3','we5',
+      'we1','we4','we2','we3','we5','we6',
       'pr_hard','pr_nm','pr3',
       'rs1',
       'd1','d_bountiful','d2','d3',
@@ -538,6 +608,8 @@ const BEGINNER_STAGES = [
       'vs_h','vs_m',               // Voidspire Heroic + Mythic
       'mq_h','mq_m',               // March on Quel'Danas Heroic + Mythic
       'ra8',                       // Weekly raid quest
+      'pf1','pf2','pf3','pf4',
+      'pv1','pv4','pv5','pv6','pv7', // Full PvP rotation
       'v1','v2',
       'cu1','cu2','cu3','cu4','cu5',
       'vf1','vf2','vf3','vf4',

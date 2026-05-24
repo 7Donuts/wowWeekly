@@ -9,6 +9,18 @@
 ------------------------------------------- */
 const VERSIONS = [
   {
+    version: 'v2.3.0',
+    date: 'May 24, 2026',
+    summary: 'New task sections — Professions, Timewalking, rated PvP, Showdown Zones (coming June 16)',
+    entries: [
+      { type: 'content', text: 'Professions section added — Weekly Profession Quest, Crafting Orders, Darkmoon Faire quests, and Inscription Contracts', detail: 'Tracks all repeatable profession content available each week in Silvermoon. Professions are now included in the Gearing, Progressing, and Endgame beginner presets.' },
+      { type: 'content', text: "Halduron Brightwing's weekly Renown Dungeon Quest added to the Bazaar section", detail: 'Grants 1,500 Renown rep with your chosen faction. The assigned dungeon rotates each reset.' },
+      { type: 'content', text: 'Timewalking tasks added to World Events — weekly 5-dungeon quest and Turbulent Timeways bonus event', detail: 'These tasks are visible each week but only active when Timewalking is the featured bonus event in the Adventure Guide.' },
+      { type: 'content', text: 'Rated PvP formats added to the PvP section — Rated Arena 2v2, Rated Arena 3v3, Solo Shuffle, and Rated Battlegrounds', detail: 'Solo Shuffle and 2v2 are included in the Progressing and Endgame beginner presets as accessible weekly Conquest sources.' },
+      { type: 'content', text: 'Showdown Zones section added (coming June 16 · Patch 12.0.7) — zone portal check, activities, and weekly World Boss', detail: 'Open-world PvPvE content with a rotating zone each week. Tasks are marked Coming June 16 until the patch releases.' },
+    ]
+  },
+  {
     version: 'v2.2.0',
     date: 'May 23, 2026',
     summary: 'Cross-device cloud sync, character management overhaul, realm-aware identifiers',
