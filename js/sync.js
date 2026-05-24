@@ -34,6 +34,7 @@
     if (key === 'wow_mn_compact')       return false;   // device-local UI pref
     if (key === 'wow_mn_welcomed')      return false;   // device-local: has this device seen the welcome
     if (key === 'wow_mn_seen_version')  return false;   // device-local: has this device seen the changelog
+    if (key === 'wow_mn_last_battletag') return false;  // device-local: cached battletag for optimistic UI
     return true;
   }
 
@@ -107,20 +108,55 @@
     const syncEl   = document.getElementById('btn-sync-all');
     if (!loginEl) return;
     if (user) {
+      localStorage.setItem('wow_mn_last_battletag', user.battletag);
       loginEl.style.display = 'none';
       if (logoutEl)  logoutEl.style.display  = '';
-      if (dotEl)     dotEl.style.display      = '';
-      if (nameEl)    { nameEl.textContent = user.battletag; nameEl.style.display = ''; }
-      if (importEl)  importEl.style.display   = '';
-      if (syncEl)    syncEl.style.display     = '';
+      if (dotEl)     dotEl.style.display     = '';
+      if (nameEl)    {
+        nameEl.textContent   = user.battletag;
+        nameEl.style.display = '';
+        nameEl.style.opacity = '';   // clear pending dim
+        nameEl.title         = '';   // clear "Verifying…" tooltip
+      }
+      if (importEl)  importEl.style.display = '';
+      if (syncEl)    syncEl.style.display   = '';
     } else {
+      const hadSession = !!localStorage.getItem('wow_mn_last_battletag');
+      localStorage.removeItem('wow_mn_last_battletag');
       loginEl.style.display = '';
       if (logoutEl)  logoutEl.style.display  = 'none';
-      if (dotEl)     dotEl.style.display      = 'none';
-      if (importEl)  importEl.style.display   = 'none';
-      if (syncEl)    syncEl.style.display     = 'none';
-      if (nameEl)    nameEl.style.display     = 'none';
+      if (dotEl)     dotEl.style.display     = 'none';
+      if (importEl)  importEl.style.display  = 'none';
+      if (syncEl)    syncEl.style.display    = 'none';
+      if (nameEl)    { nameEl.style.display = 'none'; nameEl.style.opacity = ''; nameEl.title = ''; }
+      if (hadSession && typeof showToast === 'function') {
+        showToast('Session expired — click 🔑 Battle.net to sign in again.');
+      }
     }
+  }
+
+  // Apply last-known auth state immediately so returning users see their battletag
+  // right away instead of the "🔑 Battle.net" logged-out state while the /api/user
+  // check is in flight. The name is shown dimmed until the server confirms.
+  function _applyOptimisticAuth() {
+    const tag = localStorage.getItem('wow_mn_last_battletag');
+    if (!tag) return;
+    const loginEl = document.getElementById('auth-login');
+    const nameEl  = document.getElementById('auth-battletag');
+    const dotEl   = document.getElementById('auth-dot');
+    if (loginEl) loginEl.style.display = 'none';
+    if (dotEl)   dotEl.style.display   = '';
+    if (nameEl)  {
+      nameEl.textContent   = tag;
+      nameEl.style.display = '';
+      nameEl.style.opacity = '0.45';
+      nameEl.title         = 'Verifying session…';
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _applyOptimisticAuth);
+  } else {
+    _applyOptimisticAuth();
   }
 
   async function initSync() {
