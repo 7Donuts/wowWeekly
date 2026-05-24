@@ -16,8 +16,8 @@ async function armorySync(charName) {
     const params = new URLSearchParams({ char: charDisplayName(charName).toLowerCase(), realm: slug });
     const res    = await fetch('/api/armory?' + params);
 
-    if (res.status === 401) { showToast('Session expired — please log in again.'); return; }
-    if (res.status === 404) { showToast('Character not found on Battle.net — check name and realm.'); return; }
+    if (res.status === 401) { showToast('Session expired. Please log in again.'); return; }
+    if (res.status === 404) { showToast('Character not found on Battle.net. Check the name and realm.'); return; }
     if (!res.ok)            { showToast('Armory sync failed. Please try again.'); return; }
 
     const armory = await res.json();
@@ -37,7 +37,7 @@ async function armorySync(charName) {
     render();
 
     const spec = [armory.spec, armory.className].filter(Boolean).join(' ');
-    showToast(charDisplayName(charName) + ' synced — ' + spec + ' · iLvl ' + armory.ilvl + (armory.mythicRating ? ' · M+ ' + armory.mythicRating : ''));
+    showToast(charDisplayName(charName) + ' synced: ' + spec + ' · iLvl ' + armory.ilvl + (armory.mythicRating ? ' · M+ ' + armory.mythicRating : ''));
   } catch (_) {
     showToast('Armory sync failed. Please try again.');
   }
@@ -224,7 +224,7 @@ async function syncAllCharsButton() {
   const toSync = chars.filter(c => loadCharRealmSlug(c));
 
   if (!toSync.length) {
-    showToast('No characters with a realm set — use ✏️ to add realm names first.');
+    showToast('No characters with a realm set. Use ✏️ to add realm names first.');
     return;
   }
 
@@ -237,7 +237,7 @@ async function syncAllCharsButton() {
       const slug   = loadCharRealmSlug(charName);
       const params = new URLSearchParams({ char: charDisplayName(charName).toLowerCase(), realm: slug });
       const res    = await fetch('/api/armory?' + params);
-      if (res.status === 401) { showToast('Session expired — please log in again.'); break; }
+      if (res.status === 401) { showToast('Session expired. Please log in again.'); break; }
       if (!res.ok) continue;
 
       const armory = await res.json();
@@ -260,7 +260,7 @@ async function syncAllCharsButton() {
   if (typeof renderChars === 'function') renderChars();
   if (typeof renderClassLinksBar === 'function') renderClassLinksBar();
   if (typeof render === 'function') render();
-  showToast(synced ? `Synced ${synced} character${synced !== 1 ? 's' : ''}` : 'Sync failed — check your connection.');
+  showToast(synced ? `Synced ${synced} character${synced !== 1 ? 's' : ''}` : 'Sync failed. Check your connection.');
 }
 
 /* ── TOAST ── */

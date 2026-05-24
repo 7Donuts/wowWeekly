@@ -438,8 +438,8 @@ const SECTIONS = [
     categories: ['pvp'],
     priority: 3,
     tasks: [
-      { id: 'pv1', goal: {max:1750, label:'conquest'}, name: 'Earn weekly Conquest cap',
-        desc: 'Fastest via Rated BGs and Arena (2v2 / 3v3). Conquest cap increases each week of the season.',
+      { id: 'pv1', name: 'Hit the weekly Conquest cap (1,750)',
+        desc: 'Check off when you reach 1,750 Conquest for the week. Earned fastest through Rated BGs and Arena. The cap increases each week of the season.',
         tags: ['tag-pvp'] },
       { id: 'pv2', name: 'Queue Decor Duels: Prop hunt PvP in instanced Silvermoon City',
         desc: '12.0.5 new mode. No combat involved: hide using housing decor to blend in. Recommended even for PvP-averse players. Rewards housing decor.',
@@ -454,7 +454,7 @@ const SECTIONS = [
         desc: 'Higher skill ceiling than 2v2 with the same Conquest rewards. Best for players with a consistent two-partner group.',
         tags: ['tag-pvp'] },
       { id: 'pv6', name: 'Queue Solo Shuffle for solo rated PvP',
-        desc: '6-player round-robin rated format — each player scores independently, no premade partner needed. Rewards Conquest and a personal rating. Ideal for solo players.',
+        desc: '6-player round-robin rated format: each player scores independently, no premade partner needed. Rewards Conquest and a personal rating. Ideal for solo players.',
         tags: ['tag-pvp'] },
       { id: 'pv7', name: 'Queue Rated Battlegrounds for team play',
         desc: '10v10 rated format (Epic BGs at 40v40). Best Conquest per hour for organised groups. Rewards Conquest, gear, and battleground-exclusive cosmetics.',
@@ -475,7 +475,7 @@ const SECTIONS = [
         desc: 'Void Strikes rotate weekly between Eversong Woods and Zul\'Aman. Check your map at reset.',
         tags: ['tag-void', 'tag-new'] },
       { id: 'va2', goal: {max:5, label:'strikes'}, name: 'Complete Void Strikes in the active zone',
-        desc: 'Smaller targeted attacks — easily soloable or in a small group. Defeating one spawns another nearby. Each awards Field Accolades.',
+        desc: 'Smaller targeted attacks, easily soloable or in a small group. Defeating one spawns another nearby. Each awards Field Accolades.',
         tags: ['tag-void', 'tag-world'] },
       { id: 'va3', name: 'Participate in the Void Incursion (once bar reaches 100%)',
         desc: 'Larger assault requiring more players. Triggered by clearing enough Void Strikes. Best Void Assault rewards.',
@@ -495,11 +495,11 @@ const SECTIONS = [
     categories: ['world', 'pvp'],
     priority: 3,
     tasks: [
-      { id: 'sz1', name: '[Coming June 16] Check active Showdown Zone — follow portal from Silvermoon',
+      { id: 'sz1', name: '[Coming June 16] Check active Showdown Zone: follow portal from Silvermoon',
         desc: 'Patch 12.0.7 · Showdown Zones are rotating open-world areas with mixed PvPvE objectives. A new zone activates each weekly reset. Access via the portal in Silvermoon City.',
         tags: ['tag-world', 'tag-pvp'] },
       { id: 'sz2', name: '[Coming June 16] Complete Showdown Zone activities',
-        desc: 'Patch 12.0.7 · Each zone has unique objectives — capture points, supply runs, and player elimination targets. Rewards gear, currency, and zone-exclusive cosmetics.',
+        desc: 'Patch 12.0.7 · Each zone has unique objectives: capture points, supply runs, and player elimination targets. Rewards gear, currency, and zone-exclusive cosmetics.',
         tags: ['tag-world', 'tag-pvp', 'tag-gold'] },
       { id: 'sz3', name: '[Coming June 16] Kill World Boss in the active Showdown Zone',
         desc: 'Patch 12.0.7 · Each active Showdown Zone contains a World Boss encounter, unlocked by completing zone activities. Rewards Champion-quality loot. One kill per character per week.',
@@ -511,11 +511,11 @@ const SECTIONS = [
     id: 'optional',
     icon: '', iconClass: 'icon-optional',
     title: 'Optional & Collector Content',
-    meta: '12.0.5 permanent side content — no core power progression, great for collectors',
+    meta: '12.0.5 permanent side content: no core power progression, great for collectors',
     categories: ['optional'],
     priority: 3,
     tasks: [
-      { id: 'op1', name: 'Abyss Anglers — visit Depthdiver Jeju at 68.2, 20.0 off Zul\'Aman coast',
+      { id: 'op1', name: 'Abyss Anglers: Visit Depthdiver Jeju at 68.2, 20.0 off Zul\'Aman coast',
         desc: 'Deep-sea spearfishing activity. Earns Angler Pearls for new armor sets, housing decor, pets, and a floppy fish mace. Upgrade diving gear to reach deeper zones with better treasure.',
         tags: ['tag-optional', 'tag-housing', 'tag-new'] },
       { id: 'op2', goal: {max:8, label:'shards'}, name: 'Collect up to 8 Shards of Dundun for Abundance runs',
@@ -530,7 +530,7 @@ const SECTIONS = [
 const BEGINNER_STAGES = [
   {
     id: 'fresh',
-    label: 'Fresh 80 — Just hit max level',
+    label: 'Fresh 80: Just hit max level',
     sublabel: 'ilvl ~200–219 · Adventurer gear is your target',
     color: 'var(--success-bright)',
     tasks: [
@@ -549,7 +549,7 @@ const BEGINNER_STAGES = [
   },
   {
     id: 'gearing',
-    label: 'Early Gearing — Building toward Veteran',
+    label: 'Early Gearing: Building toward Veteran',
     sublabel: 'ilvl 220–232 · Pushing into Veteran content',
     color: 'var(--light-gold)',
     tasks: [
@@ -570,7 +570,7 @@ const BEGINNER_STAGES = [
   },
   {
     id: 'progressing',
-    label: 'Progressing — Veteran to Champion',
+    label: 'Progressing: Veteran to Champion',
     sublabel: 'ilvl 233–249 · Solo content fully unlocked',
     color: 'var(--void-glow)',
     tasks: [
@@ -592,7 +592,7 @@ const BEGINNER_STAGES = [
   },
   {
     id: 'endgame',
-    label: 'Solo Endgame — Champion and beyond',
+    label: 'Solo Endgame: Champion and beyond',
     sublabel: 'ilvl 250+ · Maximising every weekly system',
     color: '#c0b8d8',
     tasks: [

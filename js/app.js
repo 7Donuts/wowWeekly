@@ -186,9 +186,9 @@ function toggleYourListView() {
    RENDER
 ═══════════════════════════════════════════ */
 const PRIORITY_META = {
-  1: ['p1', '⬡ Do First — highest weekly value'],
-  2: ['p2', '◈ Important — fill out your week'],
-  3: ['p3', '◇ Optional — collector & side content'],
+  1: ['p1', '⬡ Do First: highest weekly value'],
+  2: ['p2', '◈ Important: fill out your week'],
+  3: ['p3', '◇ Optional: collector & side content'],
 };
 
 function tagLabel(cls) {
@@ -250,7 +250,7 @@ function sectionTaskHtml(t, done, hidden, yourList, goals, bossKills, notes) {
     t.bosses.forEach(function(b) {
       const killed = !!(bossKills || {})[id + '_' + b.id];
       bossHtml += '<button class="boss-bubble' + (killed ? ' killed' : '') + '"'
-        + ' title="' + b.name + ' — click to mark killed"'
+        + ' title="' + b.name + ': click to mark killed"'
         + ' onclick="event.stopPropagation();toggleBoss(\'' + id + '\',\'' + b.id + '\')"'
         + ' oncontextmenu="event.preventDefault();window.open(\'' + b.url + '\',\'_blank\')">'
         + b.name + '</button>';
@@ -1332,7 +1332,7 @@ function dismissEventAlert(key) {
 ═══════════════════════════════════════════ */
 function generateShareURL() {
   const list = loadYourList();
-  if (!list.length) { alert('Your List is empty — add some tasks first.'); return; }
+  if (!list.length) { alert('Your List is empty. Add some tasks first.'); return; }
   const url = window.location.origin + window.location.pathname + '#plan=' + list.join(',');
   navigator.clipboard.writeText(url).then(() => {
     showShareToast('🔗 Link copied to clipboard!');
@@ -1479,7 +1479,7 @@ function renderLastChanceBanner() {
   SECTIONS.forEach(sec => sec.tasks.filter(t => !hidden[t.id] && !done[t.id]).forEach(() => remaining++));
   loadCustomTasks().forEach(t => { if (!done['custom_' + t.id]) remaining++; });
   banner.innerHTML = '<span class="lc-pulse">⚡</span>'
-    + '<span class="lc-text">Last Chance Mode — showing only uncompleted tasks</span>'
+    + '<span class="lc-text">Last Chance Mode: showing only uncompleted tasks</span>'
     + '<span class="lc-count">' + remaining + ' remaining</span>'
     + '<button class="lc-close" onclick="toggleLastChance()" title="Exit Last Chance Mode">✕</button>';
 }
@@ -1551,7 +1551,7 @@ function renderCustomSection() {
       + '</div>';
   }
 
-  const emptyHtml = '<div class="custom-empty" style="border:none;padding:2.5rem 1rem;"><div style="font-size:2rem;margin-bottom:0.5rem;">✦</div>Nothing here yet — hit <strong>+ Add Task</strong> above to get started.</div>';
+  const emptyHtml = '<div class="custom-empty" style="border:none;padding:2.5rem 1rem;"><div style="font-size:2rem;margin-bottom:0.5rem;">✦</div>Nothing here yet. Hit <strong>+ Add Task</strong> above to get started.</div>';
 
   if (isCustomOnly) {
     const body = document.createElement('div');
@@ -1584,7 +1584,7 @@ function renderCustomSection() {
     if (tasks.length === 0) {
       const emp = document.createElement('div');
       emp.className = 'custom-empty';
-      emp.textContent = 'No custom tasks yet — add one above.';
+      emp.textContent = 'No custom tasks yet. Add one above.';
       body.appendChild(emp);
     } else {
       body.innerHTML += tasks.map(customTaskHtml).join('');
@@ -1766,7 +1766,7 @@ function openBisEditModal(event, fullId) {
   const itemName = m ? m[2] : task.name;
 
   document.getElementById('bis-edit-title').textContent    = 'Edit: ' + slot;
-  document.getElementById('bis-edit-slot-label').textContent = '[' + slot + '] — slot prefix is fixed';
+  document.getElementById('bis-edit-slot-label').textContent = '[' + slot + '] (slot prefix is fixed)';
   document.getElementById('bis-edit-name').value  = itemName;
   document.getElementById('bis-edit-desc').value  = task.desc || '';
   document.getElementById('modal-bis-edit').classList.add('open');
@@ -1853,7 +1853,7 @@ function _renderBisPhase(phase) {
     const sp   = cls.specs.find(s => s.key === _bisSpec);
     const data = (BIS_DATA[_bisClass] && BIS_DATA[_bisClass][_bisSpec]) ? BIS_DATA[_bisClass][_bisSpec].items : [];
 
-    titleEl.textContent = `${cls.label} — ${sp.label}`;
+    titleEl.textContent = `${cls.label}: ${sp.label}`;
     subEl.textContent   = `Select items to add to Your List as tasks. Each imports as a completable gear-tracking task.`;
     breadEl.innerHTML   = `<button class="bis-crumb-btn" onclick="_renderBisPhase('class')">← Classes</button>
       <span style="margin:0 0.3rem;opacity:0.5;">›</span>
@@ -2232,11 +2232,11 @@ function copyDiscordSummary() {
   if (gm)     charLine += ' · ' + gm.dot + ' ' + gm.label.replace(/^[^ ]+ /, ''); // e.g. "Main"
 
   const sectionLines = rows.map(r =>
-    rowIcon(r.done, r.total) + ' ' + r.title + ' — ' + r.done + '/' + r.total
+    rowIcon(r.done, r.total) + ' ' + r.title + ': ' + r.done + '/' + r.total
   ).join('\n');
 
   const text = [
-    '📊 **The Azeroth Agenda** — ' + weekLabel,
+    '📊 **The Azeroth Agenda** · ' + weekLabel,
     charLine,
     '',
     sectionLines,
@@ -2278,7 +2278,7 @@ function openExportImport() {
   const modal   = document.getElementById('modal-data');
   const content = document.getElementById('data-modal-content');
   const btns    = document.getElementById('data-modal-btns');
-  document.getElementById('data-modal-title').textContent = `Character Data — ${currentChar}`;
+  document.getElementById('data-modal-title').textContent = `Character Data: ${currentChar}`;
   btns.innerHTML = `<button class="btn-cancel" onclick="closeDataModal()">Close</button>`;
   content.innerHTML = `
     <div class="data-option" onclick="exportCharData()">
@@ -2359,7 +2359,7 @@ function handleImportFile(event) {
   const reader = new FileReader();
   reader.onload = e => {
     try { showImportPreview(JSON.parse(e.target.result)); }
-    catch { alert('Invalid file — could not parse JSON.'); }
+    catch { alert('Invalid file. Could not parse JSON.'); }
   };
   reader.readAsText(file);
 }
@@ -2424,7 +2424,7 @@ function confirmFileImport() {
 
   window._pendingImport = null;
   closeDataModal(); renderChars(); render();
-  alert(`Import complete — ${entries.length} character${entries.length!==1?'s':''} restored.`);
+  alert(`Import complete. ${entries.length} character${entries.length!==1?'s':''} restored.`);
 }
 
 /* ═══════════════════════════════════════════
@@ -2790,7 +2790,7 @@ function renderEfficiencyTab() {
     }
     // Nudge for consistently skipped sections
     const skipNudge = (s.appearances >= 3 && pct < 25)
-      ? '<div class="eff-nudge">Skipped most weeks — consider hiding this section if it\'s not relevant.</div>' : '';
+      ? '<div class="eff-nudge">Skipped most weeks. Consider hiding this section if it\'s not relevant.</div>' : '';
     return { id, title: s.title, icon, iconCls, pct, appearances: s.appearances, trend, skipNudge };
   }).sort((a, b) => b.pct - a.pct);
 
@@ -2995,7 +2995,7 @@ const WELCOME_STEPS = [
   {
     icon: '⚜️',
     title: 'Welcome to The Azeroth Agenda',
-    body: 'Your weekly reset tracker for World of Warcraft. Every character, every task, every boss — in one place. Make every Tuesday count.',
+    body: 'Your weekly reset tracker for World of Warcraft. Every character, every task, every boss, all in one place. Make every Tuesday count.',
     note: null,
   },
   {
@@ -3015,14 +3015,14 @@ const WELCOME_STEPS = [
   {
     icon: '🧝',
     title: 'Add Your Characters',
-    body: 'Each character tracks its own progress independently. Add your main to get started — you can add alts anytime from the character bar.',
+    body: 'Each character tracks its own progress independently. Add your main to get started. You can add alts anytime from the character bar.',
     note: null,
     interactive: 'char-setup',
   },
   {
     icon: '📜',
     title: 'Build Your List',
-    body: '<strong>Your List</strong> is your personal weekly checklist — only the tasks that matter to you. Pick a preset to get started instantly, or skip and build it yourself.',
+    body: '<strong>Your List</strong> is your personal weekly checklist: only the tasks that matter to you. Pick a preset to get started instantly, or skip and build it yourself.',
     note: null,
     interactive: 'list-setup',
   },
@@ -3030,12 +3030,12 @@ const WELCOME_STEPS = [
     icon: '🏆',
     title: 'Everything That\'s Tracked',
     body: '<ul class="welcome-feature-list">'
-      + '<li><strong>Raids</strong> — per-boss bubble tracking across all four difficulties; boss kills auto-checked from Battle.net after each reset</li>'
-      + '<li><strong>Mythic+</strong> — weekly run counter with Vault Preview showing reward tiers per key level; auto-filled from your API data</li>'
-      + '<li><strong>Delves</strong> — tier selector and run counting toward the Great Vault</li>'
-      + '<li><strong>⚔️ BiS Gear</strong> — all 40 specs covered; items auto-checked off when you equip them via armory sync</li>'
-      + '<li><strong>Custom Tasks</strong> — add anything not in the default list</li>'
-      + '<li><strong>📊 Summary · ⚡ Last Chance · 🔗 Share Plan</strong> — weekly history, focus mode, and shareable links</li>'
+      + '<li><strong>Raids:</strong> per-boss bubble tracking across all four difficulties; boss kills auto-checked from Battle.net after each reset</li>'
+      + '<li><strong>Mythic+:</strong> weekly run counter with Vault Preview showing reward tiers per key level; auto-filled from your API data</li>'
+      + '<li><strong>Delves:</strong> tier selector and run counting toward the Great Vault</li>'
+      + '<li><strong>⚔️ BiS Gear:</strong> all 40 specs covered; items auto-checked off when you equip them via armory sync</li>'
+      + '<li><strong>Custom Tasks:</strong> add anything not in the default list</li>'
+      + '<li><strong>📊 Summary · ⚡ Last Chance · 🔗 Share Plan:</strong> weekly history, focus mode, and shareable links</li>'
       + '</ul>',
     note: 'Everything resets automatically each Tuesday at 15:00 UTC.',
   },
@@ -3167,7 +3167,7 @@ function renderWelcomeStep() {
       + '<div class="welcome-bnet-card-title">Offline Mode</div>'
       + '<ul class="welcome-feature-list welcome-bnet-list">'
       + '<li>Add characters by name manually</li>'
-      + '<li>Full task tracker — raids, M+, Delves</li>'
+      + '<li>Full task tracker: raids, M+, Delves</li>'
       + '<li>BiS gear browser for all 40 specs</li>'
       + '<li>Weekly history &amp; streaks</li>'
       + '<li>Saves locally in your browser</li>'
@@ -3180,14 +3180,14 @@ function renderWelcomeStep() {
     _importChars = [];
     fetch('/api/characters').then(async function(res) {
       if (res.status === 401) {
-        interactEl.innerHTML = '<div style="color:var(--color-danger);padding:0.5rem 0;">Session expired — please sign out and in again.</div>';
+        interactEl.innerHTML = '<div style="color:var(--color-danger);padding:0.5rem 0;">Session expired. Please sign out and in again.</div>';
         return;
       }
       if (!res.ok) throw new Error();
       _importChars = (await res.json()).map(function(c) { return Object.assign({}, c, { selected: false }); });
       _renderWelcomeImportList(interactEl);
     }).catch(function() {
-      interactEl.innerHTML = '<div style="color:var(--color-danger);padding:0.5rem 0;">Could not load characters — check your connection and try again.</div>';
+      interactEl.innerHTML = '<div style="color:var(--color-danger);padding:0.5rem 0;">Could not load characters. Check your connection and try again.</div>';
     });
   } else if (step.interactive === 'list-setup') {
     interactEl.innerHTML = '<div class="welcome-stage-list">'
@@ -3202,7 +3202,7 @@ function renderWelcomeStep() {
           + '</div>'
         ).join('')
       + '</div>'
-      + '<div class="welcome-stage-skip">or <button class="welcome-skip-inline" onclick="welcomeNext()">skip — I\'ll build it manually</button></div>';
+      + '<div class="welcome-stage-skip">or <button class="welcome-skip-inline" onclick="welcomeNext()">skip: I\'ll build it manually</button></div>';
   } else if (step.interactive === 'char-setup') {
     const hint = _welcomeIsLoggedIn()
       ? '<div class="welcome-import-hint">💡 After setup, use <strong>⬇ Import</strong> in the character bar to pull all your alts from Battle.net automatically.</div>'
@@ -3265,7 +3265,7 @@ function welcomeAddChar() {
 
   const form = document.getElementById('welcome-char-form');
   if (form) {
-    form.innerHTML = '<div class="welcome-char-success">✓ <strong>' + name + '</strong> added — let\'s keep going!</div>';
+    form.innerHTML = '<div class="welcome-char-success">✓ <strong>' + name + '</strong> added. Let\'s keep going!</div>';
   }
   setTimeout(welcomeNext, 900);
 }
@@ -3273,7 +3273,7 @@ function welcomeAddChar() {
 function welcomeApplyStage(stageId) {
   applyBeginnerPreset(stageId); // saves list, switches to Your List tab
   const stage = BEGINNER_STAGES.find(s => s.id === stageId);
-  const label = stage ? stage.label.split(' — ')[0] : stageId;
+  const label = stage ? stage.label.split(': ')[0] : stageId;
   const interactEl = document.getElementById('welcome-interactive');
   if (interactEl) {
     interactEl.innerHTML = '<div class="welcome-char-success">✓ Your List set up for <strong>' + label + '</strong>!</div>';
@@ -3354,7 +3354,7 @@ function _welcomeAddBnetChars() {
     renderChars(); render();
     var interactEl = document.getElementById('welcome-interactive');
     if (interactEl) {
-      interactEl.innerHTML = '<div class="welcome-char-success">✓ ' + added + ' character' + (added !== 1 ? 's' : '') + ' added — syncing armory data in the background…</div>';
+      interactEl.innerHTML = '<div class="welcome-char-success">✓ ' + added + ' character' + (added !== 1 ? 's' : '') + ' added. Syncing armory data in the background…</div>';
     }
     if (typeof autoSyncArmory === 'function') autoSyncArmory();
     setTimeout(welcomeNext, 1200);
@@ -3491,7 +3491,7 @@ async function openImportChars() {
   try {
     const res = await fetch('/api/characters');
     if (res.status === 401) {
-      content.innerHTML = '<div style="color:var(--color-danger);padding:0.5rem 0;">Session expired — please sign out and log in again to use character import.</div>';
+      content.innerHTML = '<div style="color:var(--color-danger);padding:0.5rem 0;">Session expired. Please sign out and log in again to use character import.</div>';
       return;
     }
     if (!res.ok) throw new Error('API error');
