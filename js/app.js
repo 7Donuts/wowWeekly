@@ -3084,12 +3084,15 @@ function closeWelcome() {
 }
 
 function loginWithBnet() {
-  // Flag tells initSync to open the import modal after OAuth returns.
   sessionStorage.setItem('azeroth_pending_import', '1');
-  // If inside the welcome flow, remember which step to return to.
   if (document.getElementById('modal-welcome')?.classList.contains('open')) {
     sessionStorage.setItem('azeroth_welcome_return_step', String(_welcomeStep));
   }
+  // Visual feedback — redirect can take a moment to initiate
+  const loginEl = document.getElementById('auth-login');
+  if (loginEl) { loginEl.textContent = 'Connecting…'; loginEl.style.opacity = '0.55'; loginEl.style.pointerEvents = 'none'; }
+  const welcomeBtn = document.querySelector('.welcome-bnet-login-btn');
+  if (welcomeBtn) { welcomeBtn.textContent = 'Connecting…'; welcomeBtn.disabled = true; }
   window.location.href = '/auth/login?region=us';
 }
 
