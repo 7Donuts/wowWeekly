@@ -60,6 +60,34 @@ header {
   padding: 2.5rem 0 2rem;
   border-bottom: 1px solid var(--border);
   margin-bottom: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('/img/og-image.png') center 38% / cover no-repeat;
+  opacity: 0.18;
+  pointer-events: none;
+  z-index: 0;
+}
+
+header::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 85% 70% at 50% 52%, transparent 10%, var(--bg-deep) 68%),
+    linear-gradient(to bottom, var(--bg-deep) 0%, transparent 28%, transparent 60%, var(--bg-deep) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+header > * {
+  position: relative;
+  z-index: 2;
 }
 
 .header-eyebrow {
@@ -1231,6 +1259,8 @@ body.light-mode {
 }
 body.light-mode h1 span { color: var(--void-glow); }
 body.light-mode .header-eyebrow { color: var(--text-muted); }
+body.light-mode header::before,
+body.light-mode header::after { display: none; }
 body.light-mode .byline-name,
 body.light-mode .credit-name { color: var(--void-purple); }
 body.light-mode::before { opacity: 0.06; }
