@@ -149,7 +149,7 @@ function saveProfiles(p) { localStorage.setItem(profilesKey(), JSON.stringify(p)
 ═══════════════════════════════════════════ */
 let characters      = JSON.parse(localStorage.getItem('wow_midnight_chars') || '["Main"]');
 let currentChar     = characters[0] || 'Main';
-let activeFilters   = new Set(['all']); // 'all' means show everything
+let activeFilters   = new Set(['yourlist']);
 let activeTagFilter = '';               // 'tag-vault' | 'tag-gold' | 'tag-new' | ''
 let collapsed       = {};
 let revealHidden    = false;
@@ -1166,9 +1166,7 @@ function switchChar(name) {
   currentChar = name;
   revealHidden = false;
   editingYourList = false;
-  // Default to custom view if this character has custom tasks, otherwise all
-  const hasTasks = loadCustomTasks().length > 0;
-  activeFilters = new Set([hasTasks ? 'custom' : 'all']);
+  activeFilters = new Set(['yourlist']);
   document.querySelectorAll('.tab-btn').forEach(b => {
     const val = b.getAttribute('data-filter');
     b.classList.toggle('active', activeFilters.has(val));
