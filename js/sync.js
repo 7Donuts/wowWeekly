@@ -54,11 +54,12 @@
     if (!_hasPulled) return; // never overwrite cloud with stale local state
     pushPending = false;
     try {
-      await fetch('/api/data', {
+      const res = await fetch('/api/data', {
         method:  'PUT',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify(getAllSyncData()),
       });
+      if (res && res.status === 401 && typeof _handleSessionExpired === 'function') _handleSessionExpired();
     } catch (_) {}
   }
 
@@ -73,6 +74,7 @@
     if (!force && !shouldPull()) { _hasPulled = true; return; }
     try {
       const res = await fetch('/api/data');
+      if (res.status === 401) { if (typeof _handleSessionExpired === 'function') _handleSessionExpired(); return; }
       if (!res.ok) { _hasPulled = true; return; }
       const serverData = await res.json();
       if (!serverData || Object.keys(serverData).length === 0) {

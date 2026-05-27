@@ -3488,7 +3488,8 @@ async function openImportChars() {
   try {
     const res = await fetch('/api/characters', { credentials: 'same-origin' });
     if (res.status === 401) {
-      content.innerHTML = '<div style="color:var(--color-danger);padding:0.5rem 0;">Session expired. Please sign out and log in again to use character import.</div>';
+      content.innerHTML = '<div style="color:var(--color-danger);padding:0.5rem 0;">Session expired — signing you back in…</div>';
+      setTimeout(() => { window.location.href = '/auth/login?region=us'; }, 1800);
       return;
     }
     if (!res.ok) {

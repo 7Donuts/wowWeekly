@@ -4,6 +4,12 @@
    Auto-syncs on page load; refreshes if data is > 1 hour old.
 ------------------------------------------- */
 
+/* ── SESSION EXPIRY HANDLER ── */
+function _handleSessionExpired() {
+  showToast('Session expired — signing you back in…');
+  setTimeout(() => { window.location.href = '/auth/login?region=us'; }, 1800);
+}
+
 /* ── SYNC ── */
 async function armorySync(charName) {
   const slug = loadCharRealmSlug(charName);
@@ -16,7 +22,7 @@ async function armorySync(charName) {
     const params = new URLSearchParams({ char: charDisplayName(charName).toLowerCase(), realm: slug });
     const res    = await fetch('/api/armory?' + params);
 
-    if (res.status === 401) { showToast('Session expired. Please log in again.'); return; }
+    if (res.status === 401) { _handleSessionExpired(); return; }
     if (res.status === 404) { showToast('Character not found on Battle.net. Check the name and realm.'); return; }
     if (!res.ok)            { showToast('Armory sync failed. Please try again.'); return; }
 
@@ -237,7 +243,7 @@ async function syncAllCharsButton() {
       const slug   = loadCharRealmSlug(charName);
       const params = new URLSearchParams({ char: charDisplayName(charName).toLowerCase(), realm: slug });
       const res    = await fetch('/api/armory?' + params);
-      if (res.status === 401) { showToast('Session expired. Please log in again.'); break; }
+      if (res.status === 401) { if (btn) { btn.disabled = false; btn.textContent = '🔄 Sync'; } _handleSessionExpired(); return; }
       if (!res.ok) continue;
 
       const armory = await res.json();
