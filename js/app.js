@@ -529,6 +529,14 @@ function render() {
       container.appendChild(buildEditBar());
     }
 
+    // Your List identity banner
+    const ylBanner = document.createElement('div');
+    ylBanner.className = 'yl-view-banner';
+    ylBanner.innerHTML = '<span class="yl-banner-icon">⭐</span>'
+      + '<span class="yl-banner-title">Your List</span>'
+      + '<span class="yl-banner-char">' + charDisplayName(currentChar) + '</span>';
+    container.appendChild(ylBanner);
+
     // Gather all tasks from SECTIONS that are in the list
     const selected = [];
     SECTIONS.forEach(sec => {
