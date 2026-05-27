@@ -170,7 +170,12 @@
       // and advances from bnet-choice to bnet-import if returning from OAuth.
       if (typeof onSyncAuthConfirmed === 'function') onSyncAuthConfirmed(user);
       if (user) {
-        await pullFromCloud(true); // always pull on page load regardless of TTL
+        // Pull on fresh tab open (no sync timestamp yet in sessionStorage).
+        // On refresh, the timestamp is preserved so the TTL applies — this
+        // prevents a reload loop when pullFromCloud writes localStorage and
+        // triggers location.reload(), which would otherwise force-pull again.
+        const isFreshTab = !sessionStorage.getItem(SYNC_SS_KEY);
+        await pullFromCloud(isFreshTab);
         // Open standalone import modal only when the welcome is not open.
         // When welcome is open the bnet-import step handles character import inline.
         if (sessionStorage.getItem('azeroth_pending_import')) {
