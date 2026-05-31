@@ -9,6 +9,19 @@
 ------------------------------------------- */
 const VERSIONS = [
   {
+    version: 'v2.4.0',
+    date: 'May 31, 2026',
+    summary: 'Your List as default view, sync improvements, session reliability',
+    entries: [
+      { type: 'new',     text: 'Your List is now the default view on every page load and character switch', detail: 'The site opens directly to your personal task list instead of the full All tab. Clicking a character also returns you to Your List.' },
+      { type: 'new',     text: 'Your List header banner shows your active character name at the top of the task area', detail: 'A gold-accented bar confirms which character and view you are looking at, making it clear you are working from your personal list rather than the master list.' },
+      { type: 'new',     text: 'Sync status indicator next to your battletag shows live cloud save state', detail: 'Shows an upward arrow and "Saving..." while a change is being pushed to the cloud, then "Synced" in green for four seconds on confirmation. Gives instant feedback that your progress is saved across devices.' },
+      { type: 'improve', text: 'Cross-device sync now picks up changes after 2 minutes of tab inactivity, down from 10', detail: 'When you switch back to a tab that has been in the background, changes made on another device appear within 2 minutes instead of up to 10.' },
+      { type: 'improve', text: 'Sync errors are now surfaced with a toast instead of failing silently', detail: 'If a cloud push fails (network error, server issue), a one-time warning appears so you know your data may not be saving across devices.' },
+      { type: 'fix',     text: 'Session expiry auto re-login now preserves your Battle.net region', detail: 'EU, KR, and TW players who were automatically redirected to re-login were previously sent to the US OAuth endpoint, breaking armory sync for their characters. The redirect now uses the region from your original login.' },
+    ]
+  },
+  {
     version: 'v2.3.0',
     date: 'May 24, 2026',
     summary: 'New task sections: Professions, Timewalking, rated PvP, Showdown Zones (coming June 16)',
