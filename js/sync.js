@@ -253,6 +253,11 @@
     if (this === localStorage && isSyncKey(key)) schedulePush();
   };
 
+  // Background poll: re-pull once the TTL has elapsed even if the tab stays focused.
+  setInterval(async () => {
+    if (syncUser && !document.hidden && shouldPull()) await pullFromCloud();
+  }, 30 * 1000);
+
   // Re-pull when the tab comes back into focus after the TTL has elapsed,
   // so changes made on another device appear without a full page reload by the user.
   document.addEventListener('visibilitychange', async () => {
