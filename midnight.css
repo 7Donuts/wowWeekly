@@ -859,6 +859,26 @@ body.light-mode .sync-saved { color: #3a8a3a; }
 }
 .yourlist-edit-bar strong { font-style: normal; font-family: 'Cinzel', serif; letter-spacing: 0.05em; }
 
+.yl-view-banner {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  margin-bottom: 0.75rem;
+  background: linear-gradient(135deg, rgba(201,168,76,0.12) 0%, rgba(201,168,76,0.04) 100%);
+  border: 1px solid rgba(201,168,76,0.35);
+  border-radius: 8px;
+  font-family: 'Cinzel', serif;
+}
+.yl-banner-icon { font-size: 1rem; line-height: 1; }
+.yl-banner-title {
+  font-size: 0.85rem; font-weight: 700; letter-spacing: 0.06em;
+  color: var(--light-gold); text-transform: uppercase;
+}
+.yl-banner-char {
+  margin-left: auto; font-size: 0.78rem; font-weight: 600;
+  color: var(--text-muted); letter-spacing: 0.03em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px;
+}
+
 .yourlist-empty,
 .custom-empty {
   text-align: center;
