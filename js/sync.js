@@ -13,7 +13,7 @@
   // Pull at most once per 10 minutes within a session (prevents reload loops
   // while still re-syncing when you return to the tab after a while).
   const SYNC_SS_KEY = 'azeroth_last_sync_ts';
-  const SYNC_TTL_MS = 10 * 60 * 1000;
+  const SYNC_TTL_MS = 2 * 60 * 1000;
 
   function shouldPull() {
     const last = parseInt(sessionStorage.getItem(SYNC_SS_KEY) || '0', 10);
@@ -50,6 +50,24 @@
     return data;
   }
 
+  let _syncStatusTimer = null;
+
+  function updateSyncStatus(state) {
+    const el = document.getElementById('sync-status');
+    if (!el || !syncUser) return;
+    clearTimeout(_syncStatusTimer);
+    if (state === 'saving') {
+      el.textContent  = '↑ Saving…';
+      el.className    = 'sync-status sync-saving';
+      el.style.display = '';
+    } else if (state === 'saved') {
+      el.textContent  = '✓ Synced';
+      el.className    = 'sync-status sync-saved';
+      el.style.display = '';
+      _syncStatusTimer = setTimeout(() => { el.style.display = 'none'; }, 4000);
+    }
+  }
+
   // Returns true on success, false on failure.
   async function pushToCloud() {
     if (!syncUser)   return false;
@@ -70,6 +88,7 @@
         }
         return false;
       }
+      if (res && res.ok) updateSyncStatus('saved');
       return !!(res && res.ok);
     } catch (_) {
       if (!sessionStorage.getItem('azeroth_sync_warn') && typeof showToast === 'function') {
@@ -84,6 +103,7 @@
     if (!syncUser) return;
     pushPending = true;
     clearTimeout(pushTimer);
+    updateSyncStatus('saving');
     pushTimer = setTimeout(pushToCloud, 3000);
   }
 
@@ -123,6 +143,7 @@
       }
       _hasPulled = true;
       markSynced();
+      updateSyncStatus('saved');
       if (changed) location.reload();
     } catch (_) {
       _hasPulled = true; // if cloud is unreachable allow pushes from current local state
@@ -159,6 +180,8 @@
       if (importEl)  importEl.style.display  = 'none';
       if (syncEl)    syncEl.style.display    = 'none';
       if (nameEl)    { nameEl.style.display = 'none'; nameEl.style.opacity = ''; nameEl.title = ''; }
+      const statusEl = document.getElementById('sync-status');
+      if (statusEl) statusEl.style.display = 'none';
       if (hadSession && typeof showToast === 'function') {
         showToast('Session expired — click 🔑 Battle.net to sign in again.');
       }
