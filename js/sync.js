@@ -30,6 +30,7 @@
     if (key.startsWith('wow_mn_armory_')) return false; // Battle.net armory cache — skip
     if (key === 'wow_mn_item_icons')    return false;   // item icon cache — derived, skip
     if (key === 'wow_mn_bnet_creds')    return false;   // region pref only, skip
+    if (key === 'wow_mn_bnet_region')   return false;   // device-local: OAuth region for re-login
     if (key === 'wow_mn_light_mode')    return false;   // device-local UI pref
     if (key === 'wow_mn_compact')       return false;   // device-local UI pref
     if (key === 'wow_mn_welcomed')      return false;   // device-local: has this device seen the welcome
@@ -49,9 +50,10 @@
     return data;
   }
 
+  // Returns true on success, false on failure.
   async function pushToCloud() {
-    if (!syncUser)   return;
-    if (!_hasPulled) return; // never overwrite cloud with stale local state
+    if (!syncUser)   return false;
+    if (!_hasPulled) return false; // never overwrite cloud with stale local state
     pushPending = false;
     try {
       const res = await fetch('/api/data', {
@@ -60,7 +62,22 @@
         body:    JSON.stringify(getAllSyncData()),
       });
       if (res && res.status === 401 && typeof _handleSessionExpired === 'function') _handleSessionExpired();
-    } catch (_) {}
+      if (res && !res.ok && res.status !== 401) {
+        // Show a one-time warning per session so the failure isn't invisible.
+        if (!sessionStorage.getItem('azeroth_sync_warn') && typeof showToast === 'function') {
+          sessionStorage.setItem('azeroth_sync_warn', '1');
+          showToast('Sync error — your progress may not be saving across devices.');
+        }
+        return false;
+      }
+      return !!(res && res.ok);
+    } catch (_) {
+      if (!sessionStorage.getItem('azeroth_sync_warn') && typeof showToast === 'function') {
+        sessionStorage.setItem('azeroth_sync_warn', '1');
+        showToast('Sync error — check your connection.');
+      }
+      return false;
+    }
   }
 
   function schedulePush() {
@@ -77,6 +94,17 @@
       if (res.status === 401) { if (typeof _handleSessionExpired === 'function') _handleSessionExpired(); return; }
       if (!res.ok) { _hasPulled = true; return; }
       const serverData = await res.json();
+
+      // Server signals KV storage is not configured — warn once and bail.
+      if (serverData && serverData._sync_unavailable) {
+        _hasPulled = true;
+        markSynced();
+        if (typeof showToast === 'function') {
+          showToast('Cloud sync is not set up — data will only save on this device.');
+        }
+        return;
+      }
+
       if (!serverData || Object.keys(serverData).length === 0) {
         // Cloud is empty — seed it with local state so other devices pick it up.
         _hasPulled = true;
@@ -172,6 +200,10 @@
       // and advances from bnet-choice to bnet-import if returning from OAuth.
       if (typeof onSyncAuthConfirmed === 'function') onSyncAuthConfirmed(user);
       if (user) {
+        // Store the OAuth region device-locally so _handleSessionExpired can
+        // redirect back to the correct region instead of always defaulting to US.
+        if (user.region) _origSetItem.call(localStorage, 'wow_mn_bnet_region', user.region);
+
         // Pull on fresh tab open (no sync timestamp yet in sessionStorage).
         // On refresh, the timestamp is preserved so the TTL applies — this
         // prevents a reload loop when pullFromCloud writes localStorage and

@@ -159,7 +159,7 @@ async function handleApiUser(request, env) {
   const payload = await verifyJWT(token, env.SESSION_SECRET);
 
   return Response.json(
-    { user: payload ? { sub: payload.sub, battletag: payload.battletag } : null },
+    { user: payload ? { sub: payload.sub, battletag: payload.battletag, region: payload.region || 'us' } : null },
     { headers: { 'Access-Control-Allow-Origin': 'same-origin' } }
   );
 }
@@ -395,7 +395,7 @@ async function handleGetCharacters(request, env) {
 async function handleGetData(request, env) {
   const payload = await verifyJWT(getSessionCookie(request), env.SESSION_SECRET);
   if (!payload) return new Response('Unauthorized', { status: 401 });
-  if (!env.USER_DATA) return Response.json({});
+  if (!env.USER_DATA) return Response.json({ _sync_unavailable: true });
   const raw = await env.USER_DATA.get('user:' + payload.sub);
   return Response.json(raw ? JSON.parse(raw) : {});
 }

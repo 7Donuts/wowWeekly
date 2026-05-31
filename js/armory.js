@@ -7,7 +7,8 @@
 /* ── SESSION EXPIRY HANDLER ── */
 function _handleSessionExpired() {
   showToast('Session expired — signing you back in…');
-  setTimeout(() => { window.location.href = '/auth/login?region=us'; }, 1800);
+  const region = localStorage.getItem('wow_mn_bnet_region') || 'us';
+  setTimeout(() => { window.location.href = '/auth/login?region=' + region; }, 1800);
 }
 
 /* ── SYNC ── */
