@@ -629,6 +629,7 @@ function render() {
     ylBanner.innerHTML = '<span class="yl-banner-icon">⭐</span>'
       + '<span class="yl-banner-title">Your List</span>'
       + '<span class="yl-banner-char">' + charDisplayName(currentChar) + '</span>'
+      + '<button class="yl-bis-jump-btn" onclick="scrollToBisSection()" title="Scroll to BiS Gear">⚔ BiS Gear</button>'
       + '<button id="btn-edit-yourlist" class="yl-edit-btn" onclick="startEditingYourList()">'
       + (editingYourList ? '✓ Done' : '✏ Edit') + '</button>';
     container.appendChild(ylBanner);
@@ -692,7 +693,7 @@ function render() {
       const customSelected = allCustom
         .filter(t => !t.id.startsWith('bis_') && matchesSearch({ ...t, id: 'custom_' + t.id, sectionTitle: 'Custom' }))
         .map(t => ({ ...t, id: 'custom_' + t.id, sectionTitle: 'Custom', sectionIcon: '✦', sectionId: 'custom', sectionIconClass: 'icon-custom' }));
-      if (bisSelected.length) sectionGroups.push({ sec: { title: 'Best in Slot Gear', icon: '⚔️', iconClass: 'icon-custom', id: 'bis' }, tasks: bisSelected });
+      sectionGroups.push({ sec: { title: 'Best in Slot Gear', icon: '⚔️', iconClass: 'icon-custom', id: 'bis' }, tasks: bisSelected });
       if (customSelected.length) sectionGroups.push({ sec: { title: 'Custom', icon: '✦', iconClass: 'icon-custom', id: 'custom' }, tasks: customSelected });
 
       const nonBisSelected = filteredSelected.filter(t => !t.id.startsWith('custom_bis_'));
@@ -712,6 +713,7 @@ function render() {
         const secDone = sortedTasks.filter(t => done[t.id]).length;
         const wrap = document.createElement('div');
         wrap.className = 'yl-section-group';
+        if (isBis) wrap.id = 'yl-bis-section';
         const ylHeader = document.createElement('div');
         ylHeader.className = 'yl-section-header';
         ylHeader.innerHTML = '<div class="section-icon ' + sec.iconClass + '">' + sec.icon + '</div>'
@@ -979,6 +981,11 @@ function toggleRevealHidden() {
 }
 
 /* ── YOUR LIST ── */
+function scrollToBisSection() {
+  const el = document.getElementById('yl-bis-section');
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function startEditingYourList() {
   if (editingYourList) { doneEditingYourList(); return; }
   editingYourList = true;

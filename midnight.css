@@ -898,6 +898,17 @@ body.light-mode .sync-saved { color: #3a8a3a; }
   transition: border-color 0.15s, background 0.15s;
 }
 .yl-edit-btn:hover { background: rgba(201,168,76,0.12); border-color: rgba(201,168,76,0.7); }
+.yl-bis-jump-btn {
+  background: transparent;
+  border: 1px solid rgba(139,92,246,0.35);
+  color: var(--void-glow);
+  font-family: 'Cinzel', serif;
+  font-size: 0.68rem; letter-spacing: 0.05em;
+  padding: 0.22rem 0.6rem; border-radius: 5px;
+  cursor: pointer; white-space: nowrap;
+  transition: border-color 0.15s, background 0.15s;
+}
+.yl-bis-jump-btn:hover { background: rgba(139,92,246,0.1); border-color: rgba(139,92,246,0.7); }
 
 .yourlist-empty,
 .custom-empty {
