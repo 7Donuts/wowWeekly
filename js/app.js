@@ -357,10 +357,10 @@ const _BIS_GRID_SLOTS = [
   'Main Hand','Off Hand',
 ];
 
-// Center oval gap per row (px) — widens at shoulder/chest, narrows at head and weapons
+// Center oval gap per row (px) — gently curved ellipse with generous breathing room
 // Row pairs: Head/Hands, Neck/Waist, Shoulders/Legs, Back/Feet,
 //            Chest/Ring1, Wrists/Ring2, Trinket1/2, MH/OH
-const _BIS_OVAL_WIDTHS = [48, 80, 116, 124, 120, 100, 76, 56];
+const _BIS_OVAL_WIDTHS = [120, 152, 172, 180, 180, 172, 152, 120];
 
 function _renderBisCard(slot, t, done, isRight, cache) {
   if (!t) {
