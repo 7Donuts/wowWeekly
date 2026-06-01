@@ -1809,6 +1809,7 @@ body.light-mode .tier-btn.active { background: rgba(139,26,26,0.12); border-colo
   padding: 0.4rem;
   background: transparent;
   border: none;
+  overflow: visible; /* override section-body overflow:hidden — grid rows must not be clipped */
 }
 .bis-grid-card {
   display: flex; align-items: center; gap: 0.45rem;
