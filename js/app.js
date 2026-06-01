@@ -571,9 +571,12 @@ function render() {
           + '<span style="font-size:13px;margin-top:0.4rem;display:block;">Switch to the <strong style="font-style:normal;color:var(--light-gold);">All</strong> tab to pick tasks to add.</span>';
         container.appendChild(emptyEl);
       } else {
-        container.innerHTML = selected.length === 0
-          ? '<div class="yourlist-empty"><div style="font-size:2rem;margin-bottom:0.5rem;">⭐</div>Your list is empty.<br><span style="font-size:13px;margin-top:0.4rem;display:block;">Click <strong style="font-style:normal;color:var(--light-gold);">⭐ Edit List</strong> in the toolbar above to pick tasks from the master list.</span></div>'
-          : '<div class="yourlist-empty"><div style="font-size:2rem;margin-bottom:0.5rem;">🔍</div>No tasks match <strong style="color:var(--void-glow);">"' + searchQuery + '"</strong></div>';
+        const emptyEl = document.createElement('div');
+        emptyEl.className = 'yourlist-empty';
+        emptyEl.innerHTML = selected.length === 0
+          ? '<div style="font-size:2rem;margin-bottom:0.5rem;">⭐</div>Your list is empty.<br><span style="font-size:13px;margin-top:0.4rem;display:block;">Click <strong style="font-style:normal;color:var(--light-gold);">✏ Edit</strong> above to pick tasks.</span>'
+          : '<div style="font-size:2rem;margin-bottom:0.5rem;">🔍</div>No tasks match <strong style="color:var(--void-glow);">"' + searchQuery + '"</strong>';
+        container.appendChild(emptyEl);
       }
     } else if (yourListGrouped) {
       // ── GROUPED VIEW ─────────────────────────────────────
