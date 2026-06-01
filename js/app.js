@@ -387,12 +387,15 @@ function renderBisGrid(tasks, done) {
     const iconHtml = iconSrc
       ? '<img src="' + escHtml(iconSrc) + '" class="bis-grid-icon' + (apiIcon ? '' : ' bis-task-icon--placeholder') + '" alt="' + escHtml(slot) + '">'
       : '';
+    const desc     = t.desc || '';
+    const descHtml = desc ? '<div class="bis-grid-desc">' + escHtml(desc) + '</div>' : '';
     return '<div class="task bis-grid-card' + (isDone ? ' done' : '') + '">'
       + '<div class="task-check" onclick="event.stopPropagation();toggle(\'' + id + '\',this)" style="cursor:pointer;flex-shrink:0;"></div>'
       + iconHtml
       + '<div class="bis-grid-info">'
       + '<div class="bis-grid-slot">' + escHtml(slot) + '</div>'
       + '<div class="bis-grid-name" title="' + escHtml(item) + '">' + escHtml(item) + '</div>'
+      + descHtml
       + '</div>'
       + '<button class="bis-grid-edit-btn" onclick="event.stopPropagation();openBisEditModal(event,\'' + id + '\')" title="Edit item">✏</button>'
       + '</div>';

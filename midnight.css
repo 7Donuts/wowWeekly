@@ -1853,6 +1853,11 @@ body.light-mode .tier-btn.active { background: rgba(139,26,26,0.12); border-colo
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   line-height: 1.3;
 }
+.bis-grid-desc {
+  font-size: 10px; font-style: italic; color: var(--text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  line-height: 1.3; margin-top: 1px;
+}
 
 body.light-mode .yl-section-header { border-color: rgba(139,26,26,0.15); }
 body.light-mode .section-header { border-bottom-color: rgba(139,26,26,0.15); }
