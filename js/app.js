@@ -345,10 +345,16 @@ function removeFromYourList(id) {
 }
 
 /* ── BIS GRID — always renders all 16 standard slots so positions never shift ── */
+// Interleaved order mirrors WoW character sheet: left col (Head→Wrists) / right col (Hands→Ring 2)
 const _BIS_GRID_SLOTS = [
-  'Head','Neck','Shoulders','Back','Chest','Wrists',
-  'Hands','Waist','Legs','Feet','Ring 1','Ring 2',
-  'Trinket 1','Trinket 2','Main Hand','Off Hand',
+  'Head',     'Hands',
+  'Neck',     'Waist',
+  'Shoulders','Legs',
+  'Back',     'Feet',
+  'Chest',    'Ring 1',
+  'Wrists',   'Ring 2',
+  'Trinket 1','Trinket 2',
+  'Main Hand','Off Hand',
 ];
 
 function renderBisGrid(tasks, done) {
@@ -368,8 +374,9 @@ function renderBisGrid(tasks, done) {
       const ph = _BIS_SLOT_ICONS[slot]
         ? '<img src="' + _BIS_SLOT_ICONS[slot] + '" class="bis-grid-icon bis-task-icon--placeholder" style="opacity:0.18;" alt="">'
         : '<div class="bis-grid-icon"></div>';
-      return '<div class="bis-grid-card bis-grid-empty">' + ph
-        + '<div class="bis-grid-info"><div class="bis-grid-slot">' + slot + '</div></div></div>';
+      return '<div class="bis-grid-card bis-grid-empty" onclick="openBisSlotCreate(\'' + slot + '\')" title="Add item for ' + slot + '">' + ph
+        + '<div class="bis-grid-info"><div class="bis-grid-slot">' + slot + '</div>'
+        + '<div class="bis-grid-name bis-grid-add">+ Add item</div></div></div>';
     }
     const id     = t.id;
     const isDone = !!done[id];
@@ -387,6 +394,7 @@ function renderBisGrid(tasks, done) {
       + '<div class="bis-grid-slot">' + escHtml(slot) + '</div>'
       + '<div class="bis-grid-name" title="' + escHtml(item) + '">' + escHtml(item) + '</div>'
       + '</div>'
+      + '<button class="bis-grid-edit-btn" onclick="event.stopPropagation();openBisEditModal(event,\'custom_' + id + '\')" title="Edit item">✏</button>'
       + '</div>';
   }).join('');
 }
@@ -1747,53 +1755,116 @@ function closeBisModal() {
   document.getElementById('modal-bis').classList.remove('open');
 }
 
-let _bisEditId = null;
+let _bisEditId   = null;
+let _bisEditSlot = null;
 
 function openBisEditModal(event, fullId) {
-  event.stopPropagation();
-  _bisEditId = fullId; // e.g. 'custom_bis_abc123_0'
+  if (event) event.stopPropagation();
+  _bisEditId   = fullId;
+  _bisEditSlot = null;
   const rawId = fullId.replace(/^custom_/, '');
   const task  = loadCustomTasks().find(t => t.id === rawId);
   if (!task) return;
-
-  // Parse "[Slot] Item Name"
-  const m = (task.name || '').match(/^\[([^\]]+)\]\s*(.*)$/);
+  const m        = (task.name || '').match(/^\[([^\]]+)\]\s*(.*)$/);
   const slot     = m ? m[1] : '';
   const itemName = m ? m[2] : task.name;
+  document.getElementById('bis-edit-title').textContent     = 'Edit: ' + slot;
+  document.getElementById('bis-edit-slot-label').textContent = '[' + slot + '] (slot is fixed)';
+  document.getElementById('bis-edit-name').value = itemName;
+  document.getElementById('bis-edit-desc').value = task.desc || '';
+  document.getElementById('modal-bis-edit').classList.add('open');
+  setTimeout(() => document.getElementById('bis-edit-name').focus(), 50);
+}
 
-  document.getElementById('bis-edit-title').textContent    = 'Edit: ' + slot;
-  document.getElementById('bis-edit-slot-label').textContent = '[' + slot + '] (slot prefix is fixed)';
-  document.getElementById('bis-edit-name').value  = itemName;
-  document.getElementById('bis-edit-desc').value  = task.desc || '';
+function openBisSlotCreate(slot) {
+  _bisEditId   = null;
+  _bisEditSlot = slot;
+  document.getElementById('bis-edit-title').textContent     = 'Add Item: ' + slot;
+  document.getElementById('bis-edit-slot-label').textContent = '[' + slot + '] (slot is fixed)';
+  document.getElementById('bis-edit-name').value = '';
+  document.getElementById('bis-edit-desc').value = '';
   document.getElementById('modal-bis-edit').classList.add('open');
   setTimeout(() => document.getElementById('bis-edit-name').focus(), 50);
 }
 
 function closeBisEditModal() {
   document.getElementById('modal-bis-edit').classList.remove('open');
-  _bisEditId = null;
+  _bisEditId = null; _bisEditSlot = null;
 }
 
 function saveBisEdit() {
-  if (!_bisEditId) return;
-  const rawId   = _bisEditId.replace(/^custom_/, '');
   const newItem = document.getElementById('bis-edit-name').value.trim();
   const newDesc = document.getElementById('bis-edit-desc').value.trim();
   if (!newItem) return;
 
-  const tasks = loadCustomTasks();
-  const task  = tasks.find(t => t.id === rawId);
-  if (!task) return;
+  if (_bisEditId) {
+    const rawId = _bisEditId.replace(/^custom_/, '');
+    const tasks = loadCustomTasks();
+    const task  = tasks.find(t => t.id === rawId);
+    if (!task) return;
+    const m    = (task.name || '').match(/^\[([^\]]+)\]/);
+    const slot = m ? m[1] : '';
+    task.name  = slot ? '[' + slot + '] ' + newItem : newItem;
+    task.desc  = newDesc;
+    saveCustomTasks(tasks);
+  } else if (_bisEditSlot) {
+    const id       = 'bis_' + Date.now().toString(36);
+    const taskName = '[' + _bisEditSlot + '] ' + newItem;
+    const tasks    = loadCustomTasks();
+    tasks.push({ id, name: taskName, desc: newDesc });
+    saveCustomTasks(tasks);
+    const yourList = loadYourList();
+    yourList.push('custom_' + id);
+    saveYourList(yourList);
+  } else {
+    return;
+  }
 
-  // Preserve the [Slot] prefix
-  const m    = (task.name || '').match(/^\[([^\]]+)\]/);
-  const slot = m ? m[1] : '';
-  task.name  = slot ? '[' + slot + '] ' + newItem : newItem;
-  task.desc  = newDesc;
-
-  saveCustomTasks(tasks);
+  _fetchIconForItem(newItem);
   closeBisEditModal();
   render();
+}
+
+async function _fetchIconForItem(itemName) {
+  if (!itemName) return;
+  const cache = JSON.parse(localStorage.getItem('wow_mn_item_icons') || '{}');
+  if (cache[itemName.toLowerCase()]) { render(); return; }
+
+  let found = false;
+
+  // Try known ID first
+  const knownId = (typeof BIS_ITEM_IDS !== 'undefined') && BIS_ITEM_IDS[itemName];
+  if (knownId) {
+    try {
+      const res = await fetch('/api/item-icons-by-id', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: [{ name: itemName, id: knownId }] }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Object.keys(data).length) { Object.assign(cache, data); found = true; }
+      }
+    } catch (_) {}
+  }
+
+  // Fall back to name search
+  if (!found) {
+    try {
+      const res = await fetch('/api/item-icons', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ names: [itemName] }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Object.keys(data).length) { Object.assign(cache, data); found = true; }
+      }
+    } catch (_) {}
+  }
+
+  if (found) {
+    localStorage.setItem('wow_mn_item_icons', JSON.stringify(cache));
+    render();
+  }
 }
 
 function _renderBisPhase(phase) {
