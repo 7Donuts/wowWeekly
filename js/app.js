@@ -344,6 +344,29 @@ function removeFromYourList(id) {
   render();
 }
 
+/* ── BIS GRID CARD (compact two-column layout in grouped Your List) ── */
+function bisGridTaskHtml(t, done) {
+  const id    = t.id;
+  const isDone = !!done[id];
+  const m     = (t.name || '').match(/^\[([^\]]+)\]\s*(.+)$/);
+  const slot  = m ? m[1] : '';
+  const item  = m ? m[2] : (t.name || '');
+  const cache = JSON.parse(localStorage.getItem('wow_mn_item_icons') || '{}');
+  const apiIcon = cache[item.toLowerCase()];
+  const iconSrc = apiIcon || _BIS_SLOT_ICONS[slot] || '';
+  const iconHtml = iconSrc
+    ? '<img src="' + escHtml(iconSrc) + '" class="bis-grid-icon' + (apiIcon ? '' : ' bis-task-icon--placeholder') + '" alt="' + escHtml(slot) + '">'
+    : '';
+  return '<div class="task bis-grid-card' + (isDone ? ' done' : '') + '">'
+    + '<div class="task-check" onclick="event.stopPropagation();toggle(\'' + id + '\',this)" style="cursor:pointer;flex-shrink:0;"></div>'
+    + iconHtml
+    + '<div class="bis-grid-info">'
+    + '<div class="bis-grid-slot">' + escHtml(slot) + '</div>'
+    + '<div class="bis-grid-name" title="' + escHtml(item) + '">' + escHtml(item) + '</div>'
+    + '</div>'
+    + '</div>';
+}
+
 /* ── YOUR LIST TASK HTML HELPER (shared by grouped + flat views) ── */
 function ylTaskHtml(t, done, goals, notes, bossKills) {
   const id = t.id;
@@ -611,13 +634,13 @@ function render() {
       totalDone    = nonBisSelected.filter(t => done[t.id]).length;
 
       sectionGroups.forEach(({ sec, tasks }) => {
+        const isBis = sec.id === 'bis';
         const sortedTasks = [...tasks].sort((a, b) => {
-          const ai = order.indexOf(a.id), bi = order.indexOf(b.id);
-          const aPos = ai === -1 ? 999 : ai;
-          const bPos = bi === -1 ? 999 : bi;
           const aDone = done[a.id] ? 1 : 0, bDone = done[b.id] ? 1 : 0;
           if (aDone !== bDone) return aDone - bDone;
-          return aPos - bPos;
+          if (isBis) return _bisSlotRank(a.name) - _bisSlotRank(b.name);
+          const ai = order.indexOf(a.id), bi = order.indexOf(b.id);
+          return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
         });
 
         const secDone = sortedTasks.filter(t => done[t.id]).length;
@@ -631,9 +654,11 @@ function render() {
         wrap.appendChild(ylHeader);
 
         const body = document.createElement('div');
-        body.className = 'section-body yl-section-body';
+        body.className = 'section-body yl-section-body' + (isBis && !editingYourList ? ' bis-grid-body' : '');
         body.dataset.secId = sec.id;
-        body.innerHTML = sortedTasks.map(t => editingYourList ? ylEditTaskHtml(t) : ylTaskHtml(t, done, goals, notes, bossKills)).join('');
+        body.innerHTML = (isBis && !editingYourList)
+          ? sortedTasks.map(t => bisGridTaskHtml(t, done)).join('')
+          : sortedTasks.map(t => editingYourList ? ylEditTaskHtml(t) : ylTaskHtml(t, done, goals, notes, bossKills)).join('');
         wrap.appendChild(body);
         container.appendChild(wrap);
       });
@@ -1594,6 +1619,13 @@ function saveCustomTask() {
 ═══════════════════════════════════════════ */
 let _bisClass = null;
 let _bisSpec  = null;
+
+const _BIS_SLOT_ORDER = ['Head','Neck','Shoulders','Back','Chest','Wrists','Hands','Waist','Legs','Feet','Ring 1','Ring 2','Trinket 1','Trinket 2','Main Hand','Off Hand','Shield','Ranged'];
+function _bisSlotRank(name) {
+  const m = (name || '').match(/^\[([^\]]+)\]/);
+  const idx = m ? _BIS_SLOT_ORDER.indexOf(m[1]) : -1;
+  return idx === -1 ? 999 : idx;
+}
 
 const _BIS_SLOT_ICONS = {
   'Head':      'img/headslot.webp',
