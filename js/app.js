@@ -344,27 +344,51 @@ function removeFromYourList(id) {
   render();
 }
 
-/* ── BIS GRID CARD (compact two-column layout in grouped Your List) ── */
-function bisGridTaskHtml(t, done) {
-  const id    = t.id;
-  const isDone = !!done[id];
-  const m     = (t.name || '').match(/^\[([^\]]+)\]\s*(.+)$/);
-  const slot  = m ? m[1] : '';
-  const item  = m ? m[2] : (t.name || '');
-  const cache = JSON.parse(localStorage.getItem('wow_mn_item_icons') || '{}');
-  const apiIcon = cache[item.toLowerCase()];
-  const iconSrc = apiIcon || _BIS_SLOT_ICONS[slot] || '';
-  const iconHtml = iconSrc
-    ? '<img src="' + escHtml(iconSrc) + '" class="bis-grid-icon' + (apiIcon ? '' : ' bis-task-icon--placeholder') + '" alt="' + escHtml(slot) + '">'
-    : '';
-  return '<div class="task bis-grid-card' + (isDone ? ' done' : '') + '">'
-    + '<div class="task-check" onclick="event.stopPropagation();toggle(\'' + id + '\',this)" style="cursor:pointer;flex-shrink:0;"></div>'
-    + iconHtml
-    + '<div class="bis-grid-info">'
-    + '<div class="bis-grid-slot">' + escHtml(slot) + '</div>'
-    + '<div class="bis-grid-name" title="' + escHtml(item) + '">' + escHtml(item) + '</div>'
-    + '</div>'
-    + '</div>';
+/* ── BIS GRID — always renders all 16 standard slots so positions never shift ── */
+const _BIS_GRID_SLOTS = [
+  'Head','Neck','Shoulders','Back','Chest','Wrists',
+  'Hands','Waist','Legs','Feet','Ring 1','Ring 2',
+  'Trinket 1','Trinket 2','Main Hand','Off Hand',
+];
+
+function renderBisGrid(tasks, done) {
+  const cache  = JSON.parse(localStorage.getItem('wow_mn_item_icons') || '{}');
+  const bySlot = {};
+  tasks.forEach(t => {
+    const m = (t.name || '').match(/^\[([^\]]+)\]/);
+    if (m && !bySlot[m[1]]) bySlot[m[1]] = t;
+    // Shield and Ranged fall into Off Hand / Main Hand columns
+    if (m && m[1] === 'Shield'  && !bySlot['Off Hand'])  bySlot['Off Hand']  = t;
+    if (m && m[1] === 'Ranged'  && !bySlot['Main Hand']) bySlot['Main Hand'] = t;
+  });
+
+  return _BIS_GRID_SLOTS.map(slot => {
+    const t = bySlot[slot];
+    if (!t) {
+      const ph = _BIS_SLOT_ICONS[slot]
+        ? '<img src="' + _BIS_SLOT_ICONS[slot] + '" class="bis-grid-icon bis-task-icon--placeholder" style="opacity:0.18;" alt="">'
+        : '<div class="bis-grid-icon"></div>';
+      return '<div class="bis-grid-card bis-grid-empty">' + ph
+        + '<div class="bis-grid-info"><div class="bis-grid-slot">' + slot + '</div></div></div>';
+    }
+    const id     = t.id;
+    const isDone = !!done[id];
+    const m2     = (t.name || '').match(/^\[([^\]]+)\]\s*(.+)$/);
+    const item   = m2 ? m2[2] : (t.name || '');
+    const apiIcon = cache[item.toLowerCase()];
+    const iconSrc = apiIcon || _BIS_SLOT_ICONS[slot] || '';
+    const iconHtml = iconSrc
+      ? '<img src="' + escHtml(iconSrc) + '" class="bis-grid-icon' + (apiIcon ? '' : ' bis-task-icon--placeholder') + '" alt="' + escHtml(slot) + '">'
+      : '';
+    return '<div class="task bis-grid-card' + (isDone ? ' done' : '') + '">'
+      + '<div class="task-check" onclick="event.stopPropagation();toggle(\'' + id + '\',this)" style="cursor:pointer;flex-shrink:0;"></div>'
+      + iconHtml
+      + '<div class="bis-grid-info">'
+      + '<div class="bis-grid-slot">' + escHtml(slot) + '</div>'
+      + '<div class="bis-grid-name" title="' + escHtml(item) + '">' + escHtml(item) + '</div>'
+      + '</div>'
+      + '</div>';
+  }).join('');
 }
 
 /* ── YOUR LIST TASK HTML HELPER (shared by grouped + flat views) ── */
@@ -657,7 +681,7 @@ function render() {
         body.className = 'section-body yl-section-body' + (isBis && !editingYourList ? ' bis-grid-body' : '');
         body.dataset.secId = sec.id;
         body.innerHTML = (isBis && !editingYourList)
-          ? sortedTasks.map(t => bisGridTaskHtml(t, done)).join('')
+          ? renderBisGrid(sortedTasks, done)
           : sortedTasks.map(t => editingYourList ? ylEditTaskHtml(t) : ylTaskHtml(t, done, goals, notes, bossKills)).join('');
         wrap.appendChild(body);
         container.appendChild(wrap);

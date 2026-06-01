@@ -1822,6 +1822,10 @@ body.light-mode .tier-btn.active { background: rgba(139,26,26,0.12); border-colo
 .bis-grid-card:hover { border-color: var(--border-bright); }
 .bis-grid-card.done { opacity: 0.45; }
 .bis-grid-card.done .bis-grid-name { text-decoration: line-through; }
+.bis-grid-card.bis-grid-empty {
+  opacity: 0.28; pointer-events: none;
+  border-style: dashed;
+}
 .bis-grid-icon {
   width: 26px; height: 26px; border-radius: 4px; flex-shrink: 0;
   object-fit: contain;
