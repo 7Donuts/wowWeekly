@@ -1840,13 +1840,16 @@ function _renderBisPhase(phase) {
       return;
     }
 
-    // Check which items are already imported (exist as custom tasks)
-    const existingNames = new Set(loadCustomTasks().map(t => t.name));
+    // Check which items are currently in Your List (not just in customTasks storage)
+    const _existingCustom = loadCustomTasks();
+    const _existingByName = new Map(_existingCustom.map(t => [t.name, t.id]));
+    const _yourListSet    = new Set(loadYourList());
     const rows = data.map((item, i) => {
-      const taskName = `[${item.slot}] ${item.item}`;
-      const alreadyIn = existingNames.has(taskName);
-      const selClass  = alreadyIn ? 'selected' : '';
-      const checked   = alreadyIn ? 'checked' : '';
+      const taskName  = `[${item.slot}] ${item.item}`;
+      const existId   = _existingByName.get(taskName);
+      const inList    = !!(existId && _yourListSet.has('custom_' + existId));
+      const selClass  = inList ? 'selected' : '';
+      const checked   = inList ? 'checked' : '';
       return `<label class="bis-gear-row ${selClass}" id="bis-row-${i}">
         <input type="checkbox" class="bis-gear-check" id="bis-chk-${i}" ${checked}
                onchange="_bisRowToggle(${i})" onclick="event.stopPropagation()">
@@ -1981,16 +1984,28 @@ function _bisImportSelected() {
   const sp   = cls ? cls.specs.find(s => s.key === _bisSpec) : null;
   const data = (BIS_DATA[_bisClass] && BIS_DATA[_bisClass][_bisSpec]) ? BIS_DATA[_bisClass][_bisSpec].items : [];
 
-  const existing   = loadCustomTasks();
-  const existNames = new Set(existing.map(t => t.name));
-  const yourList   = loadYourList();
-  let   imported   = 0;
+  const existing    = loadCustomTasks();
+  const existByName = new Map(existing.map(t => [t.name, t.id]));
+  const yourList    = loadYourList();
+  const yourListSet = new Set(yourList);
+  let   imported    = 0;
 
   data.forEach((item, i) => {
     const chk = document.getElementById('bis-chk-' + i);
     if (!chk || !chk.checked) return;
     const taskName = `[${item.slot}] ${item.item}`;
-    if (existNames.has(taskName)) return; // skip already-imported
+    const existId  = existByName.get(taskName);
+    if (existId) {
+      // Task exists in storage — re-add to list if it was removed
+      const customId = 'custom_' + existId;
+      if (!yourListSet.has(customId)) {
+        yourList.push(customId);
+        yourListSet.add(customId);
+        imported++;
+      }
+      return;
+    }
+    // New item — add to customTasks and yourList
     const desc = `${item.source} · ${item.location}`;
     const id   = 'bis_' + Date.now().toString(36) + '_' + i;
     existing.push({ id, name: taskName, desc });
