@@ -2133,21 +2133,26 @@ function renderSummaryTab(tab) {
 function closeSummary() { document.getElementById('modal-summary').classList.remove('open'); }
 
 function copyDiscordSummary() {
-  const week    = getWeekKey();
-  const d       = new Date(week + 'T15:00:00Z');
+  const week      = getWeekKey();
+  const d         = new Date(week + 'T15:00:00Z');
   const weekLabel = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
-  const done    = loadDone();
-  const hidden  = loadHidden();
-  const ylArr   = loadYourList();
+  const done      = loadDone();
+  const hidden    = loadHidden();
+  const ylArr     = loadYourList();
   const isYLScope = activeFilters.has('yourlist') && ylArr.length > 0;
-  const ylSet   = new Set(ylArr);
+  const ylSet     = new Set(ylArr);
 
-  const cls     = loadCharClass(currentChar);
-  const clsDef  = cls ? CLASSES.find(x => x.id === cls) : null;
-  const group   = loadCharGroupFor(currentChar);
-  const gm      = GROUP_META[group];
+  const cls    = loadCharClass(currentChar);
+  const clsDef = cls ? CLASSES.find(x => x.id === cls) : null;
+  const group  = loadCharGroupFor(currentChar);
+  const gm     = GROUP_META[group];
 
-  // Build per-section rows
+  const SHORT = {
+    'Mythic+ Dungeons': 'Mythic+', 'Optional & Collector Content': 'Optional',
+    'Bazaar Weekly Quests': 'Bazaar', 'Player Housing': 'Housing',
+    'Prey System': 'Prey', 'Showdown Zones': 'Showdown',
+  };
+
   const rows = [];
   let grandTotal = 0, grandDone = 0;
   SECTIONS.forEach(sec => {
@@ -2155,47 +2160,47 @@ function copyDiscordSummary() {
       ? sec.tasks.filter(t => ylSet.has(t.id))
       : sec.tasks.filter(t => !hidden[t.id]);
     if (!visible.length) return;
-    const secDone  = visible.filter(t => done[t.id]).length;
+    const secDone = visible.filter(t => done[t.id]).length;
     grandTotal += visible.length;
     grandDone  += secDone;
-    rows.push({ title: sec.title, done: secDone, total: visible.length });
+    rows.push({ title: SHORT[sec.title] || sec.title, done: secDone, total: visible.length });
   });
   const customTasks = isYLScope
-    ? loadCustomTasks().filter(t => ylSet.has('custom_' + t.id))
-    : loadCustomTasks();
+    ? loadCustomTasks().filter(t => ylSet.has('custom_' + t.id) && !t.id.startsWith('bis_'))
+    : loadCustomTasks().filter(t => !t.id.startsWith('bis_'));
   if (customTasks.length) {
     const cDone = customTasks.filter(t => done['custom_' + t.id]).length;
     grandTotal += customTasks.length;
     grandDone  += cDone;
-    rows.push({ title: 'Custom Tasks', done: cDone, total: customTasks.length });
+    rows.push({ title: 'Custom', done: cDone, total: customTasks.length });
   }
 
   const pct    = grandTotal ? Math.round((grandDone / grandTotal) * 100) : 0;
-  const filled = Math.round(pct / 10);
-  const bar    = '█'.repeat(filled) + '░'.repeat(10 - filled);
+  const filled = Math.round(pct / 5);
+  const bar    = '█'.repeat(filled) + '░'.repeat(20 - filled);
 
-  function rowIcon(done, total) {
-    if (done === total && total > 0) return '✅';
-    if (done > 0) return '🔄';
-    return '⬜';
-  }
+  const complete = rows.filter(r => r.done === r.total && r.total > 0);
+  const partial  = rows.filter(r => r.done > 0 && r.done < r.total);
+  const untouched = rows.filter(r => r.done === 0);
 
-  // Header line
+  const sectionLines = [];
+  if (complete.length)  sectionLines.push('✅ ' + complete.map(r => r.title).join(' · '));
+  if (partial.length)   sectionLines.push('🔄 ' + partial.map(r => r.title + ' ' + r.done + '/' + r.total).join(' · '));
+  if (untouched.length) sectionLines.push('⬜ ' + untouched.map(r => r.title).join(' · '));
+
   let charLine = '**' + currentChar + '**';
   if (clsDef) charLine += ' · ' + clsDef.name;
-  if (gm)     charLine += ' · ' + gm.dot + ' ' + gm.label.replace(/^[^ ]+ /, ''); // e.g. "Main"
+  if (gm)     charLine += ' · ' + gm.label.replace(/^[^ ]+ /, '');
 
-  const sectionLines = rows.map(r =>
-    rowIcon(r.done, r.total) + ' ' + r.title + ': ' + r.done + '/' + r.total
-  ).join('\n');
+  const scopeLabel = isYLScope ? ' · Your List' : '';
 
   const text = [
-    '📊 **The Azeroth Agenda** · ' + weekLabel,
+    '📊 **The Azeroth Agenda**' + scopeLabel + ' — ' + weekLabel,
     charLine,
     '',
-    sectionLines,
+    grandDone + '/' + grandTotal + ' tasks · ' + pct + '% \`' + bar + '\`',
     '',
-    '**' + grandDone + ' / ' + grandTotal + ' · ' + pct + '%** `' + bar + '`',
+    ...sectionLines,
   ].join('\n');
 
   navigator.clipboard.writeText(text).then(() => {
