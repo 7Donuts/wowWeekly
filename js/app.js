@@ -636,9 +636,9 @@ function render() {
       sectionGroups.forEach(({ sec, tasks }) => {
         const isBis = sec.id === 'bis';
         const sortedTasks = [...tasks].sort((a, b) => {
+          if (isBis) return _bisSlotRank(a.name) - _bisSlotRank(b.name);
           const aDone = done[a.id] ? 1 : 0, bDone = done[b.id] ? 1 : 0;
           if (aDone !== bDone) return aDone - bDone;
-          if (isBis) return _bisSlotRank(a.name) - _bisSlotRank(b.name);
           const ai = order.indexOf(a.id), bi = order.indexOf(b.id);
           return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
         });
