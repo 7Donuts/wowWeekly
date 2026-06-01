@@ -878,6 +878,17 @@ body.light-mode .sync-saved { color: #3a8a3a; }
   color: var(--text-muted); letter-spacing: 0.03em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px;
 }
+.yl-edit-btn {
+  background: transparent;
+  border: 1px solid rgba(201,168,76,0.4);
+  color: var(--light-gold);
+  font-family: 'Cinzel', serif;
+  font-size: 0.72rem; letter-spacing: 0.05em;
+  padding: 0.22rem 0.65rem; border-radius: 5px;
+  cursor: pointer; white-space: nowrap;
+  transition: border-color 0.15s, background 0.15s;
+}
+.yl-edit-btn:hover { background: rgba(201,168,76,0.12); border-color: rgba(201,168,76,0.7); }
 
 .yourlist-empty,
 .custom-empty {

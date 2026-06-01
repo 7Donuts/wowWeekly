@@ -523,20 +523,19 @@ function render() {
 
   // ── YOUR LIST VIEW (normal + edit-on-yourlist) ──────────────
   if (activeFilters.has('yourlist')) {
-    const editBtn = document.getElementById('btn-edit-yourlist');
-    editBtn.textContent = editingYourList ? '✓ Done' : '⭐ Edit List';
-
     // Render the edit bar inside the yourlist view when editing
     if (editingYourList) {
       container.appendChild(buildEditBar());
     }
 
-    // Your List identity banner
+    // Your List identity banner (with inline Edit button)
     const ylBanner = document.createElement('div');
     ylBanner.className = 'yl-view-banner';
     ylBanner.innerHTML = '<span class="yl-banner-icon">⭐</span>'
       + '<span class="yl-banner-title">Your List</span>'
-      + '<span class="yl-banner-char">' + charDisplayName(currentChar) + '</span>';
+      + '<span class="yl-banner-char">' + charDisplayName(currentChar) + '</span>'
+      + '<button id="btn-edit-yourlist" class="yl-edit-btn" onclick="startEditingYourList()">'
+      + (editingYourList ? '✓ Done' : '✏ Edit') + '</button>';
     container.appendChild(ylBanner);
 
     // Gather all tasks from SECTIONS that are in the list
@@ -812,8 +811,6 @@ function buildEditBar() {
   revealBtn.style.display = (anyHidden || revealHidden) ? '' : 'none';
   revealBtn.textContent = revealHidden ? '🚫 Hide Hidden' : '👁 Show Hidden';
 
-  // Edit List button hidden when not on yourlist tab
-  document.getElementById('btn-edit-yourlist').textContent = editingYourList ? '✓ Done' : '⭐ Edit List';
 
   // Update view toggle label
   const viewBtn = document.getElementById('btn-yourlist-view');
@@ -2004,19 +2001,26 @@ function renderSummaryTab(tab) {
     </div>`;
 
   if (tab === 'current') {
-    document.getElementById('summary-title').textContent = `Weekly Summary`;
     const done   = loadDone();
     const hidden = loadHidden();
+    const ylArr  = loadYourList();
+    const isYLScope = activeFilters.has('yourlist') && ylArr.length > 0;
+    const ylSet  = new Set(ylArr);
+    document.getElementById('summary-title').textContent = isYLScope ? 'Your List Summary' : 'Weekly Summary';
     let rows = [], grandTotal = 0, grandDone = 0;
     SECTIONS.forEach(sec => {
-      const visible = sec.tasks.filter(t => !hidden[t.id]);
+      const visible = isYLScope
+        ? sec.tasks.filter(t => ylSet.has(t.id))
+        : sec.tasks.filter(t => !hidden[t.id]);
       if (!visible.length) return;
       const secDone = visible.filter(t => done[t.id]).length;
       grandTotal += visible.length;
       grandDone  += secDone;
       rows.push({ title: sec.title, icon: sec.icon, iconClass: sec.iconClass, done: secDone, total: visible.length });
     });
-    const customTasks = loadCustomTasks().filter(t => !t.id.startsWith('bis_'));
+    const customTasks = isYLScope
+      ? loadCustomTasks().filter(t => ylSet.has('custom_' + t.id) && !t.id.startsWith('bis_'))
+      : loadCustomTasks().filter(t => !t.id.startsWith('bis_'));
     if (customTasks.length) {
       const cDone = customTasks.filter(t => done['custom_' + t.id]).length;
       grandTotal += customTasks.length;
@@ -2125,6 +2129,9 @@ function copyDiscordSummary() {
   const weekLabel = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
   const done    = loadDone();
   const hidden  = loadHidden();
+  const ylArr   = loadYourList();
+  const isYLScope = activeFilters.has('yourlist') && ylArr.length > 0;
+  const ylSet   = new Set(ylArr);
 
   const cls     = loadCharClass(currentChar);
   const clsDef  = cls ? CLASSES.find(x => x.id === cls) : null;
@@ -2135,14 +2142,18 @@ function copyDiscordSummary() {
   const rows = [];
   let grandTotal = 0, grandDone = 0;
   SECTIONS.forEach(sec => {
-    const visible = sec.tasks.filter(t => !hidden[t.id]);
+    const visible = isYLScope
+      ? sec.tasks.filter(t => ylSet.has(t.id))
+      : sec.tasks.filter(t => !hidden[t.id]);
     if (!visible.length) return;
     const secDone  = visible.filter(t => done[t.id]).length;
     grandTotal += visible.length;
     grandDone  += secDone;
     rows.push({ title: sec.title, done: secDone, total: visible.length });
   });
-  const customTasks = loadCustomTasks();
+  const customTasks = isYLScope
+    ? loadCustomTasks().filter(t => ylSet.has('custom_' + t.id))
+    : loadCustomTasks();
   if (customTasks.length) {
     const cDone = customTasks.filter(t => done['custom_' + t.id]).length;
     grandTotal += customTasks.length;
