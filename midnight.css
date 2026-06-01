@@ -1801,40 +1801,53 @@ body.light-mode .tier-btn.active { background: rgba(139,26,26,0.12); border-colo
   border: 1px solid var(--border);
 }
 
-/* BiS gear three-column layout: [left slots] [char render] [right slots] */
+/* BiS gear oval layout: 8 paired rows with variable center gap + overlaid character render */
 .bis-grid-body {
-  display: flex;
-  align-items: stretch;
-  gap: 0.4rem;
+  position: relative;
   padding: 0.4rem;
   background: transparent;
   border: none;
   overflow: visible;
 }
-.bis-col {
-  display: flex; flex-direction: column; gap: 0.35rem;
-  flex: 1; min-width: 0;
+.bis-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
 }
-.bis-char-center {
-  flex-shrink: 0;
-  width: 96px;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  position: relative;
+.bis-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.3rem;
+}
+.bis-row > .bis-grid-card { flex: 1; min-width: 0; }
+.bis-oval-gap { flex-shrink: 0; }
+/* Character render overlaid in the oval center space */
+.bis-char-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  pointer-events: none;
   overflow: hidden;
-  border-radius: 6px;
 }
 .bis-char-render {
-  width: 100%; height: 100%;
-  object-fit: cover; object-position: center top;
-  opacity: 0.88;
-  border-radius: 6px;
+  height: 105%;
+  width: auto;
+  object-fit: contain;
+  object-position: center bottom;
+  opacity: 0.92;
+  filter: drop-shadow(0 0 18px rgba(0,0,0,0.85));
 }
 .bis-char-placeholder {
-  width: 100%; height: 100%;
-  background: linear-gradient(180deg, rgba(var(--void-rgb,68,0,102),0.18) 0%, transparent 100%);
-  border-radius: 6px;
-  border: 1px dashed var(--border);
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60px; height: 60%;
+  background: linear-gradient(180deg, rgba(80,20,120,0.12) 0%, transparent 100%);
+  border-left: 1px dashed var(--border);
+  border-right: 1px dashed var(--border);
+  border-radius: 50% 50% 30% 30%;
 }
 .bis-grid-card {
   display: flex; align-items: center; gap: 0.45rem;

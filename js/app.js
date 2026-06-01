@@ -357,6 +357,11 @@ const _BIS_GRID_SLOTS = [
   'Main Hand','Off Hand',
 ];
 
+// Center oval gap per row (px) — widens at shoulder/chest, narrows at head and weapons
+// Row pairs: Head/Hands, Neck/Waist, Shoulders/Legs, Back/Feet,
+//            Chest/Ring1, Wrists/Ring2, Trinket1/2, MH/OH
+const _BIS_OVAL_WIDTHS = [48, 80, 116, 124, 120, 100, 76, 56];
+
 function _renderBisCard(slot, t, done, isRight, cache) {
   if (!t) {
     const ph = _BIS_SLOT_ICONS[slot]
@@ -407,18 +412,25 @@ function renderBisGrid(tasks, done) {
   const leftSlots  = _BIS_GRID_SLOTS.filter((_, i) => i % 2 === 0);
   const rightSlots = _BIS_GRID_SLOTS.filter((_, i) => i % 2 === 1);
 
-  const leftHtml  = leftSlots.map(s  => _renderBisCard(s, bySlot[s], done, false, cache)).join('');
-  const rightHtml = rightSlots.map(s => _renderBisCard(s, bySlot[s], done, true,  cache)).join('');
+  // 8 paired rows; center gap widens/narrows to carve an oval for the character render
+  const rowsHtml = leftSlots.map((ls, rowIdx) => {
+    const rs   = rightSlots[rowIdx];
+    const gap  = _BIS_OVAL_WIDTHS[rowIdx];
+    return '<div class="bis-row">'
+      + _renderBisCard(ls, bySlot[ls], done, false, cache)
+      + '<div class="bis-oval-gap" style="width:' + gap + 'px;"></div>'
+      + _renderBisCard(rs, bySlot[rs], done, true, cache)
+      + '</div>';
+  }).join('');
 
   const armory    = loadArmoryData(currentChar);
   const renderUrl = armory?.renderUrl || null;
-  const centerHtml = renderUrl
+  const charHtml  = renderUrl
     ? '<img src="' + escHtml(renderUrl) + '" class="bis-char-render" alt="Character">'
     : '<div class="bis-char-placeholder"></div>';
 
-  return '<div class="bis-col">' + leftHtml + '</div>'
-    + '<div class="bis-char-center">' + centerHtml + '</div>'
-    + '<div class="bis-col">' + rightHtml + '</div>';
+  return '<div class="bis-rows">' + rowsHtml + '</div>'
+    + '<div class="bis-char-overlay">' + charHtml + '</div>';
 }
 
 /* ── YOUR LIST TASK HTML HELPER (shared by grouped + flat views) ── */
