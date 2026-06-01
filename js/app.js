@@ -135,10 +135,6 @@ function customStorageKey() { return 'wow_mn_custom_' + currentChar; }
 function loadCustomTasks()  { return JSON.parse(localStorage.getItem(customStorageKey()) || '[]'); }
 function saveCustomTasks(t) { localStorage.setItem(customStorageKey(), JSON.stringify(t)); }
 
-/* ── TEMPLATE PROFILES ── */
-function profilesKey()   { return 'wow_mn_profiles'; }
-function loadProfiles()  { return JSON.parse(localStorage.getItem(profilesKey()) || '[]'); }
-function saveProfiles(p) { localStorage.setItem(profilesKey(), JSON.stringify(p)); }
 
 /* ═══════════════════════════════════════════
    APP STATE — global mutable state for the
@@ -827,7 +823,6 @@ function buildEditBar() {
   // Apply to All hidden when not on yourlist tab
 
   renderCustomSection();
-  updateShareBtn();
 }
 
 function toggle(id, taskEl) {
@@ -1329,71 +1324,6 @@ function dismissEventAlert(key) {
   renderEventAlerts();
 }
 
-/* ═══════════════════════════════════════════
-   SHAREABLE PLAN URL
-   Encodes Your List task IDs into a URL hash.
-   On load, detects #plan=... and offers import.
-═══════════════════════════════════════════ */
-function generateShareURL() {
-  const list = loadYourList();
-  if (!list.length) { alert('Your List is empty. Add some tasks first.'); return; }
-  const url = window.location.origin + window.location.pathname + '#plan=' + list.join(',');
-  navigator.clipboard.writeText(url).then(() => {
-    showShareToast('🔗 Link copied to clipboard!');
-  }).catch(() => {
-    prompt('Copy this shareable link:', url);
-  });
-}
-
-function showShareToast(msg) {
-  const t = document.getElementById('share-toast');
-  if (!t) return;
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
-}
-
-function checkShareablePlanURL() {
-  const hash = window.location.hash;
-  if (!hash.startsWith('#plan=')) return;
-  const ids = hash.slice(6).split(',').filter(Boolean);
-  history.replaceState(null, '', window.location.pathname); // clear hash
-  if (!ids.length) return;
-  const allIds = new Set(SECTIONS.flatMap(s => s.tasks.map(t => t.id)));
-  const valid = ids.filter(id => allIds.has(id));
-  if (!valid.length) return;
-  const allTasks = SECTIONS.flatMap(s => s.tasks);
-  const preview = valid.slice(0, 3).map(id => {
-    const t = allTasks.find(t => t.id === id);
-    return t ? t.name : id;
-  }).join(', ') + (valid.length > 3 ? ' +' + (valid.length - 3) + ' more' : '');
-  const banner = document.getElementById('plan-import-banner');
-  if (!banner) return;
-  banner.innerHTML = '<span class="pib-icon">📋</span>'
-    + '<span class="pib-text">Shared plan &middot; <strong>' + valid.length + ' tasks</strong> &mdash; ' + preview + '</span>'
-    + '<button class="pib-btn" onclick="importSharedPlan(' + JSON.stringify(valid) + ')">Import</button>'
-    + '<button class="pib-dismiss" onclick="dismissPlanBanner()" title="Dismiss">&times;</button>';
-  banner.style.display = 'flex';
-}
-
-function importSharedPlan(ids) {
-  saveYourList(ids);
-  dismissPlanBanner();
-  const btn = document.querySelector('[data-filter="yourlist"]');
-  if (btn) setFilter('yourlist', btn);
-  render();
-  showShareToast('✓ Plan imported to Your List!');
-}
-
-function dismissPlanBanner() {
-  const b = document.getElementById('plan-import-banner');
-  if (b) b.style.display = 'none';
-}
-
-function updateShareBtn() {
-  const btn = document.getElementById('btn-share-plan');
-  if (btn) btn.style.display = loadYourList().length ? '' : 'none';
-}
 
 /* ═══════════════════════════════════════════
    COUNTDOWN
@@ -2306,20 +2236,6 @@ function openExportImport() {
         <div class="data-option-desc">Download every character's data as a single backup JSON file.</div>
       </div>
     </div>
-    <div class="data-option" onclick="closeDataModal();openProfilesModal()">
-      <div class="data-option-icon">🗂️</div>
-      <div class="data-option-body">
-        <div class="data-option-title">Template Profiles</div>
-        <div class="data-option-desc">Save and apply named configurations (Your List + hidden settings) across characters.</div>
-      </div>
-    </div>
-    <div class="data-option" onclick="closeDataModal();openArmoryRegionModal()">
-      <div class="data-option-icon">🌍</div>
-      <div class="data-option-body">
-        <div class="data-option-title">Armory Region</div>
-        <div class="data-option-desc">Set your WoW region (Americas, Europe, Korea, Taiwan) for Armory sync.</div>
-      </div>
-    </div>
     <div class="data-option" onclick="closeDataModal();localStorage.removeItem('wow_mn_welcomed');openWelcome()">
       <div class="data-option-icon">🧭</div>
       <div class="data-option-body">
@@ -2651,95 +2567,6 @@ function renderInlineHistory() {
         </div>
       </div>
     </div>`;
-}
-
-/* ═══════════════════════════════════════════
-   TEMPLATE PROFILES
-   Captures Your List + hidden tasks/sections
-   into a named, reusable configuration.
-═══════════════════════════════════════════ */
-function openProfilesModal() {
-  document.getElementById('modal-profiles').classList.add('open');
-  renderProfilesModal();
-}
-function closeProfilesModal() {
-  document.getElementById('modal-profiles').classList.remove('open');
-}
-
-function renderProfilesModal() {
-  const profiles = loadProfiles();
-  const content  = document.getElementById('profiles-modal-content');
-  const saveArea = '<div class="profile-save-row">'
-    + '<input type="text" id="profile-name-input" class="profile-name-input" placeholder="Profile name…" maxlength="40" onkeydown="if(event.key===\'Enter\')saveCurrentProfile()">'
-    + '<button class="btn-primary" style="font-size:12px;padding:0.4rem 1rem;" onclick="saveCurrentProfile()">💾 Save Current</button>'
-    + '</div>';
-
-  let listHtml = '';
-  if (profiles.length === 0) {
-    listHtml = '<div class="profile-empty">No profiles saved yet.<br><span style="font-size:12px;color:var(--text-muted)">Save your current Your List + hidden settings as a named profile to reuse on any character.</span></div>';
-  } else {
-    listHtml = profiles.map((p, i) => {
-      const taskCount  = (p.yourList || []).length;
-      const hiddenCount = Object.keys(p.hidden || {}).length;
-      const saved      = new Date(p.savedAt).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
-      return '<div class="profile-row">'
-        + '<div class="profile-row-info">'
-        + '<div class="profile-row-name">' + escHtml(p.name) + '</div>'
-        + '<div class="profile-row-meta">' + taskCount + ' tasks · ' + hiddenCount + ' hidden · Saved ' + saved + '</div>'
-        + '</div>'
-        + '<div class="profile-row-btns">'
-        + '<button class="btn-profile-apply" onclick="applyProfile(' + i + ')" title="Apply to current character">Apply</button>'
-        + '<button class="btn-profile-del" onclick="deleteProfile(' + i + ')" title="Delete profile">✕</button>'
-        + '</div>'
-        + '</div>';
-    }).join('');
-  }
-
-  content.innerHTML = saveArea
-    + '<div class="profile-desc">Profiles capture Your List selection and hidden tasks/sections. They do not include weekly completion progress.</div>'
-    + '<div class="profiles-list">' + listHtml + '</div>';
-}
-
-function saveCurrentProfile() {
-  const nameInput = document.getElementById('profile-name-input');
-  const name = nameInput ? nameInput.value.trim() : '';
-  if (!name) { if (nameInput) nameInput.focus(); return; }
-  const profiles = loadProfiles();
-  const existing = profiles.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
-  const profile = {
-    name,
-    savedAt:  new Date().toISOString(),
-    yourList: loadYourList(),
-    hidden:   loadHidden(),
-  };
-  if (existing !== -1) {
-    if (!confirm('A profile named "' + name + '" already exists. Overwrite it?')) return;
-    profiles[existing] = profile;
-  } else {
-    profiles.unshift(profile);
-  }
-  saveProfiles(profiles);
-  if (nameInput) nameInput.value = '';
-  renderProfilesModal();
-}
-
-function applyProfile(idx) {
-  const profiles = loadProfiles();
-  const p = profiles[idx];
-  if (!p) return;
-  if (!confirm('Apply profile "' + p.name + '" to ' + currentChar + '? This will replace their current Your List and hidden settings.')) return;
-  saveYourList(p.yourList || []);
-  saveHidden(p.hidden || {});
-  closeProfilesModal();
-  render();
-}
-
-function deleteProfile(idx) {
-  const profiles = loadProfiles();
-  if (!confirm('Delete profile "' + (profiles[idx] || {}).name + '"?')) return;
-  profiles.splice(idx, 1);
-  saveProfiles(profiles);
-  renderProfilesModal();
 }
 
 
@@ -3425,7 +3252,6 @@ function closeWhatsNew() {
 renderChars(); renderClassLinksBar(); render(); renderInlineHistory(); renderInlineEvent(); updateCountdown(); setInterval(updateCountdown, 1000); _fetchResetTime();
 updateLastChanceBtn(); renderLastChanceBanner();
 renderEventAlerts();
-checkShareablePlanURL();
 function shouldShowWelcome() {
   // Always show if we're mid-welcome-flow (e.g. OAuth return that triggered a cloud reload).
   if (sessionStorage.getItem('azeroth_welcome_return_step')) return true;

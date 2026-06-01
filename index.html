@@ -15,7 +15,7 @@
 <meta name="twitter:description" content="WoW Midnight weekly task tracker — never miss a reset.">
 <meta name="twitter:image" content="https://agenda.7donuts.dev/img/og-image.png">
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
-<link rel="stylesheet" href="midnight.css?v=1.9.49">
+<link rel="stylesheet" href="midnight.css?v=1.9.50">
 
 </head>
 <body>
@@ -67,7 +67,6 @@
           <button class="btn-reset-all" id="btn-reveal" onclick="toggleRevealHidden()" style="display:none;">👁 Show Hidden</button>
           <button class="btn-reset-all" id="btn-edit-yourlist" onclick="startEditingYourList()">⭐ Edit List</button>
           <button class="btn-reset-all" id="btn-bis" onclick="openBisModal()" style="color:var(--success-bright);border-color:var(--success);">⚔️ BiS Gear</button>
-          <button class="btn-reset-all" id="btn-share-plan" onclick="generateShareURL()" style="display:none;" title="Copy shareable link for Your List">🔗 Share Plan</button>
         </div>
       </div>
     </div>
@@ -83,8 +82,6 @@
   </div>
 
   <div id="event-alerts"></div>
-  <div id="plan-import-banner" class="plan-import-banner" style="display:none;"></div>
-
   <div class="char-bar">
     <span class="char-label">Character:</span>
     <button class="armory-btn" id="btn-sync-all" title="Sync all characters from Battle.net" onclick="syncAllCharsButton()" style="display:none;">🔄 Sync</button>
@@ -325,39 +322,20 @@
   </div>
 </div>
 
-<!-- ARMORY REGION MODAL -->
-<div class="modal-overlay" id="modal-armory-region">
-  <div class="modal" style="width:360px;max-width:95vw;">
-    <h3>🌍 Armory Region</h3>
-    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:1.1rem;line-height:1.6;">
-      Select your WoW region so the Armory sync looks up characters on the right servers.
-    </p>
-    <select id="armory-region-select" style="margin-bottom:1.25rem;width:100%;padding:0.55rem 0.75rem;background:var(--bg-input);color:var(--text-primary);border:1.5px solid var(--border-bright);border-radius:6px;font-size:14px;">
-      <option value="us">Americas (US)</option>
-      <option value="eu">Europe (EU)</option>
-      <option value="kr">Korea (KR)</option>
-      <option value="tw">Taiwan (TW)</option>
-    </select>
-    <div class="modal-btns">
-      <button class="btn-cancel" onclick="closeArmoryRegionModal()">Cancel</button>
-      <button class="btn-primary" onclick="saveArmoryRegion()">Save</button>
-    </div>
-  </div>
-</div>
 
 <!-- ── JS: load order matters — each file depends on the ones above it ── -->
-<script src="js/data-tasks.js?v=1.9.49"></script>
-<script src="js/data-events.js?v=1.9.49"></script>
-<script src="js/data-classes.js?v=1.9.49"></script>
-<script src="js/data-changelog.js?v=1.9.49"></script>
-<script src="js/data-bis.js?v=1.9.49"></script>
-<script src="js/data-item-ids.js?v=1.9.49"></script>
-<script src="js/storage.js?v=1.9.49"></script>
-<script src="js/armory.js?v=1.9.49"></script>
-<script src="js/confetti.js?v=1.9.49"></script>
-<script src="js/theme.js?v=1.9.49"></script>
-<script src="js/app.js?v=1.9.49"></script>
-<script src="js/sync.js?v=1.9.49"></script>
+<script src="js/data-tasks.js?v=1.9.50"></script>
+<script src="js/data-events.js?v=1.9.50"></script>
+<script src="js/data-classes.js?v=1.9.50"></script>
+<script src="js/data-changelog.js?v=1.9.50"></script>
+<script src="js/data-bis.js?v=1.9.50"></script>
+<script src="js/data-item-ids.js?v=1.9.50"></script>
+<script src="js/storage.js?v=1.9.50"></script>
+<script src="js/armory.js?v=1.9.50"></script>
+<script src="js/confetti.js?v=1.9.50"></script>
+<script src="js/theme.js?v=1.9.50"></script>
+<script src="js/app.js?v=1.9.50"></script>
+<script src="js/sync.js?v=1.9.50"></script>
 
 
 </body>

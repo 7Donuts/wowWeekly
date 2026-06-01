@@ -122,10 +122,6 @@ function snapshotWeekForChar(charName, weekKey) {
   }
 }
 
-/* ── TEMPLATE PROFILES ── */
-function profilesKey()       { return 'wow_mn_profiles'; }
-function loadProfiles()      { return JSON.parse(localStorage.getItem(profilesKey()) || '[]'); }
-function saveProfiles(p)     { localStorage.setItem(profilesKey(), JSON.stringify(p)); }
 
 
 function customStorageKey() { return 'wow_mn_custom_' + currentChar; }
