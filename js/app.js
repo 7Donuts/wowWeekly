@@ -394,7 +394,7 @@ function renderBisGrid(tasks, done) {
       + '<div class="bis-grid-slot">' + escHtml(slot) + '</div>'
       + '<div class="bis-grid-name" title="' + escHtml(item) + '">' + escHtml(item) + '</div>'
       + '</div>'
-      + '<button class="bis-grid-edit-btn" onclick="event.stopPropagation();openBisEditModal(event,\'custom_' + id + '\')" title="Edit item">✏</button>'
+      + '<button class="bis-grid-edit-btn" onclick="event.stopPropagation();openBisEditModal(event,\'' + id + '\')" title="Edit item">✏</button>'
       + '</div>';
   }).join('');
 }
@@ -1746,8 +1746,14 @@ async function _prefetchAllBisIcons() {
 function openBisModal() {
   _bisClass = null;
   _bisSpec  = null;
+  // If the character has a known class, skip straight to spec selection
+  const storedClass = localStorage.getItem('wow_mn_class_' + currentChar) || '';
+  if (storedClass) {
+    const bisKey = storedClass.replace(/-/g, ''); // 'death-knight' → 'deathknight'
+    if (WOW_CLASSES.find(c => c.key === bisKey)) _bisClass = bisKey;
+  }
   document.getElementById('modal-bis').classList.add('open');
-  _renderBisPhase('class');
+  _renderBisPhase(_bisClass ? 'spec' : 'class');
   _prefetchAllBisIcons();
 }
 
