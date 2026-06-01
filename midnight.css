@@ -841,6 +841,15 @@ body.light-mode .sync-saved { color: #3a8a3a; }
 #btn-edit-yourlist:hover { background: rgba(201,168,76,0.1); border-color: var(--light-gold); color: var(--light-pale); }
 
 .task.in-yourlist { }
+.task.yl-edit-selected {
+  border-color: rgba(201,168,76,0.55);
+  background: rgba(201,168,76,0.07);
+}
+.task.yl-edit-selected .task-name { color: var(--light-gold); }
+.task.yl-edit-selected:hover {
+  border-color: rgba(201,168,76,0.8);
+  background: rgba(201,168,76,0.13);
+}
 
 .yourlist-edit-bar {
   background: rgba(201,168,76,0.08);

@@ -299,7 +299,11 @@ function sectionTaskHtml(t, done, hidden, yourList, goals, bossKills, notes) {
       + '</div>';
   }
 
-  return '<div class="task' + (isDone ? ' done' : '') + (isHidden ? ' task-hidden' : '') + (inList ? ' in-yourlist' : '') + '">'
+  const _editSelClass = editingYourList && inList ? ' yl-edit-selected' : '';
+  const _editCardAttrs = editingYourList
+    ? ' onclick="toggleYourListTask(\'' + id + '\')" style="cursor:pointer;"'
+    : '';
+  return '<div class="task' + (isDone ? ' done' : '') + (isHidden ? ' task-hidden' : '') + (inList ? ' in-yourlist' : '') + _editSelClass + '"' + _editCardAttrs + '>'
     + '<div class="task-check" onclick="event.stopPropagation();' + checkClick + '" style="cursor:pointer;"></div>'
     + '<div class="task-body">'
     + '<div class="task-name">' + _bisTaskNameHtml(t.name, searchQuery) + '</div>'
@@ -319,12 +323,13 @@ function sectionTaskHtml(t, done, hidden, yourList, goals, bossKills, notes) {
 /* ── YOUR LIST EDIT-MODE TASK (remove toggle, shown on yourlist tab while editing) ── */
 function ylEditTaskHtml(t) {
   const id = t.id;
-  return '<div class="task yl-task yl-edit-task" data-id="' + id + '">'
+  return '<div class="task yl-task yl-edit-task yl-edit-selected" data-id="' + id + '"'
+    + ' onclick="removeFromYourList(\'' + id + '\')" style="cursor:pointer;">'
     + '<div class="task-body" style="flex:1;">'
     + '<div class="task-name">' + (t.name || '') + '</div>'
     + (t.sectionTitle ? '<div style="font-size:12px;color:var(--text-muted);font-style:italic;margin-top:2px;">' + (t.sectionIcon || '') + ' ' + t.sectionTitle + '</div>' : '')
     + '</div>'
-    + '<button onclick="removeFromYourList(\'' + id + '\')" title="Remove from Your List" style="'
+    + '<button onclick="event.stopPropagation();removeFromYourList(\'' + id + '\')" title="Remove from Your List" style="'
     + 'flex-shrink:0;background:transparent;border:1px solid rgba(192,83,74,0.35);border-radius:4px;'
     + 'color:#e07068;font-size:13px;padding:3px 8px;cursor:pointer;transition:all 0.15s;white-space:nowrap;"'
     + ' onmouseover="this.style.background=\'rgba(192,83,74,0.12)\'" onmouseout="this.style.background=\'transparent\'">'
