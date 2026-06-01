@@ -393,7 +393,7 @@ function ylTaskHtml(t, done, goals, notes, bossKills) {
   const hn = highlightMatch(t.name, searchQuery);
   const hd = t.desc ? highlightMatch(t.desc, searchQuery) : '';
 
-  return '<div class="task yl-task' + (done[id] ? ' done' : '') + '" draggable="true" data-id="' + id + '"'
+  const taskHtml = '<div class="task yl-task' + (done[id] ? ' done' : '') + '" draggable="true" data-id="' + id + '"'
     + ' ondragstart="ylDragStart(event)" ondragover="ylDragOver(event)" ondrop="ylDrop(event)" ondragend="ylDragEnd(event)">'
     + '<div class="yl-drag-handle" onclick="event.stopPropagation()" title="Drag to reorder">⠿</div>'
     + '<div class="task-check" onclick="event.stopPropagation();toggle(\'' + id + '\',this)" style="cursor:pointer;"></div>'
@@ -413,6 +413,7 @@ function ylTaskHtml(t, done, goals, notes, bossKills) {
     + '</div>'
     + goalHtml
     + '</div>';
+  return taskHtml + (id === 'm1' ? renderMythicPlusRunsHtml() : '');
 }
 
 /* ── MYTHIC+ VAULT PREVIEW ── */
