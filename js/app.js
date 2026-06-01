@@ -368,20 +368,22 @@ function renderBisGrid(tasks, done) {
     if (m && m[1] === 'Ranged'  && !bySlot['Main Hand']) bySlot['Main Hand'] = t;
   });
 
-  return _BIS_GRID_SLOTS.map(slot => {
+  return _BIS_GRID_SLOTS.map((slot, slotIdx) => {
+    const isRight = slotIdx % 2 === 1;
     const t = bySlot[slot];
     if (!t) {
       const ph = _BIS_SLOT_ICONS[slot]
         ? '<img src="' + _BIS_SLOT_ICONS[slot] + '" class="bis-grid-icon bis-task-icon--placeholder" style="opacity:0.18;" alt="">'
         : '<div class="bis-grid-icon"></div>';
-      return '<div class="bis-grid-card bis-grid-empty" onclick="openBisSlotCreate(\'' + slot + '\')" title="Add item for ' + slot + '">' + ph
-        + '<div class="bis-grid-info"><div class="bis-grid-slot">' + slot + '</div>'
-        + '<div class="bis-grid-name bis-grid-add">+ Add item</div></div></div>';
+      const info = '<div class="bis-grid-info"><div class="bis-grid-slot">' + slot + '</div>'
+        + '<div class="bis-grid-name bis-grid-add">+ Add item</div></div>';
+      return '<div class="bis-grid-card bis-grid-empty' + (isRight ? ' bis-grid-card--right' : '') + '" onclick="openBisSlotCreate(\'' + slot + '\')" title="Add item for ' + slot + '">'
+        + (isRight ? info + ph : ph + info) + '</div>';
     }
-    const id     = t.id;
-    const isDone = !!done[id];
-    const m2     = (t.name || '').match(/^\[([^\]]+)\]\s*(.+)$/);
-    const item   = m2 ? m2[2] : (t.name || '');
+    const id      = t.id;
+    const isDone  = !!done[id];
+    const m2      = (t.name || '').match(/^\[([^\]]+)\]\s*(.+)$/);
+    const item    = m2 ? m2[2] : (t.name || '');
     const apiIcon = cache[item.toLowerCase()];
     const iconSrc = apiIcon || _BIS_SLOT_ICONS[slot] || '';
     const iconHtml = iconSrc
@@ -389,15 +391,19 @@ function renderBisGrid(tasks, done) {
       : '';
     const desc     = t.desc || '';
     const descHtml = desc ? '<div class="bis-grid-desc">' + escHtml(desc) + '</div>' : '';
-    return '<div class="task bis-grid-card' + (isDone ? ' done' : '') + '">'
-      + '<div class="task-check" onclick="event.stopPropagation();toggle(\'' + id + '\',this)" style="cursor:pointer;flex-shrink:0;"></div>'
-      + iconHtml
-      + '<div class="bis-grid-info">'
+    const editBtn  = '<button class="bis-grid-edit-btn" onclick="event.stopPropagation();openBisEditModal(event,\'' + id + '\')" title="Edit">✏</button>';
+    const nameRow  = '<div class="bis-grid-name-row">'
+      + (isRight ? editBtn : '')
+      + '<span class="bis-grid-name" title="' + escHtml(item) + '">' + escHtml(item) + '</span>'
+      + (isRight ? '' : editBtn)
+      + '</div>';
+    const checkEl = '<div class="task-check" onclick="event.stopPropagation();toggle(\'' + id + '\',this)" style="cursor:pointer;flex-shrink:0;"></div>';
+    const info    = '<div class="bis-grid-info">'
       + '<div class="bis-grid-slot">' + escHtml(slot) + '</div>'
-      + '<div class="bis-grid-name" title="' + escHtml(item) + '">' + escHtml(item) + '</div>'
-      + descHtml
-      + '</div>'
-      + '<button class="bis-grid-edit-btn" onclick="event.stopPropagation();openBisEditModal(event,\'' + id + '\')" title="Edit item">✏</button>'
+      + nameRow + descHtml
+      + '</div>';
+    return '<div class="task bis-grid-card' + (isDone ? ' done' : '') + (isRight ? ' bis-grid-card--right' : '') + '">'
+      + (isRight ? info + iconHtml + checkEl : checkEl + iconHtml + info)
       + '</div>';
   }).join('');
 }
