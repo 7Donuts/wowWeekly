@@ -357,55 +357,68 @@ const _BIS_GRID_SLOTS = [
   'Main Hand','Off Hand',
 ];
 
+function _renderBisCard(slot, t, done, isRight, cache) {
+  if (!t) {
+    const ph = _BIS_SLOT_ICONS[slot]
+      ? '<img src="' + _BIS_SLOT_ICONS[slot] + '" class="bis-grid-icon bis-task-icon--placeholder" style="opacity:0.18;" alt="">'
+      : '<div class="bis-grid-icon"></div>';
+    const info = '<div class="bis-grid-info"><div class="bis-grid-slot">' + slot + '</div>'
+      + '<div class="bis-grid-name bis-grid-add">+ Add item</div></div>';
+    return '<div class="bis-grid-card bis-grid-empty' + (isRight ? ' bis-grid-card--right' : '') + '" onclick="openBisSlotCreate(\'' + slot + '\')" title="Add item for ' + slot + '">'
+      + (isRight ? info + ph : ph + info) + '</div>';
+  }
+  const id      = t.id;
+  const isDone  = !!done[id];
+  const m2      = (t.name || '').match(/^\[([^\]]+)\]\s*(.+)$/);
+  const item    = m2 ? m2[2] : (t.name || '');
+  const apiIcon = cache[item.toLowerCase()];
+  const iconSrc = apiIcon || _BIS_SLOT_ICONS[slot] || '';
+  const iconHtml = iconSrc
+    ? '<img src="' + escHtml(iconSrc) + '" class="bis-grid-icon' + (apiIcon ? '' : ' bis-task-icon--placeholder') + '" alt="' + escHtml(slot) + '">'
+    : '';
+  const desc     = t.desc || '';
+  const descHtml = desc ? '<div class="bis-grid-desc">' + escHtml(desc) + '</div>' : '';
+  const editBtn  = '<button class="bis-grid-edit-btn" onclick="event.stopPropagation();openBisEditModal(event,\'' + id + '\')" title="Edit">✏</button>';
+  const nameRow  = '<div class="bis-grid-name-row">'
+    + (isRight ? editBtn : '')
+    + '<span class="bis-grid-name" title="' + escHtml(item) + '">' + escHtml(item) + '</span>'
+    + (isRight ? '' : editBtn)
+    + '</div>';
+  const checkEl = '<div class="task-check" onclick="event.stopPropagation();toggle(\'' + id + '\',this)" style="cursor:pointer;flex-shrink:0;"></div>';
+  const info    = '<div class="bis-grid-info">'
+    + '<div class="bis-grid-slot">' + escHtml(slot) + '</div>'
+    + nameRow + descHtml
+    + '</div>';
+  return '<div class="task bis-grid-card' + (isDone ? ' done' : '') + (isRight ? ' bis-grid-card--right' : '') + '">'
+    + (isRight ? info + iconHtml + checkEl : checkEl + iconHtml + info)
+    + '</div>';
+}
+
 function renderBisGrid(tasks, done) {
   const cache  = JSON.parse(localStorage.getItem('wow_mn_item_icons') || '{}');
   const bySlot = {};
   tasks.forEach(t => {
     const m = (t.name || '').match(/^\[([^\]]+)\]/);
     if (m && !bySlot[m[1]]) bySlot[m[1]] = t;
-    // Shield and Ranged fall into Off Hand / Main Hand columns
-    if (m && m[1] === 'Shield'  && !bySlot['Off Hand'])  bySlot['Off Hand']  = t;
-    if (m && m[1] === 'Ranged'  && !bySlot['Main Hand']) bySlot['Main Hand'] = t;
+    if (m && m[1] === 'Shield' && !bySlot['Off Hand'])  bySlot['Off Hand']  = t;
+    if (m && m[1] === 'Ranged' && !bySlot['Main Hand']) bySlot['Main Hand'] = t;
   });
 
-  return _BIS_GRID_SLOTS.map((slot, slotIdx) => {
-    const isRight = slotIdx % 2 === 1;
-    const t = bySlot[slot];
-    if (!t) {
-      const ph = _BIS_SLOT_ICONS[slot]
-        ? '<img src="' + _BIS_SLOT_ICONS[slot] + '" class="bis-grid-icon bis-task-icon--placeholder" style="opacity:0.18;" alt="">'
-        : '<div class="bis-grid-icon"></div>';
-      const info = '<div class="bis-grid-info"><div class="bis-grid-slot">' + slot + '</div>'
-        + '<div class="bis-grid-name bis-grid-add">+ Add item</div></div>';
-      return '<div class="bis-grid-card bis-grid-empty' + (isRight ? ' bis-grid-card--right' : '') + '" onclick="openBisSlotCreate(\'' + slot + '\')" title="Add item for ' + slot + '">'
-        + (isRight ? info + ph : ph + info) + '</div>';
-    }
-    const id      = t.id;
-    const isDone  = !!done[id];
-    const m2      = (t.name || '').match(/^\[([^\]]+)\]\s*(.+)$/);
-    const item    = m2 ? m2[2] : (t.name || '');
-    const apiIcon = cache[item.toLowerCase()];
-    const iconSrc = apiIcon || _BIS_SLOT_ICONS[slot] || '';
-    const iconHtml = iconSrc
-      ? '<img src="' + escHtml(iconSrc) + '" class="bis-grid-icon' + (apiIcon ? '' : ' bis-task-icon--placeholder') + '" alt="' + escHtml(slot) + '">'
-      : '';
-    const desc     = t.desc || '';
-    const descHtml = desc ? '<div class="bis-grid-desc">' + escHtml(desc) + '</div>' : '';
-    const editBtn  = '<button class="bis-grid-edit-btn" onclick="event.stopPropagation();openBisEditModal(event,\'' + id + '\')" title="Edit">✏</button>';
-    const nameRow  = '<div class="bis-grid-name-row">'
-      + (isRight ? editBtn : '')
-      + '<span class="bis-grid-name" title="' + escHtml(item) + '">' + escHtml(item) + '</span>'
-      + (isRight ? '' : editBtn)
-      + '</div>';
-    const checkEl = '<div class="task-check" onclick="event.stopPropagation();toggle(\'' + id + '\',this)" style="cursor:pointer;flex-shrink:0;"></div>';
-    const info    = '<div class="bis-grid-info">'
-      + '<div class="bis-grid-slot">' + escHtml(slot) + '</div>'
-      + nameRow + descHtml
-      + '</div>';
-    return '<div class="task bis-grid-card' + (isDone ? ' done' : '') + (isRight ? ' bis-grid-card--right' : '') + '">'
-      + (isRight ? info + iconHtml + checkEl : checkEl + iconHtml + info)
-      + '</div>';
-  }).join('');
+  const leftSlots  = _BIS_GRID_SLOTS.filter((_, i) => i % 2 === 0);
+  const rightSlots = _BIS_GRID_SLOTS.filter((_, i) => i % 2 === 1);
+
+  const leftHtml  = leftSlots.map(s  => _renderBisCard(s, bySlot[s], done, false, cache)).join('');
+  const rightHtml = rightSlots.map(s => _renderBisCard(s, bySlot[s], done, true,  cache)).join('');
+
+  const armory    = loadArmoryData(currentChar);
+  const renderUrl = armory?.renderUrl || null;
+  const centerHtml = renderUrl
+    ? '<img src="' + escHtml(renderUrl) + '" class="bis-char-render" alt="Character">'
+    : '<div class="bis-char-placeholder"></div>';
+
+  return '<div class="bis-col">' + leftHtml + '</div>'
+    + '<div class="bis-char-center">' + centerHtml + '</div>'
+    + '<div class="bis-col">' + rightHtml + '</div>';
 }
 
 /* ── YOUR LIST TASK HTML HELPER (shared by grouped + flat views) ── */

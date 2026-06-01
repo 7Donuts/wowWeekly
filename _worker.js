@@ -315,10 +315,12 @@ async function handleGetArmory(request, env) {
     }
   }
 
-  let portrait = null;
+  let portrait   = null;
+  let renderUrl  = null;
   if (mediaRes.ok) {
     const media = await mediaRes.json();
-    portrait = media.assets?.find(a => a.key === 'avatar')?.value || null;
+    portrait  = media.assets?.find(a => a.key === 'avatar')?.value    || null;
+    renderUrl = media.assets?.find(a => a.key === 'main-raw')?.value  || null;
   }
 
   return Response.json({
@@ -331,6 +333,7 @@ async function handleGetArmory(request, env) {
     gearItems,
     raidKills,
     portrait,
+    renderUrl,
     lastSync:     Date.now(),
   });
 }
