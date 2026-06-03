@@ -3141,15 +3141,60 @@ function closeWelcome() {
 
 function loginWithBnet() {
   sessionStorage.setItem('azeroth_pending_import', '1');
-  if (document.getElementById('modal-welcome')?.classList.contains('open')) {
-    sessionStorage.setItem('azeroth_welcome_return_step', String(_welcomeStep));
-  }
-  // Visual feedback — redirect can take a moment to initiate
-  const loginEl = document.getElementById('auth-login');
-  if (loginEl) { loginEl.textContent = 'Connecting…'; loginEl.style.opacity = '0.55'; loginEl.style.pointerEvents = 'none'; }
+
+  const loginEl    = document.getElementById('auth-login');
   const welcomeBtn = document.querySelector('.welcome-bnet-login-btn');
-  if (welcomeBtn) { welcomeBtn.textContent = 'Connecting…'; welcomeBtn.disabled = true; }
-  window.location.href = '/auth/login?region=us';
+
+  function _setBusy() {
+    if (loginEl)    { loginEl.textContent = 'Connecting…'; loginEl.style.opacity = '0.55'; loginEl.style.pointerEvents = 'none'; }
+    if (welcomeBtn) { welcomeBtn.textContent = 'Connecting…'; welcomeBtn.disabled = true; }
+  }
+  function _resetBtns() {
+    if (loginEl)    { loginEl.textContent = '🔑 Battle.net'; loginEl.style.opacity = ''; loginEl.style.pointerEvents = ''; }
+    if (welcomeBtn) { welcomeBtn.textContent = 'Connect Battle.net →'; welcomeBtn.disabled = false; }
+  }
+
+  // Try popup first — keeps the user on the page
+  const pw = 560, ph = 680;
+  const pl = Math.max(0, Math.round((screen.width  - pw) / 2));
+  const pt = Math.max(0, Math.round((screen.height - ph) / 2));
+  const popup = window.open(
+    '/auth/login?region=us&popup=1', 'bnet_oauth',
+    `width=${pw},height=${ph},left=${pl},top=${pt},popup=1`
+  );
+
+  if (!popup || popup.closed) {
+    // Popup was blocked — fall back to full-page redirect
+    if (document.getElementById('modal-welcome')?.classList.contains('open')) {
+      sessionStorage.setItem('azeroth_welcome_return_step', String(_welcomeStep));
+    }
+    _setBusy();
+    window.location.href = '/auth/login?region=us';
+    return;
+  }
+
+  _setBusy();
+
+  // Listen for the auth_complete signal from the callback page
+  function onAuthMessage(e) {
+    if (e.origin !== window.location.origin) return;
+    if (!e.data || e.data.type !== 'bnet_auth_complete') return;
+    cleanup();
+    _resetBtns();
+    if (typeof window.refreshAuth === 'function') window.refreshAuth();
+  }
+
+  // Also reset if the user closes the popup without completing
+  const closedPoll = setInterval(() => {
+    if (popup.closed) { cleanup(); _resetBtns(); }
+  }, 600);
+
+  function cleanup() {
+    window.removeEventListener('message', onAuthMessage);
+    clearInterval(closedPoll);
+  }
+
+  window.addEventListener('message', onAuthMessage);
 }
 
 function welcomeNext() {

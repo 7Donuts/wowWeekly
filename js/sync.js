@@ -274,4 +274,26 @@
   });
 
   window.addEventListener('DOMContentLoaded', initSync);
+
+  // Called after popup OAuth completes — re-checks session without a full page reload.
+  window.refreshAuth = async function () {
+    try {
+      const res = await fetch('/api/user');
+      if (!res.ok) return;
+      const { user } = await res.json();
+      syncUser = user;
+      updateAuthUI(user);
+      if (typeof onSyncAuthConfirmed === 'function') onSyncAuthConfirmed(user);
+      if (user) {
+        if (user.region) _origSetItem.call(localStorage, 'wow_mn_bnet_region', user.region);
+        await pullFromCloud(true);
+        if (sessionStorage.getItem('azeroth_pending_import')) {
+          sessionStorage.removeItem('azeroth_pending_import');
+          const welcomeOpen = document.getElementById('modal-welcome')?.classList.contains('open');
+          if (!welcomeOpen && typeof openImportChars === 'function') setTimeout(openImportChars, 600);
+        }
+        if (typeof autoSyncArmory === 'function') autoSyncArmory();
+      }
+    } catch (_) {}
+  };
 })();

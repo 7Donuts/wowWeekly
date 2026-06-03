@@ -62,9 +62,10 @@ function bnetOAuthBase(region) {
 }
 
 async function handleLogin(request, env) {
-  const url    = new URL(request.url);
-  const region = url.searchParams.get('region') || 'us';
-  const state  = crypto.randomUUID() + '|' + region;
+  const url     = new URL(request.url);
+  const region  = url.searchParams.get('region') || 'us';
+  const isPopup = url.searchParams.get('popup') === '1';
+  const state   = crypto.randomUUID() + '|' + region + (isPopup ? '|popup' : '');
 
   const redirectUri = new URL('/auth/callback', url.origin).href;
   const params = new URLSearchParams({
@@ -96,7 +97,8 @@ async function handleCallback(request, env) {
     return new Response('Invalid OAuth state', { status: 400 });
   }
 
-  const [, region = 'us'] = cookieState.split('|');
+  const [, region = 'us', popupFlag] = cookieState.split('|');
+  const isPopup   = popupFlag === 'popup';
   const oauthBase = bnetOAuthBase(region);
 
   const tokenRes = await fetch(`${oauthBase}/token`, {
@@ -134,6 +136,22 @@ async function handleCallback(request, env) {
     { sub: String(user.sub), battletag: user.battletag, region },
     env.SESSION_SECRET
   );
+
+  if (isPopup) {
+    // Return a minimal page that signals the opener and closes itself.
+    const safeOrigin = JSON.stringify(origin);
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+<title>Battle.net — Connected</title>
+<style>body{background:#0d0010;color:#c9a84c;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;font-size:1.1rem;}</style>
+</head><body><span>Connected ✓</span>
+<script>
+try{window.opener.postMessage({type:'bnet_auth_complete'},${safeOrigin});}catch(e){}
+setTimeout(function(){window.close();},500);
+<\/script></body></html>`;
+    return new Response(html, {
+      headers: { 'Content-Type': 'text/html', 'Set-Cookie': setSessionCookie(token) },
+    });
+  }
 
   return new Response(null, {
     status: 302,
