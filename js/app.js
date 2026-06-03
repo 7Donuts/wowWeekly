@@ -3284,21 +3284,15 @@ function renderWelcomeStep() {
   backBtn.style.visibility = _welcomeStep === 0 ? 'hidden' : '';
 
   const nextBtn = document.getElementById('welcome-next');
-  const skipBtn = document.querySelector('#modal-welcome .welcome-skip');
 
-  // bnet-choice: navigation is via the two card buttons — hide Next and Skip.
+  // bnet-choice: navigation is via the two card buttons — hide Next.
   if (_welcomeStep === 1) {
     nextBtn.style.display = 'none';
-    if (skipBtn) skipBtn.style.display = 'none';
   } else {
     nextBtn.style.display = '';
     nextBtn.textContent = isLast ? "Let's Go!" : 'Next →';
     // Char-setup: Next is locked until the user has added at least one real character.
     nextBtn.disabled = (_welcomeStep === _WELCOME_CHAR_STEP && !characters.some(c => c !== 'Main'));
-    // Skip is hidden on char-setup (must add a char) and bnet-import (Next serves as skip).
-    if (skipBtn) {
-      skipBtn.style.display = (_welcomeStep === _WELCOME_CHAR_STEP || _welcomeStep === _WELCOME_BNET_IMPORT_STEP) ? 'none' : '';
-    }
   }
 }
 
@@ -3495,7 +3489,7 @@ if (isCompact) {
 
 /* ---- Modal overlay close listeners ---- */
 document.addEventListener('DOMContentLoaded', function() {
-  ['modal','modal-custom','modal-summary','modal-data','modal-profiles','modal-welcome','modal-bis','modal-bis-edit','modal-armory-region'].forEach(function(id) {
+  ['modal','modal-custom','modal-summary','modal-data','modal-profiles','modal-bis','modal-bis-edit','modal-armory-region'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener('click', function(e) {
       if (e.target === el) el.classList.remove('open');
