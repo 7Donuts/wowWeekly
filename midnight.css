@@ -1879,6 +1879,14 @@ body.light-mode .tier-btn.active { background: rgba(139,26,26,0.12); border-colo
   -webkit-mask-image: linear-gradient(to left, black 55%, transparent 100%);
   mask-image: linear-gradient(to left, black 55%, transparent 100%);
 }
+@media (max-width: 600px) {
+  .bis-char-overlay { display: none; }
+  .bis-row > .bis-grid-card:first-child,
+  .bis-row > .bis-grid-card:last-child {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
 .bis-grid-card:hover { border-color: var(--border-bright); }
 .bis-grid-card.done { opacity: 0.45; }
 .bis-grid-card.done .bis-grid-name { text-decoration: line-through; }
