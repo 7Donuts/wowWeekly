@@ -1843,12 +1843,11 @@ body.light-mode .tier-btn.active { background: rgba(139,26,26,0.12); border-colo
 }
 .bis-char-render {
   position: absolute;
-  bottom: 0;          /* feet anchor to the bottom of the last row */
+  bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  height: 100%;       /* head reaches the top row, feet the bottom row */
-  max-width: 100%;    /* never spill past the container width */
-  width: auto;
+  width: 160px;  /* sized to the oval gap — height follows aspect ratio, no squishing */
+  height: auto;
   opacity: 0.93;
   filter: drop-shadow(0 0 24px rgba(0,0,0,0.9));
 }
