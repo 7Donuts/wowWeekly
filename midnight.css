@@ -28,6 +28,7 @@ body {
   font-size: 19px;
   line-height: 1.6;
   min-height: 100vh;
+  overflow-x: hidden; /* guard against any element spilling horizontally on mobile */
 }
 
 body::before {
@@ -1838,14 +1839,15 @@ body.light-mode .tier-btn.active { background: rgba(139,26,26,0.12); border-colo
   top: 0.5rem; bottom: 0.5rem; /* match bis-grid-body padding — spans rows only */
   left: 0; right: 0;
   pointer-events: none;
-  overflow: visible;
+  overflow: hidden; /* clip the render's transparent margins so it can't widen the page */
 }
 .bis-char-render {
   position: absolute;
   bottom: 0;          /* feet anchor to the bottom of the last row */
   left: 50%;
   transform: translateX(-50%);
-  height: 116%;       /* 16% taller so head floats above the Head/Hands row */
+  height: 100%;       /* head reaches the top row, feet the bottom row */
+  max-width: 100%;    /* never spill past the container width */
   width: auto;
   opacity: 0.93;
   filter: drop-shadow(0 0 24px rgba(0,0,0,0.9));
