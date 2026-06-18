@@ -1,15 +1,14 @@
 /* -----------------------------------------------------------
-   TASK DATA  —  Patches 12.0.5–12.0.6 Lingering Shadows  (May 2026)
-   12.0.7 content (Showdown Zones) arrives June 16.
-   Sources: Icy Veins weekly to-do list, Icy Veins world
-   events guide, Mythic-Store weekly checklist.
-   No raid content included by design.
+   TASK DATA  —  Patch 12.0.7 Revelations  (June 16, 2026)
+   Sources: Wowhead patch overview, Icy Veins weekly to-do
+   list and patch guides, MMO-Champion patch notes.
+   No raid content included by design (raid section tracks kills).
 
    To update for a new patch:
      - Edit task name/desc fields below
      - Add new sections following the same object shape
      - Remove or set priority:3 for outdated content
-     - tag-new marks 12.0.5-introduced content
+     - tag-new marks 12.0.7-introduced content
      - BEGINNER_STAGES task IDs must match task ids in SECTIONS
 ----------------------------------------------------------- */
 const SECTIONS = [
@@ -37,6 +36,24 @@ const SECTIONS = [
       { id: 'vf4', name: 'Use Ascendant Voidcores on trinkets or weapons (if in endgame)',
         desc: 'Drops from Season 1 endgame content. Upgrades max ilvl trinkets and weapons beyond normal caps.',
         tags: ['tag-void', 'tag-gold', 'tag-new'] },
+    ]
+  },
+
+  {
+    id: 'omnium-folio',
+    icon: '📖', iconClass: 'icon-void',
+    title: 'Omnium Folio',
+    url: 'https://www.wowhead.com/guide/midnight/omnium-folio-unlock-buffs-rewards',
+    meta: '12.0.7 · 5-week gated power system · Unlock via Grand Master Rommath, Silvermoon City',
+    categories: ['currency', 'voidforge'],
+    priority: 1,
+    tasks: [
+      { id: 'of1', name: 'Complete this week\'s "Seeking Knowledge" Omnium Folio quest',
+        desc: 'Five-week chain from Grand Master Rommath in Silvermoon City. Each week unlocks a new rune row (passive power bonus, no gear slot). Week 1: retrieve the Folio. Weeks 2–5 each require collecting specific materials. Cannot be skipped or rushed — one row unlocks per reset.',
+        tags: ['tag-void', 'tag-new'] },
+      { id: 'of2', name: 'Swap Omnium Folio runes to match your content for the week',
+        desc: 'Unlocked runes can be swapped freely out of combat. Swap to dungeon, raid, or world-content runes before entering your primary weekly activity. All unlocked rows remain available permanently.',
+        tags: ['tag-void', 'tag-new'] },
     ]
   },
 
@@ -184,12 +201,15 @@ const SECTIONS = [
     icon: '🔮', iconClass: 'icon-void',
     title: 'Ritual Sites',
     url: 'https://www.icy-veins.com/wow/ritual-sites-guide',
-    meta: '12.0.5 · 1–5 players · Great Vault World row · Do early in the week',
+    meta: '12.0.7 · Tier 6 added · 1–5 players · Great Vault World row',
     categories: ['ritual-sites'],
     priority: 2,
     tasks: [
-      { id: 'rs1', goal: {max:5, label:'sites'}, name: 'Complete Ritual Sites this week (flexible: solo or small group)',
-        desc: 'Repeatable instanced content with escalating tiers and greater rewards at higher difficulties. Counts toward Great Vault World row.',
+      { id: 'rs1', goal: {max:5, label:'sites'}, name: 'Complete Ritual Sites this week (Tier 6 now available — ilvl 274 rec.)',
+        desc: 'Repeatable instanced content, 1–5 players. Tier 6 (added in 12.0.7, select 6 challenges) awards 5 Mythic Dawncrests + 10 Heroic Dawncrests per completion. Counts toward Great Vault World row. Dark Particles drop rate increased in 12.0.7 — exchange 150 at Trima Dawnsetter in Silvermoon for cosmetic pouches.',
+        tags: ['tag-void', 'tag-world', 'tag-new'] },
+      { id: 'rs2', name: 'Complete Tier 6 Ritual Sites weekly quest (6-week chain)',
+        desc: 'Requires completing 2 Tier 6 Ritual Sites with specific challenges active. Six-week questline; bonus rolls awarded on weeks 3 and 6. Check quest tracker for this week\'s challenge requirement.',
         tags: ['tag-void', 'tag-world', 'tag-new'] },
     ]
   },
@@ -278,8 +298,8 @@ const SECTIONS = [
       { id: 'we6', name: 'Timewalking: Complete 5 Timewalking dungeons for weekly quest',
         desc: 'When Timewalking is the active bonus event (check Adventure Guide), complete 5 Timewalking dungeons to earn the weekly quest reward: a piece of current-tier loot. Uses a scaled version of your character in classic dungeons.',
         tags: ['tag-world', 'tag-gold'] },
-      { id: 'we7', name: 'Turbulent Timeways: Complete Timewalking bonus event quest (if active)',
-        desc: 'Special event rotating through Dragonflight Timewalking. Complete the weekly quest for a mount reward. Check the Adventure Guide to see if this event is currently active this week.',
+      { id: 'we7', name: 'Turbulent Timeways: Complete Dragonflight Timewalking weekly quest (active June 30 – Aug 11)',
+        desc: 'Six Dragonflight dungeons: Brackenhide Hollow, Azure Vaults, Ruby Life Pools, Halls of Infusion, Neltharus, Algeth\'ar Academy. Complete 5 for a Heroic Cache of Quel\'Thalas Treasures (ilvl 259–276 gear). New vendor rewards from Xydan in Valdrakken\'s Bronze Enclave: Liquid Hot Magma Slug mount (5,000 Timewarped Badges), Black-Furred Bakar mount (5,000 Badges). Achievement mount Spawn of Vyranoth earned by getting the Mastery of the Timeways buff during any 4 event weeks.',
         tags: ['tag-world', 'tag-optional'] },
     ]
   },
@@ -399,6 +419,31 @@ const SECTIONS = [
         ],
         diff: 'Mythic' },
 
+      // ── SPOREFALL ──
+      { id: 'sf_lfr',   name: 'Sporefall: LFR',
+        desc: 'Queue via Group Finder. Rewards ilvl 259 Sporefused gear — already upgraded to max item level for the track, no Voidcores required.',
+        tags: ['tag-raid'],
+        bosses: [{ id: 'rotmire', name: 'Rotmire', url: 'https://www.wowhead.com/guide/midnight/raids/sporefall-overview-location-rewards-boss' }],
+        diff: 'LFR' },
+      { id: 'sf_n',     name: 'Sporefall: Normal',
+        desc: 'Personal loot lockout. Sporefused drops at ilvl 272 — fully upgraded, no Voidcores needed. Counts toward Raid Vault row.',
+        tags: ['tag-raid'],
+        bosses: [{ id: 'rotmire', name: 'Rotmire', url: 'https://www.wowhead.com/guide/midnight/raids/sporefall-overview-location-rewards-boss' }],
+        diff: 'Normal' },
+      { id: 'sf_h',     name: 'Sporefall: Heroic',
+        desc: 'Personal loot lockout. Sporefused gear at ilvl 285 — Ascendant-equivalent with zero upgrade cost. Best alt-catchup raid in 12.0.7.',
+        tags: ['tag-raid'],
+        bosses: [{ id: 'rotmire', name: 'Rotmire', url: 'https://www.wowhead.com/guide/midnight/raids/sporefall-overview-location-rewards-boss' }],
+        diff: 'Heroic' },
+      { id: 'sf_m',     name: 'Sporefall: Mythic',
+        desc: 'Mythic Flex: scales dynamically for 15–25 players. Sporefused gear at ilvl 298. Hall of Fame eligible.',
+        tags: ['tag-raid'],
+        bosses: [{ id: 'rotmire', name: 'Rotmire', url: 'https://www.wowhead.com/guide/midnight/raids/sporefall-overview-location-rewards-boss' }],
+        diff: 'Mythic' },
+      { id: 'sf_snack', name: 'Collect Delicious Sporesnack from Rotmire (any difficulty)',
+        desc: 'One Sporesnack drops per account per week from Rotmire on any difficulty. Collect 4 total over 4 weeks to combine them into the Luminous Sporeglider mount.',
+        tags: ['tag-raid', 'tag-optional'] },
+
       // ── WEEKLY QUEST ──
       { id: 'ra8', name: 'Complete weekly raid quest from The Bazaar (if active)',
         desc: 'Some weekly reset quests reward bonus loot or Crests for completing a raid boss. Check Lady Liadrin and the Adventure Guide.',
@@ -488,22 +533,31 @@ const SECTIONS = [
 
   {
     id: 'showdown-zones',
-    icon: '⚔️', iconClass: 'icon-pvp',
-    title: 'Showdown Zones',
-    url: 'https://www.icy-veins.com/wow/showdown-zones-guide',
-    meta: '🚧 Coming June 16 · Patch 12.0.7 · Open-world PvPvE content rotating weekly',
-    categories: ['world', 'pvp'],
-    priority: 3,
+    icon: '🌐', iconClass: 'icon-void',
+    title: 'Invasion Zones: Val & Naigtal',
+    url: 'https://www.icy-veins.com/wow/news/two-new-world-bosses-and-locations-12-0-7s-val-and-naigtal-rewards-quests-and-more/',
+    meta: '12.0.7 · Rotates weekly · Normal (rec. ilvl 219) or Heroic World Tier (rec. ilvl 274)',
+    categories: ['world', 'currency'],
+    priority: 2,
     tasks: [
-      { id: 'sz1', name: '[Coming June 16] Check active Showdown Zone: follow portal from Silvermoon',
-        desc: 'Patch 12.0.7 · Showdown Zones are rotating open-world areas with mixed PvPvE objectives. A new zone activates each weekly reset. Access via the portal in Silvermoon City.',
-        tags: ['tag-world', 'tag-pvp'] },
-      { id: 'sz2', name: '[Coming June 16] Complete Showdown Zone activities',
-        desc: 'Patch 12.0.7 · Each zone has unique objectives: capture points, supply runs, and player elimination targets. Rewards gear, currency, and zone-exclusive cosmetics.',
-        tags: ['tag-world', 'tag-pvp', 'tag-gold'] },
-      { id: 'sz3', name: '[Coming June 16] Kill World Boss in the active Showdown Zone',
-        desc: 'Patch 12.0.7 · Each active Showdown Zone contains a World Boss encounter, unlocked by completing zone activities. Rewards Champion-quality loot. One kill per character per week.',
-        tags: ['tag-world', 'tag-pvp', 'tag-gold'] },
+      { id: 'sz1', name: 'Check active Invasion Zone this week (Val or Naigtal — rotates each reset)',
+        desc: 'Val is a frozen Legion-era world ruled by Imperator Pertinax. Naigtal is a fungal arcane-infested world led by Nexus-Captain Leth\'ir. Access via the unstable portal in Voidstorm. Only one zone is active per week.',
+        tags: ['tag-world', 'tag-new'] },
+      { id: 'sz2', name: 'Complete World Quests in the active Invasion Zone',
+        desc: 'Normal World Tier: 10 Field Accolades per quest. Heroic World Tier: 30 Field Accolades per quest. Also rewards Voidlight Marl.',
+        tags: ['tag-world', 'tag-gold', 'tag-new'] },
+      { id: 'sz3', name: 'Complete Bonus Objectives in the active Invasion Zone',
+        desc: 'Normal: 10 Field Accolades each. Heroic: 16 Field Accolades each. Completed quickly alongside world quests.',
+        tags: ['tag-world', 'tag-gold', 'tag-new'] },
+      { id: 'sz4', name: 'Kill the weekly World Boss (Imperator Pertinax or Nexus-Captain Leth\'ir)',
+        desc: 'One kill per character per week. Rewards Hero-track gear (ilvl 263–276). All drops are Bind on Equip — tradeable on the Auction House for alts or gold income. Killing the boss also unlocks Heroic World Tier for both zones simultaneously.',
+        tags: ['tag-world', 'tag-gold', 'tag-new'] },
+      { id: 'sz5', name: 'Complete "Showdown" weekly quest for Riftstalker\'s Cache',
+        desc: 'Primary weekly wrapper quest for the active Invasion Zone. Rewards a Riftstalker\'s Cache containing gear and currency.',
+        tags: ['tag-world', 'tag-gold', 'tag-new'] },
+      { id: 'sz6', name: '[Heroic World Tier] Kill World Boss for Void Commander\'s Emblem',
+        desc: 'One Void Commander\'s Emblem per character per week. Collect 4 over 4 weeks for "Knocking Off the Top" — rewards your choice of Myth-track (ilvl 285) cloak, belt, or bracer. The first open-world Myth-track gear ever available in WoW.',
+        tags: ['tag-world', 'tag-gold', 'tag-new'] },
     ]
   },
 
@@ -534,9 +588,11 @@ const BEGINNER_STAGES = [
     sublabel: 'ilvl ~200–219 · Adventurer gear is your target',
     color: 'var(--success-bright)',
     tasks: [
+      'of1',                       // Omnium Folio — free weekly power
       'bq1','bq2','bq3',           // Bazaar weeklies — free, high value
       'we0a','we0b',               // World Quests + Rare mobs — easiest gear
       'va2','va3','va4',           // Void Assaults — strong intro content
+      'sz1','sz4','sz5',           // Invasion Zone: check zone + world boss + weekly quest
       'we1',                       // World Bosses
       'we4',                       // Saltheril's Soiree
       'we2',                       // Abundance
@@ -553,9 +609,11 @@ const BEGINNER_STAGES = [
     sublabel: 'ilvl 220–232 · Pushing into Veteran content',
     color: 'var(--light-gold)',
     tasks: [
+      'of1',                       // Omnium Folio weekly quest
       'bq1','bq2','bq3','bq5',     // Bazaar weeklies incl. Halduron
       'we0a','we0b',
       'va2','va3','va4',
+      'sz1','sz2','sz3','sz4','sz5', // Invasion Zone full loop
       'we1','we4','we2','we3',
       'pr_norm','pr_hard',         // Normal + Hard Prey
       'rs1',                       // Ritual Sites
@@ -574,13 +632,16 @@ const BEGINNER_STAGES = [
     sublabel: 'ilvl 233–249 · Solo content fully unlocked',
     color: 'var(--void-glow)',
     tasks: [
+      'of1','of2',                 // Omnium Folio — quest + rune swap
       'bq1','bq2','bq3','bq5',
       'we0a','we0b',
       'va2','va3','va4',
+      'sz1','sz2','sz3','sz4','sz5', // Invasion Zone full loop
       'we1','we4','we2','we3','we5','we6',
       'pr_norm','pr_hard','pr_nm', // All three Prey difficulties
       'pr3',                       // Prey transmog check
-      'rs1',
+      'rs1','rs2',                 // Ritual Sites + Tier 6 weekly
+      'sf_n','sf_snack',           // Sporefall Normal + weekly Sporesnack
       'd1','d_bountiful','d3',
       'm1','m4','m5',              // Mythic+ for vault + Crests
       'pf1','pf2','pf3','pf4',     // Full professions
@@ -596,14 +657,17 @@ const BEGINNER_STAGES = [
     sublabel: 'ilvl 250+ · Maximising every weekly system',
     color: '#c0b8d8',
     tasks: [
+      'of1','of2',                 // Omnium Folio — quest + rune swap
       'bq1','bq2','bq3','bq5',
       'we0a','we0b',
       'va2','va3','va4',
+      'sz1','sz2','sz3','sz4','sz5','sz6', // Invasion Zone + Heroic World Tier emblem
       'we1','we4','we2','we3','we5','we6',
       'pr_hard','pr_nm','pr3',
-      'rs1',
+      'rs1','rs2',                 // Ritual Sites + Tier 6 weekly
       'd1','d_bountiful','d2','d3',
       'm1','m4','m5',
+      'sf_h','sf_m','sf_snack',    // Sporefall Heroic + Mythic + Sporesnack
       'rd_h','rd_m',               // Dreamrift Heroic + Mythic
       'vs_h','vs_m',               // Voidspire Heroic + Mythic
       'mq_h','mq_m',               // March on Quel'Danas Heroic + Mythic
