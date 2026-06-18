@@ -651,7 +651,8 @@ function render() {
       if (!searchQuery) return true;
       return (t.name || '').toLowerCase().includes(searchQuery) ||
              (t.desc || '').toLowerCase().includes(searchQuery) ||
-             (t.sectionTitle || '').toLowerCase().includes(searchQuery);
+             (t.sectionTitle || '').toLowerCase().includes(searchQuery) ||
+             (t.tags || []).some(tg => tagLabel(tg).toLowerCase().includes(searchQuery));
     };
     const filteredSelected = selected.filter(t =>
       matchesSearch(t) && (!activeTagFilter || (t.tags && t.tags.includes(activeTagFilter)))
@@ -812,7 +813,8 @@ function buildEditBar() {
       if (!searchQuery) return true;
       return (t.name || '').toLowerCase().includes(searchQuery) ||
              (t.desc || '').toLowerCase().includes(searchQuery) ||
-             sec.title.toLowerCase().includes(searchQuery);
+             sec.title.toLowerCase().includes(searchQuery) ||
+             (t.tags || []).some(tg => tagLabel(tg).toLowerCase().includes(searchQuery));
     };
 
     const visibleTasks = tasks.filter(t => {
