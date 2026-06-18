@@ -141,7 +141,7 @@ async function handleCallback(request, env) {
     // Return a minimal page that signals the opener and closes itself.
     const safeOrigin = JSON.stringify(origin);
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
-<title>Battle.net — Connected</title>
+<title>Battle.net: Connected</title>
 <style>body{background:#0d0010;color:#c9a84c;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;font-size:1.1rem;}</style>
 </head><body><span>Connected ✓</span>
 <script>
@@ -191,7 +191,7 @@ function getWowWeekKey() {
   return d.toISOString().slice(0, 10);
 }
 
-// Tuesday 15:00 UTC reset as a ms timestamp — used to filter this-week kills
+// Tuesday 15:00 UTC reset as a ms timestamp: used to filter this-week kills
 function getWowWeekResetMs() {
   return new Date(getWowWeekKey() + 'T15:00:00Z').getTime();
 }
@@ -382,7 +382,7 @@ async function handleGetCharacters(request, env) {
   }
 
   if (res.status === 401) {
-    // Access token rejected by Battle.net — evict it so re-login prompts correctly
+    // Access token rejected by Battle.net: evict it so re-login prompts correctly
     await env.USER_DATA.delete('token:' + payload.sub);
     return new Response('Token expired', { status: 401 });
   }

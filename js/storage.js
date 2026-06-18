@@ -1,5 +1,5 @@
 /* -------------------------------------------
-   STORAGE — namespaced localStorage abstraction
+   STORAGE: namespaced localStorage abstraction
    All keys follow the prefix "wow_mn_" to avoid
    collisions. Change the schema here and it
    propagates to every page that loads this file.

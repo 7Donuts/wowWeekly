@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Azeroth Agenda — Patch Notes & Hotfixes</title>
+<title>The Azeroth Agenda: Patch Notes & Hotfixes</title>
 <link rel="stylesheet" href="midnight.css">
 <style>
   .pn-wrapper {
@@ -351,7 +351,7 @@
   <header style="text-align:center;padding:2rem 0 1.75rem;border-bottom:1px solid var(--border);margin-bottom:2rem;">
     <div class="header-eyebrow">World of Warcraft</div>
     <h1>The Azeroth Agenda<br><span>Patch Notes &amp; Hotfixes</span></h1>
-    <p class="subtitle">Curated changes for Patch 12.0.x — Lingering Shadows, Season 1</p>
+    <p class="subtitle">Curated changes for Patch 12.0.x, Lingering Shadows, Season 1</p>
     <div class="patch-badge">Patch 12.0.5 · Last Updated May 14, 2026</div>
     <div class="credit-bar" style="display:flex;justify-content:center;align-items:center;gap:0.5rem;margin-top:0.9rem;font-size:14px;color:var(--text-muted);">
       Curated &amp; maintained by <span class="credit-name">Seven</span>
@@ -385,7 +385,7 @@
     </div>
   </div>
 
-  <div class="live-divider">Curated Patch Notes — Patch 12.0.x</div>
+  <div class="live-divider">Curated Patch Notes, Patch 12.0.x</div>
 
   <div class="pn-filter-bar" id="filter-bar"></div>
 
@@ -398,7 +398,7 @@
 
 <script>
 /* ═══════════════════════════════════════════════════════════
-   PATCH NOTES DATA — Patch 12.0.x, Lingering Shadows
+   PATCH NOTES DATA: Patch 12.0.x, Lingering Shadows
    Sources: Blizzard Hotfix Blog, Wowhead
    Types: fix | buff | nerf | class | content | system
    Tags: used for filtering (e.g. class name, 'dungeons', 'pvp', 'world')
@@ -407,14 +407,14 @@ const PATCHES = [
   {
     version: '12.0.5',
     date: 'May 6, 2026',
-    summary: 'Season 1 content patch — Voidforge, Ritual Sites, Bazaar Quests, Prey',
+    summary: 'Season 1 content patch, Voidforge, Ritual Sites, Bazaar Quests, Prey',
     entries: [
-      { type: 'content', text: 'Voidforge system added — Nebulous Voidcores can now be spent for bonus loot rolls on Delves and Ritual Sites.', detail: 'Cores drop from Nightmare Prey and Bountiful Delves.', tag: 'content' },
-      { type: 'content', text: 'Ritual Sites added — 1–5 player instanced content replacing Bountiful Delves as the primary solo/small-group activity.', detail: 'Counts toward Great Vault World row. Tiered difficulty with escalating rewards.', tag: 'content' },
-      { type: 'content', text: 'Nightmare Prey weekly quest added — complete 3 hunts for Vault World row credit and Voidcore drops.', detail: 'Enabled via Astalor Bloodsworn in Murder Row, Silvermoon.', tag: 'content' },
-      { type: 'content', text: 'Bazaar Quest system added — weekly quests available from The Bazaar NPCs in Silvermoon.', detail: 'Rewards range from Crests to Pinnacle Caches depending on quest tier.', tag: 'content' },
-      { type: 'content', text: 'Abyss Anglers activity added — deep-sea spearfishing off the Zul\'Aman coast.', detail: 'Earn Angler Pearls for cosmetics, housing, pets. Upgradeable diving gear unlocks deeper zones.', tag: 'content' },
-      { type: 'content', text: 'Abundance weekly quest added — accumulate 20,000 points in cavern events for Overflowing Abundant Satchel + Amani Tribe rep.', detail: 'Use Shards of Dundun (up to 8 per week) to empower runs for bonus rewards.', tag: 'content' },
+      { type: 'content', text: 'Voidforge system added, Nebulous Voidcores can now be spent for bonus loot rolls on Delves and Ritual Sites.', detail: 'Cores drop from Nightmare Prey and Bountiful Delves.', tag: 'content' },
+      { type: 'content', text: 'Ritual Sites added, 1–5 player instanced content replacing Bountiful Delves as the primary solo/small-group activity.', detail: 'Counts toward Great Vault World row. Tiered difficulty with escalating rewards.', tag: 'content' },
+      { type: 'content', text: 'Nightmare Prey weekly quest added, complete 3 hunts for Vault World row credit and Voidcore drops.', detail: 'Enabled via Astalor Bloodsworn in Murder Row, Silvermoon.', tag: 'content' },
+      { type: 'content', text: 'Bazaar Quest system added, weekly quests available from The Bazaar NPCs in Silvermoon.', detail: 'Rewards range from Crests to Pinnacle Caches depending on quest tier.', tag: 'content' },
+      { type: 'content', text: 'Abyss Anglers activity added, deep-sea spearfishing off the Zul\'Aman coast.', detail: 'Earn Angler Pearls for cosmetics, housing, pets. Upgradeable diving gear unlocks deeper zones.', tag: 'content' },
+      { type: 'content', text: 'Abundance weekly quest added, accumulate 20,000 points in cavern events for Overflowing Abundant Satchel + Amani Tribe rep.', detail: 'Use Shards of Dundun (up to 8 per week) to empower runs for bonus rewards.', tag: 'content' },
       { type: 'buff', text: 'Great Vault World row now accepts Ritual Site completions in addition to Delves and World Activities.', detail: '', tag: 'systems' },
       { type: 'buff', text: 'Nebulous Voidcore weekly cap increased from 4 to 6.', detail: 'Applies to all sources including Nightmare Prey and Bountiful Delves.', tag: 'systems' },
     ]
@@ -424,14 +424,14 @@ const PATCHES = [
     date: 'May 9, 2026',
     summary: 'Voidforge tuning, class fixes, Ritual Site adjustments',
     entries: [
-      { type: 'fix', text: 'Ritual Sites — fixed an issue where Tier 3 difficulty could be accessed before Tier 2 was completed on a fresh character.', detail: '', tag: 'content' },
-      { type: 'fix', text: 'Voidforge — Nebulous Voidcore rolls now correctly award loot at the expected item level for the selected content tier.', detail: 'Previously could cap at Veteran quality regardless of Delve tier.', tag: 'content' },
-      { type: 'nerf', text: 'Abundance — Empowered run bonus reduced by 15%.', detail: 'Feedback indicated Shards of Dundun provided too strong a time-to-reward advantage over non-empowered runs.', tag: 'content' },
-      { type: 'buff', text: 'Death Knight — Frost: Obliterate damage increased by 8%.', detail: '', tag: 'Death Knight' },
-      { type: 'nerf', text: 'Evoker — Devastation: Eternity Surge cooldown increased from 24s to 30s at base.', detail: 'Tuning adjustment following AoE output analysis.', tag: 'Evoker' },
-      { type: 'buff', text: 'Monk — Windwalker: Rising Sun Kick now reduces the cooldown of Serenity by 0.5 seconds (was 0.25s).', detail: '', tag: 'Monk' },
-      { type: 'fix', text: 'Abyss Anglers — Angler Pearl rewards no longer occasionally fail to appear in the loot window on kills.', detail: '', tag: 'content' },
-      { type: 'fix', text: 'Prey System — fixed rare case where a tracked Prey would despawn mid-combat without awarding credit.', detail: '', tag: 'content' },
+      { type: 'fix', text: 'Ritual Sites, fixed an issue where Tier 3 difficulty could be accessed before Tier 2 was completed on a fresh character.', detail: '', tag: 'content' },
+      { type: 'fix', text: 'Voidforge, Nebulous Voidcore rolls now correctly award loot at the expected item level for the selected content tier.', detail: 'Previously could cap at Veteran quality regardless of Delve tier.', tag: 'content' },
+      { type: 'nerf', text: 'Abundance, Empowered run bonus reduced by 15%.', detail: 'Feedback indicated Shards of Dundun provided too strong a time-to-reward advantage over non-empowered runs.', tag: 'content' },
+      { type: 'buff', text: 'Death Knight, Frost: Obliterate damage increased by 8%.', detail: '', tag: 'Death Knight' },
+      { type: 'nerf', text: 'Evoker, Devastation: Eternity Surge cooldown increased from 24s to 30s at base.', detail: 'Tuning adjustment following AoE output analysis.', tag: 'Evoker' },
+      { type: 'buff', text: 'Monk, Windwalker: Rising Sun Kick now reduces the cooldown of Serenity by 0.5 seconds (was 0.25s).', detail: '', tag: 'Monk' },
+      { type: 'fix', text: 'Abyss Anglers, Angler Pearl rewards no longer occasionally fail to appear in the loot window on kills.', detail: '', tag: 'content' },
+      { type: 'fix', text: 'Prey System, fixed rare case where a tracked Prey would despawn mid-combat without awarding credit.', detail: '', tag: 'content' },
     ]
   },
   {
@@ -439,15 +439,15 @@ const PATCHES = [
     date: 'May 13, 2026',
     summary: 'Raid tuning, PvP fixes, Stormarion Assault adjustment',
     entries: [
-      { type: 'nerf', text: 'The Sundered Sanctum — Solariel the Fallen: Void Cascade cast time reduced (10→8 seconds) but damage increased by 20%.', detail: 'The longer cast was allowing groups to consistently interrupt without cooldown coordination.', tag: 'raid' },
-      { type: 'buff', text: 'The Sundered Sanctum — Mythic: Kael\'thas Reborn: Pyroblast Overload now has a 0.5s wind-up indicator added.', detail: 'Accessibility improvement following community feedback.', tag: 'raid' },
-      { type: 'fix', text: 'Stormarion Assault — Stand Your Ground weekly quest now correctly awards the Victorious Stormarion Pinnacle Cache on completion.', detail: 'Was awarding a Champion-quality cache instead for some players.', tag: 'content' },
-      { type: 'buff', text: 'Paladin — Holy: Holy Light healing increased by 6% in PvE.', detail: '', tag: 'Paladin' },
-      { type: 'buff', text: 'Shaman — Restoration: Riptide initial heal increased by 10%.', detail: 'Brought in line with similar instant cast healing effects.', tag: 'Shaman' },
-      { type: 'nerf', text: 'Warlock — Affliction: Seed of Corruption no longer benefits from the Soul Rot talent multiplier in PvP combat.', detail: '', tag: 'Warlock' },
-      { type: 'fix', text: 'PvP — Fixed an issue where Deepwind Dunk brawl could end prematurely if the score was tied at 5:00.', detail: '', tag: 'pvp' },
-      { type: 'fix', text: 'Saltheril\'s Soiree — Fortify the Runestones quest now correctly awards Silvermoon Court reputation to characters who completed the intro scenario prior to Patch 12.0.4.', detail: '', tag: 'content' },
-      { type: 'system', text: 'Weekly reset countdown timer no longer causes layout reflow as seconds tick — now uses monospaced rendering.', detail: 'UI polish pass.', tag: 'systems' },
+      { type: 'nerf', text: 'The Sundered Sanctum, Solariel the Fallen: Void Cascade cast time reduced (10→8 seconds) but damage increased by 20%.', detail: 'The longer cast was allowing groups to consistently interrupt without cooldown coordination.', tag: 'raid' },
+      { type: 'buff', text: 'The Sundered Sanctum, Mythic: Kael\'thas Reborn: Pyroblast Overload now has a 0.5s wind-up indicator added.', detail: 'Accessibility improvement following community feedback.', tag: 'raid' },
+      { type: 'fix', text: 'Stormarion Assault, Stand Your Ground weekly quest now correctly awards the Victorious Stormarion Pinnacle Cache on completion.', detail: 'Was awarding a Champion-quality cache instead for some players.', tag: 'content' },
+      { type: 'buff', text: 'Paladin, Holy: Holy Light healing increased by 6% in PvE.', detail: '', tag: 'Paladin' },
+      { type: 'buff', text: 'Shaman, Restoration: Riptide initial heal increased by 10%.', detail: 'Brought in line with similar instant cast healing effects.', tag: 'Shaman' },
+      { type: 'nerf', text: 'Warlock, Affliction: Seed of Corruption no longer benefits from the Soul Rot talent multiplier in PvP combat.', detail: '', tag: 'Warlock' },
+      { type: 'fix', text: 'PvP, Fixed an issue where Deepwind Dunk brawl could end prematurely if the score was tied at 5:00.', detail: '', tag: 'pvp' },
+      { type: 'fix', text: 'Saltheril\'s Soiree, Fortify the Runestones quest now correctly awards Silvermoon Court reputation to characters who completed the intro scenario prior to Patch 12.0.4.', detail: '', tag: 'content' },
+      { type: 'system', text: 'Weekly reset countdown timer no longer causes layout reflow as seconds tick, now uses monospaced rendering.', detail: 'UI polish pass.', tag: 'systems' },
     ]
   },
   {
@@ -456,12 +456,12 @@ const PATCHES = [
     summary: 'Mythic+ Season 1 adjustments, housing phase 2 additions',
     entries: [
       { type: 'content', text: 'Housing Phase 2: 40+ new decor items added from Crafting, Prey, and Ritual Site rewards.', detail: 'Includes void-themed furniture from Legends of the Haranir relic scenarios.', tag: 'content' },
-      { type: 'fix', text: 'Mythic+ — Fixed an issue where Sunken Sanctum of Quel\'Thalas dungeon could become blocked on the second encounter if a player died during the door-open animation.', detail: '', tag: 'dungeons' },
-      { type: 'buff', text: 'Mythic+ — Affixes: Fortified base health modifier reduced from 20% to 15% at +7 and above.', detail: 'Response to feedback that tank burden was disproportionate on Fortified weeks.', tag: 'dungeons' },
-      { type: 'nerf', text: 'Demon Hunter — Havoc: Essence Break now increases Chaos Strike and Blade Dance damage by 80% (was 100%).', detail: 'DH was substantially ahead on funnel damage profiles in M+ environments.', tag: 'Demon Hunter' },
-      { type: 'buff', text: 'Mage — Arcane: Arcane Barrage now generates 1 Arcane Charge when it strikes 3 or more targets.', detail: '', tag: 'Mage' },
-      { type: 'buff', text: 'Druid — Balance: Starlord buff duration increased from 15s to 18s.', detail: '', tag: 'Druid' },
-      { type: 'fix', text: 'Great Vault — Fixed edge case where completing a Ritual Site at exactly the weekly reset window could fail to award vault slot credit.', detail: '', tag: 'systems' },
+      { type: 'fix', text: 'Mythic+, Fixed an issue where Sunken Sanctum of Quel\'Thalas dungeon could become blocked on the second encounter if a player died during the door-open animation.', detail: '', tag: 'dungeons' },
+      { type: 'buff', text: 'Mythic+, Affixes: Fortified base health modifier reduced from 20% to 15% at +7 and above.', detail: 'Response to feedback that tank burden was disproportionate on Fortified weeks.', tag: 'dungeons' },
+      { type: 'nerf', text: 'Demon Hunter, Havoc: Essence Break now increases Chaos Strike and Blade Dance damage by 80% (was 100%).', detail: 'DH was substantially ahead on funnel damage profiles in M+ environments.', tag: 'Demon Hunter' },
+      { type: 'buff', text: 'Mage, Arcane: Arcane Barrage now generates 1 Arcane Charge when it strikes 3 or more targets.', detail: '', tag: 'Mage' },
+      { type: 'buff', text: 'Druid, Balance: Starlord buff duration increased from 15s to 18s.', detail: '', tag: 'Druid' },
+      { type: 'fix', text: 'Great Vault, Fixed edge case where completing a Ritual Site at exactly the weekly reset window could fail to award vault slot credit.', detail: '', tag: 'systems' },
     ]
   },
   {
@@ -469,27 +469,27 @@ const PATCHES = [
     date: 'Mar 25, 2026',
     summary: 'Legends of the Haranir scenario tuning, broad class pass',
     entries: [
-      { type: 'buff', text: 'Warrior — Arms: Mortal Strike now deals 10% more damage when the target is below 35% health.', detail: '', tag: 'Warrior' },
-      { type: 'buff', text: 'Hunter — Beast Mastery: Kill Command cooldown reduced by 1s.', detail: '', tag: 'Hunter' },
-      { type: 'nerf', text: 'Rogue — Subtlety: Shadow Dance maximum charges reduced from 3 to 2 in PvE.', detail: 'Output was significantly ahead of the expected DPS curve in single-target fights.', tag: 'Rogue' },
-      { type: 'fix', text: 'Legends of the Haranir — Players can now correctly abandon and re-accept the Lost Legends weekly without losing relic scenario progress.', detail: '', tag: 'content' },
-      { type: 'content', text: 'Legends of the Haranir — Two additional relic scenarios added (Vethara\'s Compass, Shard of the Sunwell Restored), bringing total to 9 available relics.', detail: '', tag: 'content' },
-      { type: 'buff', text: 'Priest — Discipline: Atonement healing from Penance increased by 12%.', detail: '', tag: 'Priest' },
+      { type: 'buff', text: 'Warrior, Arms: Mortal Strike now deals 10% more damage when the target is below 35% health.', detail: '', tag: 'Warrior' },
+      { type: 'buff', text: 'Hunter, Beast Mastery: Kill Command cooldown reduced by 1s.', detail: '', tag: 'Hunter' },
+      { type: 'nerf', text: 'Rogue, Subtlety: Shadow Dance maximum charges reduced from 3 to 2 in PvE.', detail: 'Output was significantly ahead of the expected DPS curve in single-target fights.', tag: 'Rogue' },
+      { type: 'fix', text: 'Legends of the Haranir, Players can now correctly abandon and re-accept the Lost Legends weekly without losing relic scenario progress.', detail: '', tag: 'content' },
+      { type: 'content', text: 'Legends of the Haranir, Two additional relic scenarios added (Vethara\'s Compass, Shard of the Sunwell Restored), bringing total to 9 available relics.', detail: '', tag: 'content' },
+      { type: 'buff', text: 'Priest, Discipline: Atonement healing from Penance increased by 12%.', detail: '', tag: 'Priest' },
       { type: 'system', text: 'Adventure Guide now correctly displays Season 1 activity recommendations for characters below item level 610.', detail: '', tag: 'systems' },
     ]
   },
   {
     version: '12.0',
     date: 'Feb 11, 2026',
-    summary: 'Midnight launch — Quel\'Thalas, Blood Elves, Silvermoon',
+    summary: 'Midnight launch, Quel\'Thalas, Blood Elves, Silvermoon',
     entries: [
       { type: 'content', text: 'World of Warcraft: Midnight launches. Quel\'Thalas and four new zones available: Eversong Woods, The Voidstorm, Harandar, and Zul\'Aman Depths.', detail: '', tag: 'content' },
-      { type: 'content', text: 'New raid: The Sundered Sanctum — 8 boss raid across two wings, available in Normal/Heroic/Mythic and LFR.', detail: 'LFR launches 2 weeks post-release. Mythic available Day 1 for Hall of Fame.', tag: 'raid' },
-      { type: 'content', text: 'New Mythic+ Season 1: 8 dungeons (4 new, 4 returning). Affix pool revised — Tyrannical and Fortified remain; Afflicted and Incorporeal removed.', detail: 'New affixes: Sundered (void-themed spawn mechanic) and Echoing (damage reflection on missed interrupts).', tag: 'dungeons' },
+      { type: 'content', text: 'New raid: The Sundered Sanctum, 8 boss raid across two wings, available in Normal/Heroic/Mythic and LFR.', detail: 'LFR launches 2 weeks post-release. Mythic available Day 1 for Hall of Fame.', tag: 'raid' },
+      { type: 'content', text: 'New Mythic+ Season 1: 8 dungeons (4 new, 4 returning). Affix pool revised, Tyrannical and Fortified remain; Afflicted and Incorporeal removed.', detail: 'New affixes: Sundered (void-themed spawn mechanic) and Echoing (damage reflection on missed interrupts).', tag: 'dungeons' },
       { type: 'content', text: 'Delve system updated to Midnight content. Tier 1–11 available. Delver\'s Journey campaign expands with 4 new chapters.', detail: '', tag: 'content' },
-      { type: 'content', text: 'Silvermoon Court — new major faction. Earn rep via Saltheril\'s Soiree, crafting orders, and daily Bazaar quests.', detail: 'Quartermaster sells cosmetics, housing, mounts, and recipes.', tag: 'content' },
-      { type: 'content', text: 'Housing system launches — personal plots available in Eversong Woods and Silvermoon District. Phase 1 includes 200+ decor items.', detail: 'Plots purchased via Silvermoon Court reputation.', tag: 'content' },
-      { type: 'system', text: 'Great Vault redesigned — 3 rows: Raid (1/3/6 kills), Mythic+ (1/4/8 keys), World (2/4/6 world activities). Reward quality scales with content difficulty.', detail: '', tag: 'systems' },
+      { type: 'content', text: 'Silvermoon Court, new major faction. Earn rep via Saltheril\'s Soiree, crafting orders, and daily Bazaar quests.', detail: 'Quartermaster sells cosmetics, housing, mounts, and recipes.', tag: 'content' },
+      { type: 'content', text: 'Housing system launches, personal plots available in Eversong Woods and Silvermoon District. Phase 1 includes 200+ decor items.', detail: 'Plots purchased via Silvermoon Court reputation.', tag: 'content' },
+      { type: 'system', text: 'Great Vault redesigned, 3 rows: Raid (1/3/6 kills), Mythic+ (1/4/8 keys), World (2/4/6 world activities). Reward quality scales with content difficulty.', detail: '', tag: 'systems' },
     ]
   },
 ];
@@ -611,9 +611,9 @@ function togglePatch(i) {
 }
 
 /* ═══════════════════════════════════════════
-   LIVE RSS FEED — Wowhead News
+   LIVE RSS FEED: Wowhead News
    Uses rss2json.com JSONP (script tag injection)
-   — no fetch(), no CORS, no AbortSignal issues.
+  : no fetch(), no CORS, no AbortSignal issues.
 ═══════════════════════════════════════════ */
 const WOWHEAD_RSS = 'https://www.wowhead.com/news/rss/wow';
 
@@ -698,17 +698,17 @@ function renderRssItems(items) {
 
 function rssFeedError(msg) {
   setLiveIndicator('error', 'Unavailable');
-  document.getElementById('live-feed-meta').textContent = 'Could not load feed — check Wowhead directly';
+  document.getElementById('live-feed-meta').textContent = 'Could not load feed, check Wowhead directly';
   document.getElementById('live-feed-body').innerHTML = `
     <div class="rss-error">
-      Feed unavailable — ${msg}.<br>
+      Feed unavailable: ${msg}.<br>
       <a href="https://www.wowhead.com/news" target="_blank" style="color:var(--void-glow);">Browse Wowhead News ↗</a>
       &nbsp;·&nbsp;
       <a href="https://www.wowhead.com/news/wow-hotfixes" target="_blank" style="color:var(--void-glow);">Hotfix Tracker ↗</a>
     </div>`;
 }
 
-// JSONP callback — rss2json.com calls this global function with the parsed data
+// JSONP callback: rss2json.com calls this global function with the parsed data
 window._wowRssCb = function(data) {
   clearTimeout(window._wowRssTimer);
   const s = document.getElementById('_wowRssScript');
@@ -728,7 +728,7 @@ window._wowRssCb = function(data) {
 
   setLiveIndicator('live', 'Live');
   document.getElementById('live-feed-meta').textContent =
-    items.length + ' articles from Wowhead — click any title to read on Wowhead';
+    items.length + ' articles from Wowhead, click any title to read on Wowhead';
   renderRssItems(items);
 };
 
@@ -755,7 +755,7 @@ function fetchWowheadFeed() {
     // Check if this looks like a CSP block (common in sandboxed iframes/previews)
     const inIframe = window.self !== window.top;
     const msg = inIframe
-      ? 'blocked by sandbox CSP — open this file directly in a browser to load live data'
+      ? 'blocked by sandbox CSP: open this file directly in a browser to load live data'
       : 'script blocked by browser or network';
     rssFeedError(msg);
   };

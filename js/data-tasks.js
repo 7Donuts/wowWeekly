@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------
-   TASK DATA  —  Patch 12.0.7 Revelations  (June 16, 2026)
+   TASK DATA :  Patch 12.0.7 Revelations  (June 16, 2026)
    Sources: Wowhead patch overview, Icy Veins weekly to-do
    list and patch guides, MMO-Champion patch notes.
    No raid content included by design (raid section tracks kills).
@@ -49,7 +49,7 @@ const SECTIONS = [
     priority: 1,
     tasks: [
       { id: 'of1', name: 'Complete this week\'s "Seeking Knowledge" Omnium Folio quest',
-        desc: 'Five-week chain from Grand Master Rommath in Silvermoon City. Each week unlocks a new rune row (passive power bonus, no gear slot). Week 1: retrieve the Folio. Weeks 2–5 each require collecting specific materials. Cannot be skipped or rushed — one row unlocks per reset.',
+        desc: 'Five-week chain from Grand Master Rommath in Silvermoon City. Each week unlocks a new rune row (passive power bonus, no gear slot). Week 1: retrieve the Folio. Weeks 2–5 each require collecting specific materials. Cannot be skipped or rushed, one row unlocks per reset.',
         tags: ['tag-void', 'tag-new', 'tag-127'] },
       { id: 'of2', name: 'Swap Omnium Folio runes to match your content for the week',
         desc: 'Unlocked runes can be swapped freely out of combat. Swap to dungeon, raid, or world-content runes before entering your primary weekly activity. All unlocked rows remain available permanently.',
@@ -205,8 +205,8 @@ const SECTIONS = [
     categories: ['ritual-sites'],
     priority: 2,
     tasks: [
-      { id: 'rs1', goal: {max:5, label:'sites'}, name: 'Complete Ritual Sites this week (Tier 6 now available — ilvl 274 rec.)',
-        desc: 'Repeatable instanced content, 1–5 players. Tier 6 (added in 12.0.7, select 6 challenges) awards 5 Mythic Dawncrests + 10 Heroic Dawncrests per completion. Counts toward Great Vault World row. Dark Particles drop rate increased in 12.0.7 — exchange 150 at Trima Dawnsetter in Silvermoon for cosmetic pouches.',
+      { id: 'rs1', goal: {max:5, label:'sites'}, name: 'Complete Ritual Sites this week (Tier 6 now available, ilvl 274 rec.)',
+        desc: 'Repeatable instanced content, 1–5 players. Tier 6 (added in 12.0.7, select 6 challenges) awards 5 Mythic Dawncrests + 10 Heroic Dawncrests per completion. Counts toward Great Vault World row. Dark Particles drop rate increased in 12.0.7, exchange 150 at Trima Dawnsetter in Silvermoon for cosmetic pouches.',
         tags: ['tag-void', 'tag-world', 'tag-new', 'tag-127'] },
       { id: 'rs2', name: 'Complete Tier 6 Ritual Sites weekly quest (6-week chain)',
         desc: 'Requires completing 2 Tier 6 Ritual Sites with specific challenges active. Six-week questline; bonus rolls awarded on weeks 3 and 6. Check quest tracker for this week\'s challenge requirement.',
@@ -421,17 +421,17 @@ const SECTIONS = [
 
       // ── SPOREFALL ──
       { id: 'sf_lfr',   name: 'Sporefall: LFR',
-        desc: 'Queue via Group Finder. Rewards ilvl 259 Sporefused gear — already upgraded to max item level for the track, no Voidcores required.',
+        desc: 'Queue via Group Finder. Rewards ilvl 259 Sporefused gear, already upgraded to max item level for the track, no Voidcores required.',
         tags: ['tag-raid', 'tag-127'],
         bosses: [{ id: 'rotmire', name: 'Rotmire', url: 'https://www.wowhead.com/guide/midnight/raids/sporefall-overview-location-rewards-boss' }],
         diff: 'LFR' },
       { id: 'sf_n',     name: 'Sporefall: Normal',
-        desc: 'Personal loot lockout. Sporefused drops at ilvl 272 — fully upgraded, no Voidcores needed. Counts toward Raid Vault row.',
+        desc: 'Personal loot lockout. Sporefused drops at ilvl 272, fully upgraded, no Voidcores needed. Counts toward Raid Vault row.',
         tags: ['tag-raid', 'tag-127'],
         bosses: [{ id: 'rotmire', name: 'Rotmire', url: 'https://www.wowhead.com/guide/midnight/raids/sporefall-overview-location-rewards-boss' }],
         diff: 'Normal' },
       { id: 'sf_h',     name: 'Sporefall: Heroic',
-        desc: 'Personal loot lockout. Sporefused gear at ilvl 285 — Ascendant-equivalent with zero upgrade cost. Best alt-catchup raid in 12.0.7.',
+        desc: 'Personal loot lockout. Sporefused gear at ilvl 285, Ascendant-equivalent with zero upgrade cost. Best alt-catchup raid in 12.0.7.',
         tags: ['tag-raid', 'tag-127'],
         bosses: [{ id: 'rotmire', name: 'Rotmire', url: 'https://www.wowhead.com/guide/midnight/raids/sporefall-overview-location-rewards-boss' }],
         diff: 'Heroic' },
@@ -540,7 +540,7 @@ const SECTIONS = [
     categories: ['world', 'currency'],
     priority: 2,
     tasks: [
-      { id: 'sz1', name: 'Check active Invasion Zone this week (Val or Naigtal — rotates each reset)',
+      { id: 'sz1', name: 'Check active Invasion Zone this week (Val or Naigtal, rotates each reset)',
         desc: 'Val is a frozen Legion-era world ruled by Imperator Pertinax. Naigtal is a fungal arcane-infested world led by Nexus-Captain Leth\'ir. Access via the unstable portal in Voidstorm. Only one zone is active per week.',
         tags: ['tag-world', 'tag-new', 'tag-127'] },
       { id: 'sz2', name: 'Complete World Quests in the active Invasion Zone',
@@ -550,13 +550,13 @@ const SECTIONS = [
         desc: 'Normal: 10 Field Accolades each. Heroic: 16 Field Accolades each. Completed quickly alongside world quests.',
         tags: ['tag-world', 'tag-gold', 'tag-new', 'tag-127'] },
       { id: 'sz4', name: 'Kill the weekly World Boss (Imperator Pertinax or Nexus-Captain Leth\'ir)',
-        desc: 'One kill per character per week. Rewards Hero-track gear (ilvl 263–276). All drops are Bind on Equip — tradeable on the Auction House for alts or gold income. Killing the boss also unlocks Heroic World Tier for both zones simultaneously.',
+        desc: 'One kill per character per week. Rewards Hero-track gear (ilvl 263–276). All drops are Bind on Equip, tradeable on the Auction House for alts or gold income. Killing the boss also unlocks Heroic World Tier for both zones simultaneously.',
         tags: ['tag-world', 'tag-gold', 'tag-new', 'tag-127'] },
       { id: 'sz5', name: 'Complete "Showdown" weekly quest for Riftstalker\'s Cache',
         desc: 'Primary weekly wrapper quest for the active Invasion Zone. Rewards a Riftstalker\'s Cache containing gear and currency.',
         tags: ['tag-world', 'tag-gold', 'tag-new', 'tag-127'] },
       { id: 'sz6', name: '[Heroic World Tier] Kill World Boss for Void Commander\'s Emblem',
-        desc: 'One Void Commander\'s Emblem per character per week. Collect 4 over 4 weeks for "Knocking Off the Top" — rewards your choice of Myth-track (ilvl 285) cloak, belt, or bracer. The first open-world Myth-track gear ever available in WoW.',
+        desc: 'One Void Commander\'s Emblem per character per week. Collect 4 over 4 weeks for "Knocking Off the Top", rewards your choice of Myth-track (ilvl 285) cloak, belt, or bracer. The first open-world Myth-track gear ever available in WoW.',
         tags: ['tag-world', 'tag-gold', 'tag-new', 'tag-127'] },
     ]
   },
@@ -588,10 +588,10 @@ const BEGINNER_STAGES = [
     sublabel: 'ilvl ~200–219 · Adventurer gear is your target',
     color: 'var(--success-bright)',
     tasks: [
-      'of1',                       // Omnium Folio — free weekly power
-      'bq1','bq2','bq3',           // Bazaar weeklies — free, high value
-      'we0a','we0b',               // World Quests + Rare mobs — easiest gear
-      'va2','va3','va4',           // Void Assaults — strong intro content
+      'of1',                       // Omnium Folio: free weekly power
+      'bq1','bq2','bq3',           // Bazaar weeklies: free, high value
+      'we0a','we0b',               // World Quests + Rare mobs: easiest gear
+      'va2','va3','va4',           // Void Assaults: strong intro content
       'sz1','sz4','sz5',           // Invasion Zone: check zone + world boss + weekly quest
       'we1',                       // World Bosses
       'we4',                       // Saltheril's Soiree
@@ -599,7 +599,7 @@ const BEGINNER_STAGES = [
       'pr_norm',                   // Normal Prey (2x, Adventurer gear)
       'd_bountiful',               // Bountiful Delves (scales to your tier)
       'd3',                        // Delve weekly cache
-      'v1','v2',                   // Great Vault — always open it
+      'v1','v2',                   // Great Vault: always open it
       'cu1',                       // Spend Crests
     ]
   },
@@ -632,7 +632,7 @@ const BEGINNER_STAGES = [
     sublabel: 'ilvl 233–249 · Solo content fully unlocked',
     color: 'var(--void-glow)',
     tasks: [
-      'of1','of2',                 // Omnium Folio — quest + rune swap
+      'of1','of2',                 // Omnium Folio: quest + rune swap
       'bq1','bq2','bq3','bq5',
       'we0a','we0b',
       'va2','va3','va4',
@@ -657,7 +657,7 @@ const BEGINNER_STAGES = [
     sublabel: 'ilvl 250+ · Maximising every weekly system',
     color: '#c0b8d8',
     tasks: [
-      'of1','of2',                 // Omnium Folio — quest + rune swap
+      'of1','of2',                 // Omnium Folio: quest + rune swap
       'bq1','bq2','bq3','bq5',
       'we0a','we0b',
       'va2','va3','va4',

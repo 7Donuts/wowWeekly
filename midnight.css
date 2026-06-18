@@ -1022,7 +1022,7 @@ footer {
     min-width: 0;
   }
 
-  /* spacer div — collapse on mobile */
+  /* spacer div: collapse on mobile */
   .reset-bar-top > div[style*="flex:1"] {
     display: none;
   }
@@ -1779,7 +1779,7 @@ body.light-mode .tier-btn.active { background: rgba(139,26,26,0.12); border-colo
   transform: translateX(3px);
 }
 
-/* ── YOUR LIST — SECTION GROUPS ── */
+/* ── YOUR LIST: SECTION GROUPS ── */
 .yl-section-group {
   margin-bottom: 1rem;
 }
@@ -1836,7 +1836,7 @@ body.light-mode .tier-btn.active { background: rgba(139,26,26,0.12); border-colo
 /* Character render overlaid in the oval center space */
 .bis-char-overlay {
   position: absolute;
-  top: 0.5rem; bottom: 0.5rem; /* match bis-grid-body padding — spans rows only */
+  top: 0.5rem; bottom: 0.5rem; /* match bis-grid-body padding: spans rows only */
   left: 0; right: 0;
   pointer-events: none;
   overflow: hidden; /* clip the render's transparent margins so it can't widen the page */
@@ -1870,7 +1870,7 @@ body.light-mode .tier-btn.active { background: rgba(139,26,26,0.12); border-colo
   min-width: 0;
   transition: border-color 0.15s;
 }
-/* Fade left cards on the right edge, right cards on the left edge — toward the character */
+/* Fade left cards on the right edge, right cards on the left edge: toward the character */
 .bis-row > .bis-grid-card:first-child {
   -webkit-mask-image: linear-gradient(to right, black 55%, transparent 100%);
   mask-image: linear-gradient(to right, black 55%, transparent 100%);
@@ -2580,7 +2580,7 @@ body.light-mode .ev-filter-btn.active  { background: rgba(139,26,26,0.11); }
 body.light-mode .welcome-feature-list li { background: rgba(139,26,26,0.04); border-color: rgba(139,26,26,0.14); }
 body.light-mode .welcome-note { border-color: rgba(139,26,26,0.35); }
 
-/* ── Welcome — Battle.net choice cards ── */
+/* ── Welcome: Battle.net choice cards ── */
 .welcome-bnet-cards {
   display: flex; gap: 0.75rem; margin-top: 0.25rem; text-align: left;
 }

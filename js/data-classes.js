@@ -1,5 +1,5 @@
 /* -------------------------------------------
-   WoW CLASS DATA — icons, colors, identifiers
+   WoW CLASS DATA: icons, colors, identifiers
    Used by: character picker, class links bar,
    summary alts view, char button rendering.
 ------------------------------------------- */
@@ -140,12 +140,12 @@ function renderClassLinksBar() {
   const linkBg    = isLightMode ? 'var(--bg-card)'       : rgba(0.1);
   const linkBgHov = isLightMode ? 'var(--bg-card-hover)' : rgba(0.2);
 
-  // Armory data — shown if synced
+  // Armory data: shown if synced
   const armory      = (typeof loadArmoryData === 'function') ? loadArmoryData(currentChar) : null;
   const specLabel   = armory?.spec ? armory.spec + ' ' + def.name : def.name;
   const guildLabel  = armory?.guild ? ` <span style="color:${resClr};font-size:11px;font-family:sans-serif;font-style:italic;">(${armory.guild})</span>` : '';
 
-  // External profile links — only shown if realm is set
+  // External profile links: only shown if realm is set
   const realm       = (typeof loadCharRealm === 'function') ? loadCharRealm(currentChar) : '';
   const region      = (typeof loadBnetCreds === 'function') ? (loadBnetCreds()?.region || 'us') : 'us';
   const realmSlug   = realm.toLowerCase().replace(/\s+/g, '-');
@@ -171,7 +171,7 @@ function renderClassLinksBar() {
       border:1px solid ${mColor}55; border-radius:4px;
       padding:2px 8px; white-space:nowrap; flex-shrink:0;
     " title="Mythic+ Rating · synced ${new Date(armory.lastSync).toLocaleDateString()}">
-      🔑 ${mScore > 0 ? mScore : '—'}
+      🔑 ${mScore > 0 ? mScore : '-'}
     </span>` : '';
 
   const linkStyle = `

@@ -1,12 +1,12 @@
 /* -----------------------------------------------
-   APP — main application logic for index.html
+   APP: main application logic for index.html
    Depends on (loaded before this file):
      data-tasks.js, data-events.js, data-classes.js,
      storage.js, confetti.js, theme.js
 ----------------------------------------------- */
 
 /* -------------------------------------------
-   STORAGE — namespaced localStorage abstraction
+   STORAGE: namespaced localStorage abstraction
    All keys follow the prefix "wow_mn_" to avoid
    collisions. Change the schema here and it
    propagates to every page that loads this file.
@@ -137,7 +137,7 @@ function saveCustomTasks(t) { localStorage.setItem(customStorageKey(), JSON.stri
 
 
 /* ═══════════════════════════════════════════
-   APP STATE — global mutable state for the
+   APP STATE: global mutable state for the
    current session. Not persisted here; the
    storage.js layer handles persistence.
    Note: isLightMode and isCompact live in
@@ -220,7 +220,7 @@ function updateSearchResultCount(matched, total) {
   el.className = 'search-result-count has-results';
 }
 
-/* ── SECTION TASK HTML (main list + edit mode) — pure string concat, no nested backticks ── */
+/* ── SECTION TASK HTML (main list + edit mode): pure string concat, no nested backticks ── */
 function sectionTaskHtml(t, done, hidden, yourList, goals, bossKills, notes) {
   const id = t.id;
   const goalDef = t.goal;
@@ -344,7 +344,7 @@ function removeFromYourList(id) {
   render();
 }
 
-/* ── BIS GRID — always renders all 16 standard slots so positions never shift ── */
+/* ── BIS GRID: always renders all 16 standard slots so positions never shift ── */
 // Interleaved order mirrors WoW character sheet: left col (Head→Wrists) / right col (Hands→Ring 2)
 const _BIS_GRID_SLOTS = [
   'Head',     'Hands',
@@ -357,7 +357,7 @@ const _BIS_GRID_SLOTS = [
   'Main Hand','Off Hand',
 ];
 
-// Center oval gap per row (px) — gently curved ellipse with generous breathing room
+// Center oval gap per row (px): gently curved ellipse with generous breathing room
 // Row pairs: Head/Hands, Neck/Waist, Shoulders/Legs, Back/Feet,
 //            Chest/Ring1, Wrists/Ring2, Trinket1/2, MH/OH
 const _BIS_OVAL_WIDTHS = [120, 152, 172, 180, 180, 172, 152, 120];
@@ -659,7 +659,7 @@ function render() {
 
     if (filteredSelected.length === 0) {
       if (editingYourList) {
-        // Empty list in edit mode — show helpful prompt
+        // Empty list in edit mode: show helpful prompt
         const emptyEl = document.createElement('div');
         emptyEl.className = 'yourlist-empty';
         emptyEl.innerHTML = '<div style="font-size:2rem;margin-bottom:0.5rem;">⭐</div>'
@@ -792,7 +792,7 @@ function buildEditBar() {
   return editBar;
 }
 
-  // ── EDIT YOUR LIST MODE — master list with highlight toggles ──
+  // ── EDIT YOUR LIST MODE: master list with highlight toggles ──
   if (editingYourList) container.appendChild(buildEditBar());
 
   let searchMatchTotal = 0, searchTotal = 0;
@@ -930,7 +930,7 @@ function toggle(id, taskEl) {
   done[id] ? delete done[id] : (done[id] = true);
   saveDone(done);
   if (!wasDown) {
-    // Task just checked — burst from task position
+    // Task just checked: burst from task position
     const pos = _getTaskPos(taskEl);
     _confetti.burst(pos.x, pos.y, 28, false);
     // Check for full completion
@@ -1322,7 +1322,7 @@ function saveChar() {
 
   if (isRename) {
     if (newId === oldName) {
-      // Identifier unchanged — just save class/group/realm display update
+      // Identifier unchanged: just save class/group/realm display update
       saveCharClass(oldName, _modalSelectedClass);
       saveCharGroupFor(oldName, _modalSelectedGroup);
       if (realmInput) saveCharRealm(oldName, realmInput);
@@ -1388,13 +1388,13 @@ function renderEventAlerts() {
     const start = parseD(e.start);
     const end   = parseD(e.end);
     if (start <= today && today < end) {
-      // Active event — warn if ending within 3 days
+      // Active event: warn if ending within 3 days
       const daysLeft = Math.round((end - today) / 86400000);
       if (daysLeft <= 3 && !dismissed.has(e.name)) {
         alerts.push({ event: e, daysLeft, type: 'ending' });
       }
     } else if (start > today) {
-      // Upcoming — notify if starting tomorrow
+      // Upcoming: notify if starting tomorrow
       const daysUntil = Math.round((start - today) / 86400000);
       if (daysUntil === 1 && !dismissed.has('start_' + e.name)) {
         alerts.push({ event: e, daysUntil, type: 'starting' });
@@ -1524,7 +1524,7 @@ function renderLastChanceBanner() {
 
 /* ═══════════════════════════════════════════
    CUSTOM TASKS
-   Stored per character (not per week — persist
+   Stored per character (not per week: persist
    until manually deleted)
 ═══════════════════════════════════════════ */
 
@@ -1731,7 +1731,7 @@ function _bisSlotIcon(slot, itemName) {
   return `<img src="${src}" class="bis-slot-icon bis-slot-icon--placeholder" title="${slot}" alt="${slot}">`;
 }
 
-// Used in task cards for imported BiS items — replaces "[Head] Item" with icon + name
+// Used in task cards for imported BiS items: replaces "[Head] Item" with icon + name
 function _bisTaskNameHtml(name, searchQuery) {
   const m = (name || '').match(/^\[([^\]]+)\]\s*(.+)$/);
   if (m) {
@@ -2052,7 +2052,7 @@ async function _fetchMissingBisIcons(items) {
 
   let anyFound = false;
 
-  // Direct ID-based lookup — worker also persists results to KV
+  // Direct ID-based lookup: worker also persists results to KV
   if (byId.length) {
     try {
       const res = await fetch('/api/item-icons-by-id', {
@@ -2138,7 +2138,7 @@ function _bisImportSelected() {
     const taskName = `[${item.slot}] ${item.item}`;
     const existId  = existByName.get(taskName);
     if (existId) {
-      // Task exists in storage — re-add to list if it was removed
+      // Task exists in storage: re-add to list if it was removed
       const customId = 'custom_' + existId;
       if (!yourListSet.has(customId)) {
         yourList.push(customId);
@@ -2147,7 +2147,7 @@ function _bisImportSelected() {
       }
       return;
     }
-    // New item — add to customTasks and yourList
+    // New item: add to customTasks and yourList
     const desc = `${item.source} · ${item.location}`;
     const id   = 'bis_' + Date.now().toString(36) + '_' + i;
     existing.push({ id, name: taskName, desc });
@@ -2156,7 +2156,7 @@ function _bisImportSelected() {
   });
 
   if (imported === 0) {
-    // All selected items were already imported — just close
+    // All selected items were already imported: just close
     closeBisModal();
     render();
     return;
@@ -2384,7 +2384,7 @@ function copyDiscordSummary() {
   const scopeLabel = isYLScope ? ' · Your List' : '';
 
   const text = [
-    '📊 **The Azeroth Agenda**' + scopeLabel + ' — ' + weekLabel,
+    '📊 **The Azeroth Agenda**' + scopeLabel + ', ' + weekLabel,
     charLine,
     '',
     grandDone + '/' + grandTotal + ' tasks · ' + pct + '% \`' + bar + '\`',
@@ -2613,7 +2613,7 @@ function whatsNext() {
   }
 
   // Find the task element and scroll + highlight it
-  // Tasks render with onclick containing the id — find by that
+  // Tasks render with onclick containing the id: find by that
   setTimeout(() => {
     const taskEl = [...document.querySelectorAll('.task')].find(el => {
       const oc = el.getAttribute('onclick') || '';
@@ -2690,7 +2690,7 @@ function noteBtnHtml(id, notes) {
 /* ═══════════════════════════════════════════
    AUTO-SNAPSHOT ON WEEK ROLLOVER
    If the stored "last seen week" differs from the current week,
-   it means a reset just happened — snapshot every character's
+   it means a reset just happened: snapshot every character's
    previous week before anything is overwritten.
 ═══════════════════════════════════════════ */
 (function autoSnapshotOnRollover() {
@@ -2698,7 +2698,7 @@ function noteBtnHtml(id, notes) {
   const currentWeek   = getWeekKey();
   const lastWeek      = localStorage.getItem(LAST_WEEK_KEY);
   if (lastWeek && lastWeek !== currentWeek) {
-    // New week detected — snapshot all characters for the previous week
+    // New week detected: snapshot all characters for the previous week
     characters.forEach(c => snapshotWeekForChar(c, lastWeek));
   }
   localStorage.setItem(LAST_WEEK_KEY, currentWeek);
@@ -3120,7 +3120,7 @@ let _importChars = [];
 
 function openWelcome() {
   // If the user just returned from Battle.net OAuth, restore the step they left from.
-  // Do NOT remove the key here — initSync() removes it after auth is confirmed so that
+  // Do NOT remove the key here: initSync() removes it after auth is confirmed so that
   // a cloud-pull reload doesn't lose the step before auth has been checked.
   const savedStep = sessionStorage.getItem('azeroth_welcome_return_step');
   if (savedStep !== null) {
@@ -3154,7 +3154,7 @@ function loginWithBnet() {
     if (welcomeBtn) { welcomeBtn.textContent = 'Connect Battle.net →'; welcomeBtn.disabled = false; }
   }
 
-  // Try popup first — keeps the user on the page
+  // Try popup first: keeps the user on the page
   const pw = 560, ph = 680;
   const pl = Math.max(0, Math.round((screen.width  - pw) / 2));
   const pt = Math.max(0, Math.round((screen.height - ph) / 2));
@@ -3164,7 +3164,7 @@ function loginWithBnet() {
   );
 
   if (!popup || popup.closed) {
-    // Popup was blocked — fall back to full-page redirect
+    // Popup was blocked: fall back to full-page redirect
     if (document.getElementById('modal-welcome')?.classList.contains('open')) {
       sessionStorage.setItem('azeroth_welcome_return_step', String(_welcomeStep));
     }
@@ -3330,7 +3330,7 @@ function renderWelcomeStep() {
 
   const nextBtn = document.getElementById('welcome-next');
 
-  // bnet-choice: navigation is via the two card buttons — hide Next.
+  // bnet-choice: navigation is via the two card buttons: hide Next.
   if (_welcomeStep === 1) {
     nextBtn.style.display = 'none';
   } else {
@@ -3385,7 +3385,7 @@ function onSyncAuthConfirmed(user) {
   const welcomeEl = document.getElementById('modal-welcome');
   if (!welcomeEl?.classList.contains('open')) return;
   if (user && _welcomeStep === 1) {
-    // User just authenticated — advance from bnet-choice to the import step.
+    // User just authenticated: advance from bnet-choice to the import step.
     _welcomeStep = _WELCOME_BNET_IMPORT_STEP;
     // Persist so a cloud-pull reload reopens on bnet-import, not step 0.
     sessionStorage.setItem('azeroth_welcome_return_step', String(_WELCOME_BNET_IMPORT_STEP));
@@ -3573,7 +3573,7 @@ async function openImportChars() {
   try {
     const res = await fetch('/api/characters', { credentials: 'same-origin' });
     if (res.status === 401) {
-      content.innerHTML = '<div style="color:var(--color-danger);padding:0.5rem 0;">Session expired — signing you back in…</div>';
+      content.innerHTML = '<div style="color:var(--color-danger);padding:0.5rem 0;">Session expired: signing you back in…</div>';
       setTimeout(() => { window.location.href = '/auth/login?region=us'; }, 1800);
       return;
     }

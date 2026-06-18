@@ -27,8 +27,8 @@
   function isSyncKey(key) {
     if (key === 'wow_midnight_chars') return true;
     if (!key.startsWith('wow_mn_')) return false;
-    if (key.startsWith('wow_mn_armory_')) return false; // Battle.net armory cache — skip
-    if (key === 'wow_mn_item_icons')    return false;   // item icon cache — derived, skip
+    if (key.startsWith('wow_mn_armory_')) return false; // Battle.net armory cache: skip
+    if (key === 'wow_mn_item_icons')    return false;   // item icon cache: derived, skip
     if (key === 'wow_mn_bnet_creds')    return false;   // region pref only, skip
     if (key === 'wow_mn_bnet_region')   return false;   // device-local: OAuth region for re-login
     if (key === 'wow_mn_light_mode')    return false;   // device-local UI pref
@@ -84,7 +84,7 @@
         // Show a one-time warning per session so the failure isn't invisible.
         if (!sessionStorage.getItem('azeroth_sync_warn') && typeof showToast === 'function') {
           sessionStorage.setItem('azeroth_sync_warn', '1');
-          showToast('Sync error — your progress may not be saving across devices.');
+          showToast('Sync error: your progress may not be saving across devices.');
         }
         return false;
       }
@@ -93,7 +93,7 @@
     } catch (_) {
       if (!sessionStorage.getItem('azeroth_sync_warn') && typeof showToast === 'function') {
         sessionStorage.setItem('azeroth_sync_warn', '1');
-        showToast('Sync error — check your connection.');
+        showToast('Sync error: check your connection.');
       }
       return false;
     }
@@ -115,18 +115,18 @@
       if (!res.ok) { _hasPulled = true; return; }
       const serverData = await res.json();
 
-      // Server signals KV storage is not configured — warn once and bail.
+      // Server signals KV storage is not configured: warn once and bail.
       if (serverData && serverData._sync_unavailable) {
         _hasPulled = true;
         markSynced();
         if (typeof showToast === 'function') {
-          showToast('Cloud sync is not set up — data will only save on this device.');
+          showToast('Cloud sync is not set up, data will only save on this device.');
         }
         return;
       }
 
       if (!serverData || Object.keys(serverData).length === 0) {
-        // Cloud is empty — seed it with local state so other devices pick it up.
+        // Cloud is empty: seed it with local state so other devices pick it up.
         _hasPulled = true;
         markSynced();
         await pushToCloud();
@@ -183,7 +183,7 @@
       const statusEl = document.getElementById('sync-status');
       if (statusEl) statusEl.style.display = 'none';
       if (hadSession && typeof showToast === 'function') {
-        showToast('Session expired — click 🔑 Battle.net to sign in again.');
+        showToast('Session expired: click 🔑 Battle.net to sign in again.');
       }
     }
   }
@@ -219,7 +219,7 @@
       const { user } = await res.json();
       syncUser = user;
       updateAuthUI(user);
-      // Notify app — it re-renders the welcome step now that auth is confirmed,
+      // Notify app: it re-renders the welcome step now that auth is confirmed,
       // and advances from bnet-choice to bnet-import if returning from OAuth.
       if (typeof onSyncAuthConfirmed === 'function') onSyncAuthConfirmed(user);
       if (user) {
@@ -228,7 +228,7 @@
         if (user.region) _origSetItem.call(localStorage, 'wow_mn_bnet_region', user.region);
 
         // Pull on fresh tab open (no sync timestamp yet in sessionStorage).
-        // On refresh, the timestamp is preserved so the TTL applies — this
+        // On refresh, the timestamp is preserved so the TTL applies: this
         // prevents a reload loop when pullFromCloud writes localStorage and
         // triggers location.reload(), which would otherwise force-pull again.
         const isFreshTab = !sessionStorage.getItem(SYNC_SS_KEY);
@@ -275,7 +275,7 @@
 
   window.addEventListener('DOMContentLoaded', initSync);
 
-  // Called after popup OAuth completes — re-checks session without a full page reload.
+  // Called after popup OAuth completes: re-checks session without a full page reload.
   window.refreshAuth = async function () {
     try {
       const res = await fetch('/api/user');

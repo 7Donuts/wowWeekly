@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------
-   WORLD EVENT DATA  —  Patch 12.0.5 · May 2026 – May 2027
+   WORLD EVENT DATA :  Patch 12.0.5 · May 2026 – May 2027
    Single source of truth for both the inline event display
    (index.html) and the full Event Calendar (events.html).
 
@@ -105,7 +105,7 @@ const EVENTS = [
     tags: ['tag-optional','tag-world'] },
   { name: 'PvP Brawl: Arathi Blizzard',   url: 'https://www.wowhead.com/event=666/pvp-brawl-arathi-blizzard',
     start: '2026-07-21', end: '2026-07-28',
-    desc: 'Arathi Basin in a blizzard — reduced visibility, chaotic fun. Weekly quest reward.',
+    desc: 'Arathi Basin in a blizzard, reduced visibility, chaotic fun. Weekly quest reward.',
     tags: ['tag-optional','tag-pvp'] },
   { name: 'Auction House Dance Party',    url: 'https://www.wowhead.com/event=692/auction-house-dance-party',
     start: '2026-07-22', end: '2026-07-23',

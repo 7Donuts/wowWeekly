@@ -1,5 +1,5 @@
 /* -------------------------------------------
-   THEME & COMPACT — shared across all pages
+   THEME & COMPACT: shared across all pages
    Reads persisted preference on load and
    applies the right body class immediately,
    so there's no flash of wrong theme.

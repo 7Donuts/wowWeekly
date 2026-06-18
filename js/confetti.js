@@ -13,7 +13,7 @@ const _confetti = (() => {
   let raf       = null;
   let W, H;
 
-  // WoW Midnight palette — void purples, golds, pale whites
+  // WoW Midnight palette: void purples, golds, pale whites
   const COLORS = [
     '#a07de0','#7c5cbf','#c9a84c','#e8d9a0',
     '#6abf80','#e07068','#b090e0','#ffffff',
@@ -66,7 +66,7 @@ const _confetti = (() => {
     } else if (p.shape === 'square') {
       ctx.fillRect(-p.r, -p.r, p.r * 2, p.r * 2);
     } else {
-      // ribbon — thin rectangle with wobble-based skew
+      // ribbon: thin rectangle with wobble-based skew
       ctx.fillRect(-p.r * 0.4, -p.r * 1.5, p.r * 0.8, p.r * 3);
     }
     ctx.restore();
@@ -106,7 +106,7 @@ const _confetti = (() => {
   }
 
   function celebrate() {
-    // Full-screen celebration — fire from multiple points
+    // Full-screen celebration: fire from multiple points
     const points = [
       [W * 0.2, H * 0.4], [W * 0.5, H * 0.35],
       [W * 0.8, H * 0.4], [W * 0.35, H * 0.5],

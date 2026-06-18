@@ -1,12 +1,12 @@
 /* -------------------------------------------
-   ARMORY.JS — WoW character sync via Battle.net API
+   ARMORY.JS: WoW character sync via Battle.net API
    Requires the user to be logged in with Battle.net.
    Auto-syncs on page load; refreshes if data is > 1 hour old.
 ------------------------------------------- */
 
 /* ── SESSION EXPIRY HANDLER ── */
 function _handleSessionExpired() {
-  showToast('Session expired — signing you back in…');
+  showToast('Session expired: signing you back in…');
   const region = localStorage.getItem('wow_mn_bnet_region') || 'us';
   setTimeout(() => { window.location.href = '/auth/login?region=' + region; }, 1800);
 }
@@ -52,8 +52,8 @@ async function armorySync(charName) {
 
 /* ── AUTO-SYNC (called after login, refreshes stale data) ── */
 const _ARMORY_SESS_KEY = 'azeroth_armory_ts';
-const _ARMORY_STALE_MS = 60 * 60 * 1000; // 1 hour — per-char stale threshold
-const _ARMORY_SESS_MS  =  3 * 60 * 1000; // 3 minutes — debounce rapid re-calls within a session
+const _ARMORY_STALE_MS = 60 * 60 * 1000; // 1 hour: per-char stale threshold
+const _ARMORY_SESS_MS  =  3 * 60 * 1000; // 3 minutes: debounce rapid re-calls within a session
 
 async function autoSyncArmory() {
   const chars = JSON.parse(localStorage.getItem('wow_midnight_chars') || '["Main"]');

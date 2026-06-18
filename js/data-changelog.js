@@ -1,9 +1,9 @@
 /* -------------------------------------------
    CHANGELOG DATA
    Semantic versioning: MAJOR.MINOR.PATCH
-     MAJOR — architectural shift or breaking change
-     MINOR — new features, backward compatible
-     PATCH — bug fixes, small improvements, refactors
+     MAJOR: architectural shift or breaking change
+     MINOR: new features, backward compatible
+     PATCH: bug fixes, small improvements, refactors
    Add new versions at the top of the VERSIONS array.
    Types: new | fix | improve | content | remove
 ------------------------------------------- */
@@ -13,17 +13,17 @@ const VERSIONS = [
     date: 'June 1, 2026',
     summary: 'Best in Slot gear tracker: character sheet layout, armory render, and per-card editing',
     entries: [
-      { type: 'new',     text: 'Best in Slot Gear section in Your List — always visible, with all 16 gear slots as a character sheet layout', detail: 'Head through Main Hand/Off Hand are arranged in two columns mirroring the WoW character pane. Empty slots show a clickable placeholder so you can fill them in at any time.' },
+      { type: 'new',     text: 'Best in Slot Gear section in Your List, always visible, with all 16 gear slots as a character sheet layout', detail: 'Head through Main Hand/Off Hand are arranged in two columns mirroring the WoW character pane. Empty slots show a clickable placeholder so you can fill them in at any time.' },
       { type: 'new',     text: 'Character full-body render shown in the center of the BiS gear layout, pulled from the Battle.net character media API', detail: 'The render floats between the gear columns with feet anchored to the weapon row and the head visible above the helm slot. An oval cutout in the card layout curves around the character silhouette. Requires one armory re-sync to fetch the render URL.' },
       { type: 'new',     text: 'Cards fade to transparency toward the character model instead of hard-stopping at the oval edge', detail: 'Each gear card dissolves on its inner edge so the character render feels embedded in the layout rather than boxed in.' },
       { type: 'new',     text: 'Edit button on each BiS card lets you rename the item or update the source note', detail: 'Clicking the pencil on any filled card opens an edit modal. Empty slot placeholders are also clickable to create a new item for that slot. Item names are matched against the Blizzard icon API on save so icons appear automatically when the name is exact.' },
       { type: 'new',     text: '⚔ BiS Gear jump button in the Your List banner scrolls directly to the BiS section', detail: 'Useful when other task sections push BiS Gear below the fold.' },
       { type: 'improve', text: 'BiS import skips the class selection screen when your character has a known class saved', detail: 'Opens directly to the spec list for your class. The ← Classes breadcrumb is still available to switch.' },
-      { type: 'improve', text: 'Right-column gear cards (Hands, Waist, Legs, Feet, Rings, Trinket 2, Off Hand) are mirrored — icon in the middle, checkbox on the right — matching the WoW character sheet orientation', detail: '' },
+      { type: 'improve', text: 'Right-column gear cards (Hands, Waist, Legs, Feet, Rings, Trinket 2, Off Hand) are mirrored, icon in the middle, checkbox on the right, matching the WoW character sheet orientation', detail: '' },
       { type: 'improve', text: 'Source and location note shown in italic below each item name on BiS grid cards', detail: 'Displays where the item drops: raid boss name, dungeon, crafting, world boss, etc.' },
       { type: 'fix',     text: 'BiS grid card slots no longer shift position when some slots are empty or unchecked', detail: 'All 16 slot positions are always rendered in fixed positions regardless of which items are present.' },
       { type: 'fix',     text: 'Re-importing a BiS item that was previously removed from Your List now correctly re-adds it', detail: 'The import was finding the existing custom task but not re-adding it to the list if it had been removed.' },
-      { type: 'fix',     text: 'Edit pencil on BiS grid cards was doing nothing — fixed a double custom_ prefix bug in the onclick handler', detail: '' },
+      { type: 'fix',     text: 'Edit pencil on BiS grid cards was doing nothing, fixed a double custom_ prefix bug in the onclick handler', detail: '' },
     ]
   },
   {

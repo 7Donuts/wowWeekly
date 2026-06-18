@@ -1,8 +1,8 @@
 /**
- * WoW Armory Proxy — Cloudflare Worker (optional)
+ * WoW Armory Proxy: Cloudflare Worker (optional)
  *
  * Proxies requests to the Raider.IO public API.
- * No API keys or secrets required — deploy and go.
+ * No API keys or secrets required: deploy and go.
  *
  * Usage:
  *   GET /armory?name=Charname&realm=area-52&region=us
@@ -10,7 +10,7 @@
  * Returns JSON: { className, guild, ilvl }
  *
  * NOTE: The app calls Raider.IO directly by default.
- * This Worker is optional — useful if you want caching
+ * This Worker is optional: useful if you want caching
  * or a single controlled endpoint for your guild.
  */
 

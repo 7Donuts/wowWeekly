@@ -174,7 +174,7 @@ const BIS_ITEM_IDS = {
   "Arcanic of the High Sage":                   258050,
   "Clutchmate's Caress":                        249287,
 
-  // ── Warrior — Rage of the Night Ender ────────────────────────────────────
+  // ── Warrior: Rage of the Night Ender ────────────────────────────────────
   "Night Ender's Tusks":                        249952,
   "Night Ender's Pauldrons":                    249950,
   "Night Ender's Breastplate":                  249955,
@@ -184,14 +184,14 @@ const BIS_ITEM_IDS = {
   "Night Ender's Chausses":                     249951,
   "Night Ender's Greatboots":                   249954,
 
-  // ── Paladin — Luminant Verdict's Vestments ───────────────────────────────
+  // ── Paladin: Luminant Verdict's Vestments ───────────────────────────────
   "Luminant Verdict's Unwavering Gaze":         249961,
   "Luminant Verdict's Providence Watch":        249959,
   "Luminant Verdict's Divine Warplate":         249964,
   "Luminant Verdict's Gauntlets":               249962,
   "Luminant Verdict's Greaves":                 249960,
 
-  // ── Death Knight — Relentless Rider's Lament ─────────────────────────────
+  // ── Death Knight: Relentless Rider's Lament ─────────────────────────────
   "Relentless Rider's Crown":                   249970,
   "Relentless Rider's Dreadthorns":             249968,
   "Relentless Rider's Cuirass":                 249973,
@@ -199,21 +199,21 @@ const BIS_ITEM_IDS = {
   "Relentless Rider's Chain":                   249967,
   "Relentless Rider's Legguards":               249969,
 
-  // ── Demon Hunter — Devouring Reaver's Sheathe ────────────────────────────
+  // ── Demon Hunter: Devouring Reaver's Sheathe ────────────────────────────
   "Devouring Reaver's Intake":                  250033,
   "Devouring Reaver's Exhaustplates":           250031,
   "Devouring Reaver's Engine":                  250036,
   "Devouring Reaver's Essence Grips":           250034,
   "Devouring Reaver's Pistons":                 250032,
 
-  // ── Druid — Sprouts of the Luminous Bloom ────────────────────────────────
+  // ── Druid: Sprouts of the Luminous Bloom ────────────────────────────────
   "Branches of the Luminous Bloom":             250024,
   "Seedpods of the Luminous Bloom":             250022,
   "Trunk of the Luminous Bloom":                250027,
   "Arbortenders of the Luminous Bloom":         250025,
   "Phloemwraps of the Luminous Bloom":          250023,
 
-  // ── Evoker — Wings of the Black Talon ────────────────────────────────────
+  // ── Evoker: Wings of the Black Talon ────────────────────────────────────
   "Hornhelm of the Black Talon":                249997,
   "Beacons of the Black Talon":                 249995,
   "Frenzyward of the Black Talon":              250000,
@@ -221,14 +221,14 @@ const BIS_ITEM_IDS = {
   "Greaves of the Black Talon":                 249996,
   "Spelltreads of the Black Talon":             249999,
 
-  // ── Hunter — Primal Sentry's Vigilance ───────────────────────────────────
+  // ── Hunter: Primal Sentry's Vigilance ───────────────────────────────────
   "Primal Sentry's Maw":                        249988,
   "Primal Sentry's Scaleplate":                 249991,
   "Primal Sentry's Wound Stanchers":            249984,
   "Primal Sentry's Talonguards":                249989,
   "Primal Sentry's Legguards":                  249987,
 
-  // ── Mage — Void Communion ─────────────────────────────────────────────────
+  // ── Mage: Void Communion ─────────────────────────────────────────────────
   "Voidbreaker's Veil":                         250060,
   "Voidbreaker's Leyline Nexi":                 250058,
   "Voidbreaker's Robe":                         257183,
@@ -236,7 +236,7 @@ const BIS_ITEM_IDS = {
   "Voidbreaker's Sage Cord":                    250057,
   "Voidbreaker's Britches":                     250059,
 
-  // ── Monk — Vestments of Ra-den's Chosen ──────────────────────────────────
+  // ── Monk: Vestments of Ra-den's Chosen ──────────────────────────────────
   "Fearsome Visage of Ra-den's Chosen":         250015,
   "Aurastones of Ra-den's Chosen":              250013,
   "Battle Garb of Ra-den's Chosen":             250018,
@@ -246,7 +246,7 @@ const BIS_ITEM_IDS = {
   "Storm Crashers of Ra-den's Chosen":          250017,
   "Windwrap of Ra-den's Chosen":                250010,
 
-  // ── Priest — Blind Oath's Raiment ────────────────────────────────────────
+  // ── Priest: Blind Oath's Raiment ────────────────────────────────────────
   "Blind Oath's Winged Crest":                  250051,
   "Blind Oath's Seraphguards":                  250049,
   "Blind Oath's Raiment":                       250054,
@@ -254,7 +254,7 @@ const BIS_ITEM_IDS = {
   "Blind Oath's Leggings":                      250050,
   "Blind Oath's Wraps":                         250047,
 
-  // ── Rogue — Garb of the Grim Jest ────────────────────────────────────────
+  // ── Rogue: Garb of the Grim Jest ────────────────────────────────────────
   "Masquerade of the Grim Jest":                250006,
   "Venom Casks of the Grim Jest":               250004,
   "Fantastic Finery of the Grim Jest":          250009,
@@ -262,7 +262,7 @@ const BIS_ITEM_IDS = {
   "Blade Holsters of the Grim Jest":            250005,
   "Balancing Boots of the Grim Jest":           250008,
 
-  // ── Shaman — Regalia of the Primal Core ──────────────────────────────────
+  // ── Shaman: Regalia of the Primal Core ──────────────────────────────────
   "Locus of the Primal Core":                   249979,
   "Tempests of the Primal Core":                249977,
   "Embrace of the Primal Core":                 249982,
@@ -271,7 +271,7 @@ const BIS_ITEM_IDS = {
   "Ceinture of the Primal Core":                249976,
   "Leggings of the Primal Core":                249978,
 
-  // ── Warlock — Vestments of the Abyssal Immolator ─────────────────────────
+  // ── Warlock: Vestments of the Abyssal Immolator ─────────────────────────
   "Abyssal Immolator's Smoldering Flames":      250042,
   "Abyssal Immolator's Dreadrobe":              250045,
   "Abyssal Immolator's Grasps":                 250043,
