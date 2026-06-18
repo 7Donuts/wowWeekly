@@ -154,7 +154,7 @@ let yourListGrouped = localStorage.getItem('wow_mn_yl_grouped') !== 'false'; // 
 let searchQuery     = '';
 let lastChanceMode  = false; // session-only urgency mode
 
-const FUNCTIONAL_TAGS = new Set(['tag-vault', 'tag-gold', 'tag-new']);
+const FUNCTIONAL_TAGS = new Set(['tag-vault', 'tag-gold', 'tag-new', 'tag-127']);
 
 function onSearchInput(val) {
   searchQuery = val.trim().toLowerCase();
@@ -197,7 +197,7 @@ function tagLabel(cls) {
   const m = {
     'tag-vault':'Vault','tag-raid':'Raid','tag-mythic':'Mythic+','tag-delve':'Delve',
     'tag-void':'Void','tag-world':'World','tag-gold':'Currency',
-    'tag-pvp':'PvP','tag-optional':'Optional','tag-housing':'Housing','tag-new':'12.0.5'
+    'tag-pvp':'PvP','tag-optional':'Optional','tag-housing':'Housing','tag-new':'12.0.5','tag-127':'12.0.7'
   };
   return m[cls] || cls;
 }
