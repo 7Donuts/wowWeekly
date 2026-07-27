@@ -718,6 +718,8 @@ function render() {
   const goals     = loadGoals();
   const container = document.getElementById('sections-container');
   container.innerHTML = '';
+  // Your List is the two-column board; category views are a full-width list.
+  container.classList.toggle('is-board', activeFilters.has('yourlist'));
   let totalVisible = 0, totalDone = 0, lastPriority = null;
   let anyHidden = false;
 
@@ -832,7 +834,7 @@ function render() {
         ylHeader.className = 'yl-section-header';
         ylHeader.innerHTML = isDoll
           ? _bisDollHeaderHtml(_bisDollStats(sortedTasks, done))
-          : '<div class="section-icon"><i class="' + secIconClass(sec) + '"></i></div>'
+          : secIconHtml(sec)
             + '<div class="section-title-wrap">' + ylSecTitleHtml(sec) + '</div>'
             + '<span class="yl-section-count"><span class="done">' + secDone + '</span>'
             + '<span class="goal-max"> / ' + sortedTasks.length + '</span></span>';
@@ -983,7 +985,7 @@ function buildEditBar() {
         const d = document.createElement('div');
         d.className = 'section section-hidden';
         d.innerHTML = '<div class="section-header" onclick="">'
-          + '<div class="section-icon"><i class="' + secIconClass(sec) + '"></i></div>'
+          + secIconHtml(sec)
           + '<div class="section-title-wrap">'
           + secTitleHtml(sec)
           + '<div class="section-meta">Hidden from the Everything view</div>'
@@ -1000,7 +1002,7 @@ function buildEditBar() {
       div.dataset.section = sec.id;
       const hiddenCountSpan = hiddenCount > 0 ? '<span class="hidden-count">' + hiddenCount + ' hidden</span>' : '';
       div.innerHTML = '<div class="section-header' + (isOpen ? ' open' : '') + '" onclick="toggleSection(\'' + sec.id + '\')">'
-        + '<div class="section-icon"><i class="' + secIconClass(sec) + '"></i></div>'
+        + secIconHtml(sec)
         + '<div class="section-title-wrap">'
         + secTitleHtml(sec)
         + '<div class="section-meta">' + sec.meta + '</div>'
@@ -1060,9 +1062,16 @@ function toggle(id, taskEl) {
 }
 function toggleSection(id) { collapsed[id] = !collapsed[id]; render(); }
 
-/* Section mark: SECTIONS[].icon holds a Phosphor class name. */
-function secIconClass(sec) {
-  return (sec && sec.icon) || 'ph-fill ph-shooting-star';
+/* Section mark: SECTIONS[].icon holds either a path to the category's WoW icon
+   or a Phosphor class name for the few sections with no art. */
+function secMark(icon) {
+  const mark = icon || 'ph-fill ph-shooting-star';
+  return /^img\//.test(mark)
+    ? '<img src="' + mark + '" alt="">'
+    : '<i class="' + mark + '"></i>';
+}
+function secIconHtml(sec) {
+  return '<div class="section-icon">' + secMark(sec && sec.icon) + '</div>';
 }
 
 /* Panel title row: name, then the "do first" / "new" tags. */
@@ -1224,21 +1233,21 @@ function resetAll() {
    so the rail and the panels always agree.
 ═══════════════════════════════════════════ */
 const NAV_CATEGORIES = [
-  { filter: 'yourlist',      label: 'Your list',     icon: 'ph-fill ph-star' },
+  { filter: 'yourlist',      label: 'Your list',     art:  'img/cat-yourlist.png' },
   { filter: 'all',           label: 'Everything',    icon: 'ph ph-list' },
-  { filter: 'voidforge',     label: 'Voidforge',     icon: 'ph ph-spiral' },
-  { filter: 'prey',          label: 'Prey',          icon: 'ph ph-crosshair' },
-  { filter: 'delve',         label: 'Delves',        icon: 'ph ph-mountains' },
-  { filter: 'mythic',        label: 'Mythic+',       icon: 'ph ph-crosshair-simple' },
-  { filter: 'raid',          label: 'Raids',         art:  'img/mainhandslot.webp' },
-  { filter: 'void-assaults', label: 'Void assaults', icon: 'ph ph-spiral' },
-  { filter: 'ritual-sites',  label: 'Ritual sites',  icon: 'ph ph-sparkle' },
-  { filter: 'currency',      label: 'Upgrades',      art:  'img/chestslot.webp' },
-  { filter: 'world',         label: 'World events',  icon: 'ph ph-globe-hemisphere-west' },
+  { filter: 'voidforge',     label: 'Voidforge',     art:  'img/cat-void.png' },
+  { filter: 'prey',          label: 'Prey',          art:  'img/cat-prey.png' },
+  { filter: 'delve',         label: 'Delves',        art:  'img/cat-delve.png' },
+  { filter: 'mythic',        label: 'Mythic+',       art:  'img/cat-mythic.png' },
+  { filter: 'raid',          label: 'Raids',         art:  'img/cat-raid.png' },
+  { filter: 'void-assaults', label: 'Void assaults', art:  'img/cat-void.png' },
+  { filter: 'ritual-sites',  label: 'Ritual sites',  art:  'img/cat-void.png' },
+  { filter: 'currency',      label: 'Upgrades',      art:  'img/cat-currency.png' },
+  { filter: 'world',         label: 'World events',  art:  'img/cat-world.png' },
   { filter: 'professions',   label: 'Professions',   icon: 'ph ph-hammer' },
-  { filter: 'pvp',           label: 'PvP',           art:  'img/secondaryhandslot.webp' },
-  { filter: 'housing',       label: 'Housing',       icon: 'ph ph-house-line' },
-  { filter: 'optional',      label: 'Optional',      icon: 'ph ph-shooting-star' },
+  { filter: 'pvp',           label: 'PvP',           art:  'img/cat-pvp.png' },
+  { filter: 'housing',       label: 'Housing',       art:  'img/cat-housing.png' },
+  { filter: 'optional',      label: 'Optional',      art:  'img/cat-optional.png' },
   { filter: 'custom',        label: 'Custom',        icon: 'ph ph-plus-circle' },
 ];
 
@@ -1280,7 +1289,7 @@ function renderNav() {
     const active = activeFilters.has(c.filter);
     const mark   = c.art
       ? '<img src="' + c.art + '" alt="">'
-      : '<i class="' + (active && c.filter !== 'yourlist' ? c.icon.replace('ph ph-', 'ph-fill ph-') : c.icon) + '"></i>';
+      : '<i class="' + (active ? c.icon.replace('ph ph-', 'ph-fill ph-') : c.icon) + '"></i>';
     return '<button class="nav-row' + (active ? ' active' : '') + '" data-filter="' + c.filter + '"'
       + ' onclick="setFilter(\'' + c.filter + '\',this)">'
       + mark
@@ -2437,7 +2446,7 @@ function renderSummaryTab(tab) {
       const secDone = visible.filter(t => done[t.id]).length;
       grandTotal += visible.length;
       grandDone  += secDone;
-      rows.push({ title: sec.title, icon: secIconClass(sec), done: secDone, total: visible.length });
+      rows.push({ title: sec.title, icon: sec.icon, done: secDone, total: visible.length });
     });
     const customTasks = isYLScope
       ? loadCustomTasks().filter(t => ylSet.has('custom_' + t.id) && !t.id.startsWith('bis_'))
@@ -2456,7 +2465,7 @@ function renderSummaryTab(tab) {
         const complete = r.done === r.total && r.total > 0;
         return `
         <div class="summary-section">
-          <span class="section-icon"><i class="${r.icon}"></i></span>
+          <span class="section-icon">${secMark(r.icon)}</span>
           <span class="summary-label" title="${r.title}">${r.title}</span>
           <div class="summary-bar-track">
             <div class="summary-bar-fill${complete?' complete':''}" style="width:${p}%"></div>
@@ -3041,7 +3050,7 @@ function renderEfficiencyTab() {
     const rate    = s.totalTasks ? (s.totalDone / s.totalTasks) : 0;
     const pct     = Math.round(rate * 100);
     const secDef  = SECTIONS.find(sec => sec.id === id);
-    const icon    = secDef ? secIconClass(secDef) : 'ph ph-plus-circle';
+    const icon    = secDef ? secDef.icon : 'ph ph-plus-circle';
     // Trend: compare last 3 weeks vs prior 3 weeks
     const recent  = weeksWithData.slice(0, 3).filter(e => e.sections && e.sections[id]);
     const older   = weeksWithData.slice(3, 6).filter(e => e.sections && e.sections[id]);
@@ -3070,7 +3079,7 @@ function renderEfficiencyTab() {
       : r.pct >= 25 ? 'var(--arc-600)'
       : 'var(--arc-800)';
     return '<div class="eff-row">'
-      + '<span class="section-icon eff-icon"><i class="' + r.icon + '"></i></span>'
+      + '<span class="section-icon eff-icon">' + secMark(r.icon) + '</span>'
       + '<span class="summary-label" title="' + r.title + '">' + r.title + '</span>'
       + r.trend
       + '<div class="summary-bar-track">'

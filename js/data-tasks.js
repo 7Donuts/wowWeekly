@@ -17,7 +17,7 @@ const SECTIONS = [
 
   {
     id: 'voidforge',
-    icon: 'ph-fill ph-spiral',
+    icon: 'img/cat-void.png',
     title: 'Voidforge',
     url: 'https://www.icy-veins.com/wow/turboboost-and-bonus-rolls-in-midnight-season-1-the-voidforge',
     meta: '12.0.5 · Top priority if not yet complete · Powers endgame bonus rolls',
@@ -41,7 +41,7 @@ const SECTIONS = [
 
   {
     id: 'omnium-folio',
-    icon: 'ph-fill ph-book-open-text',
+    icon: 'img/cat-void.png',
     title: 'Omnium Folio',
     url: 'https://www.wowhead.com/guide/midnight/omnium-folio-unlock-buffs-rewards',
     meta: '12.0.7 · 5-week gated power system · Unlock via Grand Master Rommath, Silvermoon City',
@@ -59,7 +59,7 @@ const SECTIONS = [
 
   {
     id: 'prey',
-    icon: 'ph-fill ph-crosshair',
+    icon: 'img/cat-prey.png',
     title: 'Prey System',
     url: 'https://www.icy-veins.com/wow/prey-system-guide',
     meta: 'Open-world hunting · Great Vault World row · Enable via Astalor Bloodsworn in Murder Row, Silvermoon',
@@ -96,7 +96,7 @@ const SECTIONS = [
 
   {
     id: 'delves',
-    icon: 'ph-fill ph-mountains',
+    icon: 'img/cat-delve.png',
     title: 'Delves',
     url: 'https://www.icy-veins.com/wow/delves-guide',
     meta: 'Solo/2-player instanced content · Contributes to Great Vault World row',
@@ -124,7 +124,7 @@ const SECTIONS = [
 
   {
     id: 'currency',
-    icon: 'ph-fill ph-coins',
+    icon: 'img/cat-currency.png',
     title: 'Upgrades',
     url: 'https://www.icy-veins.com/wow/midnight-pve-gearing-guide',
     meta: 'Weekly caps: spend before reset or lose value',
@@ -151,7 +151,7 @@ const SECTIONS = [
 
   {
     id: 'vault',
-    icon: 'ph-fill ph-vault',
+    icon: 'img/cat-vault.png',
     title: 'Great Vault',
     url: 'https://www.icy-veins.com/wow/great-vault-guide',
     meta: 'Opens Tuesday reset. Claim before anything else.',
@@ -171,7 +171,7 @@ const SECTIONS = [
 
   {
     id: 'mythicplus',
-    icon: 'ph-fill ph-crosshair-simple',
+    icon: 'img/cat-mythic.png',
     title: 'Mythic+ Dungeons',
     url: 'https://www.icy-veins.com/wow/midnight-mythic-season-1-guide',
     meta: 'No lockout. Farm freely. Vault slots unlock at 1 / 4 / 8 runs.',
@@ -198,7 +198,7 @@ const SECTIONS = [
 
   {
     id: 'ritual-sites',
-    icon: 'ph-fill ph-sparkle',
+    icon: 'img/cat-void.png',
     title: 'Ritual Sites',
     url: 'https://www.icy-veins.com/wow/ritual-sites-guide',
     meta: '12.0.7 · Tier 6 added · 1–5 players · Great Vault World row',
@@ -216,7 +216,7 @@ const SECTIONS = [
 
   {
     id: 'bazaar',
-    icon: 'ph-fill ph-storefront',
+    icon: 'img/cat-bazaar.png',
     title: 'Bazaar Weekly Quests',
     url: 'https://www.icy-veins.com/wow/weekly-to-do-list',
     meta: 'Free weekly value. Easy to forget; never skip.',
@@ -267,7 +267,7 @@ const SECTIONS = [
 
   {
     id: 'world-events',
-    icon: 'ph-fill ph-globe-hemisphere-west',
+    icon: 'img/cat-world.png',
     title: 'World Events',
     url: 'https://www.icy-veins.com/wow/midnight-world-events-guide',
     meta: 'Rotating across all four Midnight zones each week',
@@ -306,7 +306,7 @@ const SECTIONS = [
 
   {
     id: 'raid',
-    icon: 'ph-fill ph-skull',
+    icon: 'img/cat-raid.png',
     title: 'Raids',
     url: 'https://www.icy-veins.com/wow/midnight-season-1-raid-guide',
     meta: 'Personal loot lockout resets Tuesday · Click boss bubbles to track kills',
@@ -455,7 +455,7 @@ const SECTIONS = [
 
   {
     id: 'housing',
-    icon: 'ph-fill ph-house-line',
+    icon: 'img/cat-housing.png',
     title: 'Player Housing',
     url: 'https://www.icy-veins.com/wow/player-housing-guide',
     meta: 'Decor sources spread across multiple weekly systems',
@@ -476,7 +476,7 @@ const SECTIONS = [
 
   {
     id: 'pvp',
-    icon: 'ph-fill ph-shield-chevron',
+    icon: 'img/cat-pvp.png',
     title: 'PvP',
     url: 'https://www.icy-veins.com/wow/midnight-pvp-season-1-guide',
     meta: 'Conquest cap resets Tuesday',
@@ -509,7 +509,7 @@ const SECTIONS = [
 
   {
     id: 'void-assaults',
-    icon: 'ph-fill ph-spiral',
+    icon: 'img/cat-void.png',
     title: 'Void Assaults',
     url: 'https://www.icy-veins.com/wow/void-assaults-hub',
     meta: 'Start here each reset · Rotates between Eversong Woods and Zul\'Aman weekly',
@@ -533,7 +533,7 @@ const SECTIONS = [
 
   {
     id: 'showdown-zones',
-    icon: 'ph-fill ph-planet',
+    icon: 'img/cat-void.png',
     title: 'Invasion Zones: Val & Naigtal',
     url: 'https://www.icy-veins.com/wow/news/two-new-world-bosses-and-locations-12-0-7s-val-and-naigtal-rewards-quests-and-more/',
     meta: '12.0.7 · Rotates weekly · Normal (rec. ilvl 219) or Heroic World Tier (rec. ilvl 274)',
@@ -563,7 +563,7 @@ const SECTIONS = [
 
   {
     id: 'optional',
-    icon: 'ph-fill ph-shooting-star',
+    icon: 'img/cat-optional.png',
     title: 'Optional & Collector Content',
     meta: '12.0.5 permanent side content: no core power progression, great for collectors',
     categories: ['optional'],
