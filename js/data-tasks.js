@@ -17,7 +17,7 @@ const SECTIONS = [
 
   {
     id: 'voidforge',
-    icon: '', iconClass: 'icon-void',
+    icon: 'ph-fill ph-spiral',
     title: 'Voidforge',
     url: 'https://www.icy-veins.com/wow/turboboost-and-bonus-rolls-in-midnight-season-1-the-voidforge',
     meta: '12.0.5 · Top priority if not yet complete · Powers endgame bonus rolls',
@@ -41,7 +41,7 @@ const SECTIONS = [
 
   {
     id: 'omnium-folio',
-    icon: '📖', iconClass: 'icon-void',
+    icon: 'ph-fill ph-book-open-text',
     title: 'Omnium Folio',
     url: 'https://www.wowhead.com/guide/midnight/omnium-folio-unlock-buffs-rewards',
     meta: '12.0.7 · 5-week gated power system · Unlock via Grand Master Rommath, Silvermoon City',
@@ -59,7 +59,7 @@ const SECTIONS = [
 
   {
     id: 'prey',
-    icon: '', iconClass: 'icon-prey',
+    icon: 'ph-fill ph-crosshair',
     title: 'Prey System',
     url: 'https://www.icy-veins.com/wow/prey-system-guide',
     meta: 'Open-world hunting · Great Vault World row · Enable via Astalor Bloodsworn in Murder Row, Silvermoon',
@@ -68,14 +68,14 @@ const SECTIONS = [
     tasks: [
       { id: 'pr_norm', goal: {max:2, label:'hunts', milestones:[
           {at:1, note:'1 / 2 Normal hunts done'},
-          {at:2, note:'✓ Both Normal hunts complete'},
+          {at:2, note:'<i class="ph-fill ph-check"></i>Both Normal hunts complete'},
         ]},
         name: 'Normal Prey Hunts (2 per week)',
         desc: 'Rewards Adventurer-level gear (ilvl 220–237). Twice-weekly lockout. Enable via Astalor Bloodsworn in Murder Row, Silvermoon.',
         tags: ['tag-world'] },
       { id: 'pr_hard', goal: {max:2, label:'hunts', milestones:[
           {at:1, note:'1 / 2 Hard hunts done'},
-          {at:2, note:'✓ Both Hard hunts complete'},
+          {at:2, note:'<i class="ph-fill ph-check"></i>Both Hard hunts complete'},
         ]},
         name: 'Hard Prey Hunts (2 per week)',
         desc: 'Rewards Veteran-level gear (ilvl 233–250). Twice-weekly lockout. Harder targets may require a partner.',
@@ -83,7 +83,7 @@ const SECTIONS = [
       { id: 'pr_nm', goal: {max:3, label:'hunts', milestones:[
           {at:1, note:'1 / 3 Nightmare hunts done'},
           {at:2, note:'2 / 3 Nightmare hunts done'},
-          {at:3, note:'✓ Weekly Prey quest complete'},
+          {at:3, note:'<i class="ph-fill ph-check"></i>Weekly Prey quest complete'},
         ]},
         name: 'Nightmare Prey Hunts (weekly quest: 3 kills)',
         desc: 'Rewards Champion-level gear (ilvl 246–263). Also drops Nebulous Voidcores for bonus rolls. Core Icy Veins weekly priority.',
@@ -96,7 +96,7 @@ const SECTIONS = [
 
   {
     id: 'delves',
-    icon: '', iconClass: 'icon-delve',
+    icon: 'ph-fill ph-mountains',
     title: 'Delves',
     url: 'https://www.icy-veins.com/wow/delves-guide',
     meta: 'Solo/2-player instanced content · Contributes to Great Vault World row',
@@ -110,7 +110,7 @@ const SECTIONS = [
           {at:1, note:'1 / 4 Bountiful Delves done'},
           {at:2, note:'2 / 4 Bountiful Delves done'},
           {at:3, note:'3 / 4 Bountiful Delves done'},
-          {at:4, note:'✓ Weekly Bountiful Delve goal complete'},
+          {at:4, note:'<i class="ph-fill ph-check"></i>Weekly Bountiful Delve goal complete'},
         ]},
         name: 'Complete Bountiful Delves (up to 4 per week)',
         desc: 'Bountiful Delves reward end-of-run caches and are eligible Voidforge bonus roll sources. Set your current max tier below: gear quality scales with tier.',
@@ -124,7 +124,7 @@ const SECTIONS = [
 
   {
     id: 'currency',
-    icon: '', iconClass: 'icon-currency',
+    icon: 'ph-fill ph-coins',
     title: 'Upgrades',
     url: 'https://www.icy-veins.com/wow/midnight-pve-gearing-guide',
     meta: 'Weekly caps: spend before reset or lose value',
@@ -151,7 +151,7 @@ const SECTIONS = [
 
   {
     id: 'vault',
-    icon: '', iconClass: 'icon-vault',
+    icon: 'ph-fill ph-vault',
     title: 'Great Vault',
     url: 'https://www.icy-veins.com/wow/great-vault-guide',
     meta: 'Opens Tuesday reset. Claim before anything else.',
@@ -171,7 +171,7 @@ const SECTIONS = [
 
   {
     id: 'mythicplus',
-    icon: '', iconClass: 'icon-mythic',
+    icon: 'ph-fill ph-crosshair-simple',
     title: 'Mythic+ Dungeons',
     url: 'https://www.icy-veins.com/wow/midnight-mythic-season-1-guide',
     meta: 'No lockout. Farm freely. Vault slots unlock at 1 / 4 / 8 runs.',
@@ -179,9 +179,9 @@ const SECTIONS = [
     priority: 2,
     tasks: [
       { id: 'm1', goal: {max:8, label:'runs', milestones:[
-          {at:1, note:'🔓 Vault slot 1 unlocked'},
-          {at:4, note:'🔓🔓 Vault slots 1–2 unlocked'},
-          {at:8, note:'🔓🔓🔓 All 3 Vault slots unlocked'},
+          {at:1, note:'<i class="ph-fill ph-lock-open"></i>Vault slot 1 unlocked'},
+          {at:4, note:'<i class="ph-fill ph-lock-open"></i><i class="ph-fill ph-lock-open"></i>Vault slots 1–2 unlocked'},
+          {at:8, note:'<i class="ph-fill ph-lock-open"></i><i class="ph-fill ph-lock-open"></i><i class="ph-fill ph-lock-open"></i>All 3 Vault slots unlocked'},
         ]},
         name: 'Complete Mythic+ keys for Great Vault',
         desc: 'Run 1 for slot 1, 4 for slot 2, 8 for all 3 slots.',
@@ -198,7 +198,7 @@ const SECTIONS = [
 
   {
     id: 'ritual-sites',
-    icon: '🔮', iconClass: 'icon-void',
+    icon: 'ph-fill ph-sparkle',
     title: 'Ritual Sites',
     url: 'https://www.icy-veins.com/wow/ritual-sites-guide',
     meta: '12.0.7 · Tier 6 added · 1–5 players · Great Vault World row',
@@ -216,7 +216,7 @@ const SECTIONS = [
 
   {
     id: 'bazaar',
-    icon: '', iconClass: 'icon-bazaar',
+    icon: 'ph-fill ph-storefront',
     title: 'Bazaar Weekly Quests',
     url: 'https://www.icy-veins.com/wow/weekly-to-do-list',
     meta: 'Free weekly value. Easy to forget; never skip.',
@@ -243,7 +243,7 @@ const SECTIONS = [
 
   {
     id: 'professions',
-    icon: '⚒️', iconClass: 'icon-crafting',
+    icon: 'ph-fill ph-hammer',
     title: 'Professions',
     url: 'https://www.icy-veins.com/wow/professions-guide',
     meta: 'Weekly profession content: knowledge points, crafting orders, contracts',
@@ -267,7 +267,7 @@ const SECTIONS = [
 
   {
     id: 'world-events',
-    icon: '', iconClass: 'icon-world',
+    icon: 'ph-fill ph-globe-hemisphere-west',
     title: 'World Events',
     url: 'https://www.icy-veins.com/wow/midnight-world-events-guide',
     meta: 'Rotating across all four Midnight zones each week',
@@ -306,7 +306,7 @@ const SECTIONS = [
 
   {
     id: 'raid',
-    icon: '', iconClass: 'icon-raid',
+    icon: 'ph-fill ph-skull',
     title: 'Raids',
     url: 'https://www.icy-veins.com/wow/midnight-season-1-raid-guide',
     meta: 'Personal loot lockout resets Tuesday · Click boss bubbles to track kills',
@@ -455,7 +455,7 @@ const SECTIONS = [
 
   {
     id: 'housing',
-    icon: '', iconClass: 'icon-housing',
+    icon: 'ph-fill ph-house-line',
     title: 'Player Housing',
     url: 'https://www.icy-veins.com/wow/player-housing-guide',
     meta: 'Decor sources spread across multiple weekly systems',
@@ -476,7 +476,7 @@ const SECTIONS = [
 
   {
     id: 'pvp',
-    icon: '', iconClass: 'icon-pvp',
+    icon: 'ph-fill ph-shield-chevron',
     title: 'PvP',
     url: 'https://www.icy-veins.com/wow/midnight-pvp-season-1-guide',
     meta: 'Conquest cap resets Tuesday',
@@ -509,7 +509,7 @@ const SECTIONS = [
 
   {
     id: 'void-assaults',
-    icon: '🌀', iconClass: 'icon-void',
+    icon: 'ph-fill ph-spiral',
     title: 'Void Assaults',
     url: 'https://www.icy-veins.com/wow/void-assaults-hub',
     meta: 'Start here each reset · Rotates between Eversong Woods and Zul\'Aman weekly',
@@ -533,7 +533,7 @@ const SECTIONS = [
 
   {
     id: 'showdown-zones',
-    icon: '🌐', iconClass: 'icon-void',
+    icon: 'ph-fill ph-planet',
     title: 'Invasion Zones: Val & Naigtal',
     url: 'https://www.icy-veins.com/wow/news/two-new-world-bosses-and-locations-12-0-7s-val-and-naigtal-rewards-quests-and-more/',
     meta: '12.0.7 · Rotates weekly · Normal (rec. ilvl 219) or Heroic World Tier (rec. ilvl 274)',
@@ -563,7 +563,7 @@ const SECTIONS = [
 
   {
     id: 'optional',
-    icon: '', iconClass: 'icon-optional',
+    icon: 'ph-fill ph-shooting-star',
     title: 'Optional & Collector Content',
     meta: '12.0.5 permanent side content: no core power progression, great for collectors',
     categories: ['optional'],
@@ -690,7 +690,7 @@ function openBeginnerPreset() {
         <div class="beginner-stage-label">${s.label}</div>
         <div class="beginner-stage-sub">${s.sublabel}</div>
       </div>
-      <span class="beginner-stage-arrow">→</span>
+      <span class="beginner-stage-arrow"><i class="ph ph-arrow-right"></i></span>
     </div>`).join('');
   document.getElementById('modal-beginner').style.display = 'flex';
 }

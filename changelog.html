@@ -4,33 +4,34 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Azeroth Agenda: Changelog</title>
-<link rel="stylesheet" href="midnight.css">
+<link rel="stylesheet" href="midnight.css?v=1.10.0">
 </head>
 <body>
-<div class="wrapper">
+<div class="page">
 
-  <header>
-    <div class="header-eyebrow">World of Warcraft</div>
-    <h1>The Azeroth Agenda<br><span>Changelog</span></h1>
-    <p class="subtitle">A record of every update, fix, and addition to The Azeroth Agenda.</p>
-    <div class="credit-bar">
-      Curated &amp; maintained by <span class="credit-name">Seven</span>
-      <span style="color:var(--border-bright);margin:0 0.4rem;">·</span>
-      <a href="index.html" class="byline-link">⬅ The Azeroth Agenda</a>
+  <div class="page-head">
+    <div class="brand-sigil"><i class="ph-fill ph-scroll"></i></div>
+    <div class="page-head-text">
+      <div class="page-eyebrow">The Azeroth Agenda</div>
+      <div class="page-title">Change<span>log</span></div>
+      <div class="page-sub">Every update, fix and addition, newest first.</div>
     </div>
-  </header>
-
-  <a href="index.html" class="back-link">← The Azeroth Agenda</a>
+    <div class="page-nav">
+      <a href="index.html" class="btn"><i class="ph ph-arrow-left"></i>The agenda</a>
+      <button class="btn btn-icon" id="btn-theme" onclick="toggleTheme()" title="Toggle dark / light mode"><i class="ph ph-sun"></i></button>
+    </div>
+  </div>
 
   <div id="changelog"></div>
 
-  <footer>
-    The Azeroth Agenda &nbsp;·&nbsp; Curated by Seven &nbsp;·&nbsp; Patch 12.0.5 · May 2026
-  </footer>
+  <div class="page-foot">
+    The Azeroth Agenda · Curated by Seven · Patch 12.0.5 · May 2026
+  </div>
 </div>
 
-<script src="js/data-changelog.js"></script>
-<script src="js/theme.js"></script>
+<script src="js/data-changelog.js?v=1.10.0"></script>
+<script src="js/theme.js?v=1.10.0"></script>
+<script>updateThemeBtn();</script>
 
 <script>
 function toggleVersion(idx) {
@@ -58,13 +59,13 @@ function render() {
     return `
       <div class="cl-version">
         <div class="cl-version-header${open?' open':''}" id="cl-hdr-${i}" onclick="toggleVersion(${i})">
-          <div class="section-icon icon-optional" style="font-size:12px;">📋</div>
+          <div class="section-icon"><i class="ph ph-scroll"></i></div>
           <div>
             <div class="cl-version-tag">${v.version}</div>
             <div class="cl-version-date">${v.date}</div>
           </div>
           <div class="cl-version-summary" style="color:var(--text-muted);">${v.summary}</div>
-          <span class="chevron" id="cl-chev-${i}" style="transform:rotate(${open?'0':'-90'}deg);margin-left:0.5rem;">▼</span>
+          <span class="chevron" id="cl-chev-${i}" style="transform:rotate(${open?'0':'-90'}deg);margin-left:0.5rem;"><i class="ph ph-caret-down"></i></span>
         </div>
         <div class="cl-body${open?'':' hidden'}" id="cl-body-${i}">
           ${v.entries.map(e => {

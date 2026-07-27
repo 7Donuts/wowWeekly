@@ -15,140 +15,135 @@
 <meta name="twitter:description" content="WoW Midnight weekly task tracker. Never miss a reset.">
 <meta name="twitter:image" content="https://agenda.7donuts.dev/img/og-image.png">
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
-<link rel="stylesheet" href="midnight.css?v=1.9.80">
+<link rel="preload" href="fonts/cinzel-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/Phosphor-Fill.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="midnight.css?v=1.10.0">
 
 </head>
 <body>
 <canvas id="confetti-canvas" style="position:fixed;inset:0;pointer-events:none;z-index:9999;width:100%;height:100%;"></canvas>
 <div class="wrapper">
 
-  <header>
-    <div class="header-eyebrow">World of Warcraft</div>
-    <h1>The Azeroth<br><span>Agenda</span></h1>
-    <p class="subtitle">Organize your WoW experience. Make every reset count.</p>
-    <div class="patch-badge">Patch 12.0.5 · Lingering Shadows · Season 1</div>
-    <div class="credit-bar">
-      <div class="credit-row">
-        Curated &amp; maintained by <span class="credit-name">Seven</span>
-        <a href="https://ko-fi.com/7donuts" target="_blank" rel="noopener" class="kofi-btn">☕ Support</a>
-      </div>
-      <div class="credit-row">
-        <a href="changelog.html" class="byline-link">📋 Changelog</a>
-        <span class="byline-dot" id="auth-dot" style="margin:0 0.1rem;display:none;">·</span>
-        <span id="auth-battletag" class="credit-name" style="display:none;font-size:12px;"></span>
-        <span id="sync-status" class="sync-status" style="display:none;"></span>
-        <a href="/auth/login?region=us" id="auth-login" class="byline-link" onclick="if(typeof loginWithBnet==='function'){loginWithBnet();return false;}">🔑 Battle.net</a>
-        <a href="/auth/logout" id="auth-logout" class="byline-link" style="display:none;">Sign Out</a>
+  <!-- ══ RAIL: brand, countdown, roster, categories, footer ══ -->
+  <aside class="rail">
+
+    <div class="brand">
+      <div class="brand-sigil"><i class="ph-fill ph-moon-stars"></i></div>
+      <div class="brand-text">
+        <h1>The Azeroth<br><span>Agenda</span></h1>
+        <div class="patch-badge">Patch 12.0.5 · Season 1</div>
       </div>
     </div>
-  </header>
 
-  <div class="reset-bar">
-    <div class="reset-bar-top">
-      <div class="reset-info">
-        <span style="color:var(--light-gold)">⏳</span>
-        <span>Weekly reset in:</span>
-        <span class="reset-countdown" id="countdown">calculating…</span>
-      </div>
-      <button class="btn-reset-all" onclick="resetAll()">↺ Reset Week</button>
+    <div class="reset-block">
+      <div class="rail-label">Reset in</div>
+      <span class="reset-countdown" id="countdown">calculating…</span>
       <div class="progress-wrap">
         <div class="progress-bar-track">
           <div class="progress-bar-fill" id="prog-fill" style="width:0%"></div>
         </div>
-        <span id="prog-label" style="color:var(--text-secondary);font-size:13px;">0 / 0 done</span>
+        <span id="prog-label">0 / 0</span>
       </div>
-      <div style="flex:1;"></div>
-      <div class="reset-bar-btns">
-        <button class="btn-reset-all" id="btn-theme" onclick="toggleTheme()" title="Toggle dark/light mode">☀️ Light</button>
-        <button class="btn-reset-all" id="btn-whats-next" onclick="whatsNext()" title="Randomly pick an uncompleted task from Your List">🎲 What's Next?</button>
-        <button class="btn-reset-all" onclick="openSummary()">📊 Summary</button>
-        <button class="btn-reset-all" onclick="openExportImport()">⇅ Data</button>
-        <div class="btn-conditional-group">
-          <button class="btn-reset-all" id="btn-reveal" onclick="toggleRevealHidden()" style="display:none;">👁 Show Hidden</button>
-          <button class="btn-reset-all" id="btn-bis" onclick="openBisModal()" style="color:var(--success-bright);border-color:var(--success);">⚔️ BiS Gear</button>
+      <div id="inline-history" class="inline-history"></div>
+    </div>
+
+    <div class="rail-roster">
+      <div class="rail-label-row">
+        <span class="rail-label">Roster</span>
+        <div class="btn-cluster">
+          <button class="armory-btn btn-ghost btn-xs" id="btn-sync-all" title="Sync all characters from Battle.net" onclick="syncAllCharsButton()" style="display:none;"><i class="ph ph-arrows-clockwise"></i></button>
+          <button class="armory-btn btn-ghost btn-xs" id="btn-import-chars" title="Import characters from Battle.net" onclick="openImportChars()" style="display:none;"><i class="ph ph-download-simple"></i></button>
+          <div class="char-manage-wrap" id="char-manage-wrap">
+            <button class="char-manage-btn btn-ghost btn-xs" id="char-manage-btn" title="Manage characters" onclick="toggleCharMenu(event)"><i class="ph ph-pencil-simple"></i></button>
+            <div class="char-manage-menu" id="char-manage-menu"></div>
+          </div>
+          <button class="btn btn-ghost btn-xs char-add" title="Add character" onclick="openAddChar()"><i class="ph ph-plus"></i></button>
         </div>
       </div>
+      <div class="char-list-row" id="char-list"></div>
     </div>
-    <div class="reset-bar-bottom">
-      <div class="reset-bar-bottom-left">
+
+    <div class="rail-nav">
+      <div class="rail-label" style="margin-bottom:9px;">The week</div>
+      <div class="nav-list" id="nav-list"></div>
+    </div>
+
+    <div class="rail-footer">
+      <div class="rail-footer-btns">
+        <a href="https://ko-fi.com/7donuts" target="_blank" rel="noopener" class="btn"><i class="ph ph-coffee"></i>Support</a>
+        <a href="changelog.html" class="btn"><i class="ph ph-scroll"></i>Changelog</a>
+      </div>
+      <div class="credit-row">
+        <a href="/auth/login?region=us" id="auth-login" class="byline-link" onclick="if(typeof loginWithBnet==='function'){loginWithBnet();return false;}"><i class="ph ph-key"></i>Battle.net</a>
+        <span id="auth-battletag" class="credit-name" style="display:none;"></span>
+        <span class="byline-dot" id="auth-dot" style="display:none;">·</span>
+        <a href="/auth/logout" id="auth-logout" class="byline-link" style="display:none;"><i class="ph ph-sign-out"></i>Sign out</a>
+        <span id="sync-status" class="sync-status" style="display:none;"></span>
+      </div>
+      <div class="rail-note">
+        Curated by <span class="credit-name">Seven</span><br>
+        Resets Tuesday 15:00 UTC · Sources: Icy Veins
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══ MAIN: utility bar + the week's content ══ -->
+  <main>
+
+    <div class="utility-bar">
+      <div class="search-bar-wrap">
+        <div class="search-bar-inner">
+          <i class="ph ph-magnifying-glass search-icon"></i>
+          <input type="text" id="task-search" class="task-search-input"
+                 placeholder="Search tasks…"
+                 oninput="onSearchInput(this.value)"
+                 onkeydown="if(event.key==='Escape'){clearSearch();this.blur();}" />
+          <button class="search-clear" id="search-clear-btn" onclick="clearSearch()" style="display:none;" title="Clear search"><i class="ph ph-x"></i></button>
+        </div>
+      </div>
+      <div id="search-result-count" class="search-result-count"></div>
+      <div class="utility-spacer"></div>
+      <div class="btn-cluster">
+        <button class="btn-reset-all btn-raised" id="btn-whats-next" onclick="whatsNext()" title="Randomly pick an uncompleted task from Your List"><i class="ph ph-dice-five"></i>What's next</button>
+        <button class="btn-reset-all btn-raised" onclick="openSummary()"><i class="ph ph-chart-bar"></i>Summary</button>
+        <button class="btn-reset-all btn-raised btn-icon" id="btn-yourlist-view" onclick="toggleYourListView()" title="Toggle grouped / flat list"><i class="ph ph-squares-four"></i></button>
+        <button class="btn-reset-all btn-raised btn-icon" id="btn-compact" onclick="toggleCompact()" title="Toggle compact view"><i class="ph ph-rows"></i></button>
+        <button class="btn-reset-all btn-raised btn-icon" onclick="resetAll()" title="Reset week"><i class="ph ph-arrows-clockwise"></i></button>
+        <button class="btn-reset-all btn-raised btn-icon" onclick="openExportImport()" title="Character data"><i class="ph ph-arrows-down-up"></i></button>
+        <button class="btn-reset-all btn-raised btn-icon" id="btn-theme" onclick="toggleTheme()" title="Toggle dark / light mode"><i class="ph ph-sun"></i></button>
+        <div class="btn-conditional-group">
+          <button class="btn-reset-all btn-raised btn-icon" id="btn-reveal" onclick="toggleRevealHidden()" title="Show hidden tasks" style="display:none;"><i class="ph ph-eye"></i></button>
+        </div>
+        <span class="utility-divider"></span>
+        <button class="btn-last-chance" id="btn-last-chance" onclick="toggleLastChance()" title="Show only incomplete tasks, activates automatically under 6 hours to reset"><i class="ph-fill ph-lightning"></i>Last chance</button>
+        <button class="btn-primary" id="btn-bis" onclick="openBisModal()"><i class="ph-fill ph-sword"></i>BiS Gear</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div id="last-chance-slot"></div>
+      <div id="event-alerts"></div>
+      <div class="event-strip">
         <div id="inline-event" class="inline-event"></div>
       </div>
-      <div style="display:flex;align-items:center;gap:0.6rem;flex-shrink:0;">
-        <button class="btn-last-chance" id="btn-last-chance" onclick="toggleLastChance()" title="Show only incomplete tasks, activates automatically under 6 hours to reset">⚡ Last Chance</button>
-        <div id="inline-history" class="inline-history"></div>
-      </div>
+      <div id="class-links-bar" class="class-links-bar" style="display:none;"></div>
+      <div id="sections-container"></div>
     </div>
-  </div>
 
-  <div id="event-alerts"></div>
-  <div class="char-bar">
-    <span class="char-label">Character:</span>
-    <button class="armory-btn" id="btn-sync-all" title="Sync all characters from Battle.net" onclick="syncAllCharsButton()" style="display:none;">🔄 Sync</button>
-    <button class="armory-btn" id="btn-import-chars" title="Import characters from Battle.net" onclick="openImportChars()" style="display:none;">⬇ Import</button>
-    <div class="char-manage-wrap" id="char-manage-wrap">
-      <button class="char-manage-btn" id="char-manage-btn" onclick="toggleCharMenu(event)">Edit ▾</button>
-      <div class="char-manage-menu" id="char-manage-menu"></div>
-    </div>
-    <div class="char-list-row">
-      <div id="char-list" style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;"></div>
-      <button class="char-add" title="Add character" onclick="openAddChar()">+</button>
-    </div>
-  </div>
-  <div id="class-links-bar" style="display:none;"></div>
-
-  <div class="filter-tabs">
-    <button class="tab-btn tab-yourlist active" data-filter="yourlist" onclick="setFilter('yourlist',this)"> Your List</button>
-    <button class="tab-btn" data-filter="all" onclick="setFilter('all',this)">All</button>
-    <button class="tab-btn" data-filter="raid" onclick="setFilter('raid',this)">Raids</button>
-    <button class="tab-btn" data-filter="mythic" onclick="setFilter('mythic',this)">Mythic+</button>
-    <button class="tab-btn" data-filter="delve" onclick="setFilter('delve',this)">Delves</button>
-    <button class="tab-btn" data-filter="prey" onclick="setFilter('prey',this)">Prey</button>
-    <button class="tab-btn" data-filter="void-assaults" onclick="setFilter('void-assaults',this)">Void Assaults</button>
-    <button class="tab-btn" data-filter="ritual-sites" onclick="setFilter('ritual-sites',this)">Ritual Sites</button>
-    <button class="tab-btn" data-filter="voidforge" onclick="setFilter('voidforge',this)">Voidforge</button>
-    <button class="tab-btn" data-filter="world" onclick="setFilter('world',this)">World Events</button>
-    <button class="tab-btn" data-filter="currency" onclick="setFilter('currency',this)">Upgrades</button>
-    <button class="tab-btn" data-filter="housing" onclick="setFilter('housing',this)">Housing</button>
-    <button class="tab-btn" data-filter="pvp" onclick="setFilter('pvp',this)">PvP</button>
-    <button class="tab-btn" data-filter="professions" onclick="setFilter('professions',this)">Professions</button>
-    <button class="tab-btn" data-filter="optional" onclick="setFilter('optional',this)">Optional</button>
-    <button class="tab-btn tab-custom" data-filter="custom" onclick="setFilter('custom',this)">✦ Custom</button>
-  </div>
-
-  <div class="search-bar-wrap">
-    <button class="btn-view-toggle" id="btn-yourlist-view" onclick="toggleYourListView()" title="Toggle grouped / flat list">⊞ Grouped</button>
-    <button class="btn-view-toggle" id="btn-compact" onclick="toggleCompact()" title="Toggle compact view">⊟ Compact</button>
-    <div class="search-bar-inner">
-      <span class="search-icon">🔍</span>
-      <input type="text" id="task-search" class="task-search-input"
-             placeholder="Search tasks…"
-             oninput="onSearchInput(this.value)"
-             onkeydown="if(event.key==='Escape'){clearSearch();this.blur();}" />
-      <button class="search-clear" id="search-clear-btn" onclick="clearSearch()" style="display:none;" title="Clear search">✕</button>
-    </div>
-    <div id="search-result-count" class="search-result-count"></div>
-  </div>
-
-  <div id="sections-container"></div>
-
-  <footer>
-    Resets Tuesday 15:00 UTC &nbsp;·&nbsp; Progress saved per character in your browser &nbsp;·&nbsp;
-    Sources: Icy Veins &nbsp;·&nbsp; Patch 12.0.5 · May 2026
-  </footer>
+  </main>
 </div>
 
 <div class="modal-overlay" id="modal">
-  <div class="modal" style="width:480px;max-width:95vw;">
+  <div class="modal" style="width:480px;">
     <h3 id="char-modal-title">Add Character</h3>
     <input type="text" id="char-input" placeholder="Character name…" maxlength="24"
            onkeydown="if(event.key==='Enter')saveChar()" />
-    <div style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.1em;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.4rem;">Realm <span style="font-size:10px;opacity:0.6;">(for Armory sync)</span></div>
+    <div class="modal-label">Realm <span style="letter-spacing:0.1em;">(for Armory sync)</span></div>
     <input type="text" id="char-realm-input" placeholder="e.g. Area 52, Stormrage…" maxlength="64"
-           style="margin-bottom:1rem;"
            onkeydown="if(event.key==='Enter')saveChar()" />
-    <div style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.1em;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.6rem;">Class (optional)</div>
+    <div class="modal-label">Class (optional)</div>
     <div id="class-picker" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:1.1rem;"></div>
-    <div style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.1em;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.5rem;">Role (optional)</div>
+    <div class="modal-label">Role (optional)</div>
     <div id="group-picker" style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:1.1rem;"></div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeModal()">Cancel</button>
@@ -163,7 +158,6 @@
     <input type="text" id="custom-name-input" placeholder="Task name…" maxlength="80"
            onkeydown="if(event.key==='Enter')document.getElementById('custom-desc-input').focus()" />
     <input type="text" id="custom-desc-input" placeholder="Description (optional)…" maxlength="160"
-           style="margin-bottom:1rem;"
            onkeydown="if(event.key==='Enter')saveCustomTask()" />
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeCustomModal()">Cancel</button>
@@ -173,16 +167,16 @@
 </div>
 
 <div class="modal-overlay" id="modal-beginner">
-  <div class="modal" style="width:560px;max-width:96vw;">
-    <h3>🧭 Starter Guide</h3>
-    <p style="font-size:14px;color:var(--text-secondary);font-style:italic;margin-bottom:1.25rem;line-height:1.5;">
+  <div class="modal" style="width:560px;">
+    <h3><i class="ph ph-compass"></i>Starter Guide</h3>
+    <p style="font-family:var(--font-note);font-style:italic;font-size:16px;color:var(--text-500);margin-bottom:1.25rem;line-height:1.5;">
       Pick the stage that best describes where your character is right now. Your List will be populated with the most efficient solo-friendly tasks for that stage, no raids required.
     </p>
 
     <div id="beginner-stages" style="display:flex;flex-direction:column;gap:0.6rem;margin-bottom:1.25rem;"></div>
 
-    <div style="font-size:12px;color:var(--text-muted);font-style:italic;margin-bottom:1rem;">
-      ⚠ This will replace your current list. You can always edit it afterward.
+    <div class="import-warning" style="margin-bottom:1rem;">
+      <i class="ph-fill ph-warning-diamond"></i>This will replace your current list. You can always edit it afterward.
     </div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeBeginnerModal()">Cancel</button>
@@ -192,19 +186,19 @@
 
 <!-- SUMMARY MODAL -->
 <div class="modal-overlay" id="modal-summary">
-  <div class="modal" style="width:600px;max-width:95vw;">
+  <div class="modal" style="width:600px;">
     <h3 id="summary-title">Weekly Summary</h3>
     <div id="summary-content"></div>
     <div class="modal-btns" style="margin-top:1.25rem;">
       <button class="btn-cancel" onclick="closeSummary()">Close</button>
-      <button class="btn-primary" onclick="copyDiscordSummary()" title="Copy weekly summary formatted for Discord">📋 Copy for Discord</button>
+      <button class="btn-primary" onclick="copyDiscordSummary()" title="Copy weekly summary formatted for Discord"><i class="ph ph-clipboard-text"></i>Copy for Discord</button>
     </div>
   </div>
 </div>
 
 <!-- EXPORT/IMPORT MODAL -->
 <div class="modal-overlay" id="modal-data">
-  <div class="modal" style="width:480px;max-width:95vw;">
+  <div class="modal" style="width:480px;">
     <h3 id="data-modal-title">Character Data</h3>
     <div id="data-modal-content"></div>
     <div class="modal-btns" style="margin-top:1.25rem;" id="data-modal-btns"></div>
@@ -213,9 +207,9 @@
 
 <!-- BATTLE.NET CHARACTER IMPORT MODAL -->
 <div class="modal-overlay" id="modal-import">
-  <div class="modal" style="width:520px;max-width:95vw;">
+  <div class="modal" style="width:520px;">
     <h3>Import from Battle.net</h3>
-    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:1rem;">Select level 80+ characters to add to the tracker.</p>
+    <p style="font-family:var(--font-note);font-style:italic;font-size:16px;color:var(--text-500);margin-bottom:1rem;">Select level 80+ characters to add to the tracker.</p>
     <div id="import-chars-content" style="min-height:80px;"></div>
     <div class="modal-btns" style="margin-top:1.25rem;">
       <button class="btn-cancel" onclick="closeImportModal()">Cancel</button>
@@ -229,13 +223,12 @@
 
 <!-- BEST IN SLOT EDIT MODAL -->
 <div class="modal-overlay" id="modal-bis-edit">
-  <div class="modal" style="width:460px;max-width:95vw;">
+  <div class="modal" style="width:460px;">
     <h3 id="bis-edit-title">Edit BiS Item</h3>
-    <div id="bis-edit-slot-label" style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.1em;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.4rem;"></div>
+    <div id="bis-edit-slot-label" class="modal-label"></div>
     <input type="text" id="bis-edit-name" placeholder="Item name…" maxlength="120"
            onkeydown="if(event.key==='Enter')document.getElementById('bis-edit-desc').focus()" />
     <input type="text" id="bis-edit-desc" placeholder="Source · Location (optional)…" maxlength="200"
-           style="margin-bottom:1rem;"
            onkeydown="if(event.key==='Enter')saveBisEdit()" />
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeBisEditModal()">Cancel</button>
@@ -246,7 +239,7 @@
 
 <!-- BEST IN SLOT MODAL -->
 <div class="modal-overlay" id="modal-bis">
-  <div class="modal bis-modal" style="width:640px;max-width:97vw;">
+  <div class="modal bis-modal" style="width:640px;">
     <div class="bis-header">
       <div id="bis-breadcrumb" class="bis-breadcrumb"></div>
       <h3 id="bis-title">Best in Slot Gear</h3>
@@ -259,16 +252,16 @@
 
 <!-- WHAT'S NEW MODAL -->
 <div class="modal-overlay" id="modal-whats-new">
-  <div class="modal welcome-modal wn-modal" style="width:540px;max-width:95vw;">
+  <div class="modal welcome-modal wn-modal" style="width:540px;">
     <div id="wn-icon" class="welcome-icon"></div>
     <h3 id="wn-title" class="welcome-title"></h3>
     <div style="text-align:center;margin-top:-0.25rem;margin-bottom:0.5rem;">
-      <button class="wn-replay-btn" onclick="closeWhatsNew();sessionStorage.removeItem('azeroth_welcome_return_step');openWelcome();" title="Replay the setup guide">↩ Replay Intro</button>
+      <button class="btn btn-sm wn-replay-btn" onclick="closeWhatsNew();sessionStorage.removeItem('azeroth_welcome_return_step');openWelcome();" title="Replay the setup guide"><i class="ph ph-arrow-u-up-left"></i>Replay intro</button>
     </div>
     <div id="wn-meta" class="wn-meta"></div>
     <div id="wn-entries" class="wn-entries"></div>
     <div style="text-align:center;margin-top:0.6rem;">
-      <a href="changelog.html" class="wn-changelog-link" onclick="closeWhatsNew()">View full changelog →</a>
+      <a href="changelog.html" class="wn-changelog-link" onclick="closeWhatsNew()">View full changelog <i class="ph ph-arrow-right"></i></a>
     </div>
     <div class="wn-dismiss-wrap">
       <label class="wn-dismiss-label">
@@ -276,14 +269,14 @@
       </label>
     </div>
     <div class="welcome-nav" style="margin-top:0.75rem;">
-      <button class="btn-primary" onclick="closeWhatsNew()" style="flex:1;">Got it!</button>
+      <button class="btn-primary" onclick="closeWhatsNew()" style="flex:1;justify-content:center;">Got it</button>
     </div>
   </div>
 </div>
 
 <!-- WELCOME WALKTHROUGH MODAL -->
 <div class="modal-overlay" id="modal-welcome">
-  <div class="modal welcome-modal" style="width:520px;max-width:95vw;">
+  <div class="modal welcome-modal" style="width:520px;">
     <div id="welcome-dots" class="welcome-dots"></div>
     <div id="welcome-icon" class="welcome-icon"></div>
     <h3 id="welcome-title" class="welcome-title"></h3>
@@ -291,17 +284,15 @@
     <div id="welcome-note" class="welcome-note"></div>
     <div id="welcome-interactive"></div>
     <div class="welcome-nav">
-      <button id="welcome-back" class="btn-cancel" onclick="welcomeBack()">← Back</button>
-      <button id="welcome-next" class="btn-primary" onclick="welcomeNext()">Next →</button>
+      <button id="welcome-back" class="btn-cancel" onclick="welcomeBack()"><i class="ph ph-arrow-left"></i>Back</button>
+      <button id="welcome-next" class="btn-primary" onclick="welcomeNext()">Next<i class="ph ph-arrow-right"></i></button>
     </div>
   </div>
 </div>
 
-
-
 <!-- REARRANGE CHARACTERS MODAL -->
 <div class="modal-overlay" id="modal-rearrange">
-  <div class="modal" style="width:340px;max-width:95vw;">
+  <div class="modal" style="width:340px;">
     <h3>Rearrange Characters</h3>
     <div id="rearrange-list" style="display:flex;flex-direction:column;gap:0.5rem;margin:1rem 0;"></div>
     <div class="modal-btns">
@@ -311,29 +302,29 @@
 </div>
 
 <div class="modal-overlay" id="modal-remove-char">
-  <div class="modal" style="width:340px;max-width:95vw;">
+  <div class="modal" style="width:340px;">
     <h3>Remove Character</h3>
     <div id="remove-char-list" style="display:flex;flex-direction:column;gap:0.5rem;margin:1rem 0;"></div>
     <div class="modal-btns">
-      <button class="btn-secondary" onclick="closeRemoveCharModal()">Cancel</button>
+      <button class="btn-cancel" onclick="closeRemoveCharModal()">Cancel</button>
     </div>
   </div>
 </div>
 
 
 <!-- ── JS: load order matters, each file depends on the ones above it ── -->
-<script src="js/data-tasks.js?v=1.9.80"></script>
-<script src="js/data-events.js?v=1.9.80"></script>
-<script src="js/data-classes.js?v=1.9.80"></script>
-<script src="js/data-changelog.js?v=1.9.80"></script>
-<script src="js/data-bis.js?v=1.9.80"></script>
-<script src="js/data-item-ids.js?v=1.9.80"></script>
-<script src="js/storage.js?v=1.9.80"></script>
-<script src="js/armory.js?v=1.9.80"></script>
-<script src="js/confetti.js?v=1.9.80"></script>
-<script src="js/theme.js?v=1.9.80"></script>
-<script src="js/app.js?v=1.9.80"></script>
-<script src="js/sync.js?v=1.9.80"></script>
+<script src="js/data-tasks.js?v=1.10.0"></script>
+<script src="js/data-events.js?v=1.10.0"></script>
+<script src="js/data-classes.js?v=1.10.0"></script>
+<script src="js/data-changelog.js?v=1.10.0"></script>
+<script src="js/data-bis.js?v=1.10.0"></script>
+<script src="js/data-item-ids.js?v=1.10.0"></script>
+<script src="js/storage.js?v=1.10.0"></script>
+<script src="js/armory.js?v=1.10.0"></script>
+<script src="js/confetti.js?v=1.10.0"></script>
+<script src="js/theme.js?v=1.10.0"></script>
+<script src="js/app.js?v=1.10.0"></script>
+<script src="js/sync.js?v=1.10.0"></script>
 
 
 </body>

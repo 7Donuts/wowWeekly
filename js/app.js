@@ -75,15 +75,14 @@ function getCharPref(k, def) { return loadCharPrefs()[k] ?? def; }
 function renderTierSelector(taskId) {
   const cur = getCharPref('delveTier', 7);
   const gearLabel = cur >= 8 ? 'Hero (ilvl 259–276)' : 'Champion (ilvl 246–263)';
-  const gearColor = cur >= 8 ? 'var(--void-glow)' : 'var(--light-gold)';
   let btns = '';
   for (let t = 1; t <= 11; t++) {
     btns += '<button class="tier-btn' + (cur === t ? ' active' : '') + '" onclick="setDelveTier(' + t + ',\'' + taskId + '\')">T' + t + '</button>';
   }
   return '<div class="tier-selector" onclick="event.stopPropagation()">'
-    + '<span class="tier-label">Your max Delve tier:</span>'
+    + '<span class="tier-label">Max tier</span>'
     + '<div class="tier-btns">' + btns + '</div>'
-    + '<span class="tier-gear-label" style="color:' + gearColor + ';">→ ' + gearLabel + '</span>'
+    + '<span class="tier-gear-label"><i class="ph ph-arrow-right"></i> ' + gearLabel + '</span>'
     + '</div>';
 }
 
@@ -161,9 +160,6 @@ function onSearchInput(val) {
   document.getElementById('search-clear-btn').style.display = searchQuery ? '' : 'none';
   if (searchQuery && !activeFilters.has('all') && !activeFilters.has('yourlist')) {
     activeFilters = new Set(['all']);
-    document.querySelectorAll('.tab-btn').forEach(b => {
-      b.classList.toggle('active', b.getAttribute('data-filter') === 'all');
-    });
   }
   render();
 }
@@ -188,9 +184,9 @@ function toggleYourListView() {
    RENDER
 ═══════════════════════════════════════════ */
 const PRIORITY_META = {
-  1: ['p1', '⬡ Do First: highest weekly value'],
-  2: ['p2', '◈ Important: fill out your week'],
-  3: ['p3', '◇ Optional: collector & side content'],
+  1: ['p1', 'ph-fill ph-star',          'Do first: highest weekly value'],
+  2: ['p2', 'ph ph-star',               'Important: fill out your week'],
+  3: ['p3', 'ph ph-shooting-star',      'Optional: collector and side content'],
 };
 
 function tagLabel(cls) {
@@ -220,6 +216,32 @@ function updateSearchResultCount(matched, total) {
   el.className = 'search-result-count has-results';
 }
 
+/* Progress read-out inside a goal row: pips for goals of five steps or fewer,
+   an inline bar for anything longer. The stepper on the right carries the
+   numbers, so this is purely the "how far along" glance. */
+function goalMeterHtml(goalDef, goalVal) {
+  if (!goalDef || !goalDef.max || editingYourList) return '';
+  const val = Math.max(0, Math.min(goalDef.max, goalVal || 0));
+  if (goalDef.max <= 5) {
+    let pips = '';
+    for (let i = 1; i <= goalDef.max; i++) {
+      pips += '<span class="goal-pip' + (i <= val ? ' filled' : '') + '"></span>';
+    }
+    return '<div class="goal-pips" title="' + val + ' of ' + goalDef.max + ' ' + goalDef.label + '">' + pips + '</div>';
+  }
+  const pct = Math.round((val / goalDef.max) * 100);
+  return '<div class="goal-inline-bar" title="' + val + ' of ' + goalDef.max + ' ' + goalDef.label + '">'
+    + '<span style="width:' + pct + '%"></span></div>';
+}
+
+/* Grouped / flat is an icon-only toggle in the utility bar. */
+function updateViewToggleBtn() {
+  const btn = document.getElementById('btn-yourlist-view');
+  if (!btn) return;
+  btn.innerHTML = '<i class="ph ' + (yourListGrouped ? 'ph-squares-four' : 'ph-rows') + '"></i>';
+  btn.title = yourListGrouped ? 'Switch to a flat list' : 'Switch to grouped panels';
+}
+
 /* ── SECTION TASK HTML (main list + edit mode): pure string concat, no nested backticks ── */
 function sectionTaskHtml(t, done, hidden, yourList, goals, bossKills, notes) {
   const id = t.id;
@@ -238,10 +260,9 @@ function sectionTaskHtml(t, done, hidden, yourList, goals, bossKills, notes) {
     const gComplete = !gUncapped && goalVal >= goalDef.max;
     const gMaxHtml  = gUncapped ? '' : '<span class="goal-max"> / ' + goalDef.max + '</span>';
     goalHtml = '<div class="goal-tracker" onclick="event.stopPropagation()">'
-      + '<button class="goal-btn" onclick="adjustGoal(\'' + id + '\',' + goalDef.max + ',-1)">−</button>'
+      + '<button class="goal-btn" title="One fewer" onclick="adjustGoal(\'' + id + '\',' + goalDef.max + ',-1)"><i class="ph ph-minus"></i></button>'
       + '<span class="goal-val ' + (gComplete ? 'goal-complete' : '') + '">' + goalVal + gMaxHtml + '</span>'
-      + '<button class="goal-btn" onclick="adjustGoal(\'' + id + '\',' + goalDef.max + ',1)">+</button>'
-      + '<span class="goal-label">' + goalDef.label + '</span>'
+      + '<button class="goal-btn" title="One more" onclick="adjustGoal(\'' + id + '\',' + goalDef.max + ',1)"><i class="ph ph-plus"></i></button>'
       + '</div>';
   }
 
@@ -289,13 +310,14 @@ function sectionTaskHtml(t, done, hidden, yourList, goals, bossKills, notes) {
 
   let rightCol = '';
   if (editingYourList) {
-    rightCol = '<span style="flex-shrink:0;font-size:13px;color:' + (inList ? 'var(--light-gold)' : 'var(--text-muted)') + ';">'
-      + (inList ? '⭐' : '☆') + '</span>';
+    rightCol = '<span class="task-star" style="' + (inList ? '' : 'color:var(--text-600)') + '">'
+      + '<i class="' + (inList ? 'ph-fill ph-star' : 'ph ph-star') + '"></i></span>';
   } else {
-    rightCol = '<div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;align-items:center;">'
-      + (inList ? '<span style="font-size:13px;color:var(--light-gold);line-height:1;" title="In Your List">⭐</span>' : '')
+    rightCol = '<div class="task-side">'
+      + (inList ? '<span class="task-star" title="In Your List"><i class="ph-fill ph-star"></i></span>' : '')
       + noteBtnHtml(id, notes)
-      + '<button class="task-hide" title="' + (isHidden ? 'Unhide task' : 'Hide task') + '" onclick="toggleHideTask(event,\'' + id + '\')">' + (isHidden ? '👁' : '🚫') + '</button>'
+      + '<button class="task-hide" title="' + (isHidden ? 'Unhide task' : 'Hide task') + '" onclick="toggleHideTask(event,\'' + id + '\')">'
+      + '<i class="ph ' + (isHidden ? 'ph-eye' : 'ph-eye-slash') + '"></i></button>'
       + '</div>';
   }
 
@@ -308,7 +330,8 @@ function sectionTaskHtml(t, done, hidden, yourList, goals, bossKills, notes) {
     + '<div class="task-body">'
     + '<div class="task-name">' + _bisTaskNameHtml(t.name, searchQuery) + '</div>'
     + (hd ? '<div class="task-desc">' + hd + '</div>' : '')
-    + (milestoneNote ? '<div class="milestone-note">' + milestoneNote + '</div>' : '')
+    + (milestoneNote ? '<div class="milestone-note"><i class="ph-fill ph-check"></i>' + milestoneNote + '</div>' : '')
+    + goalMeterHtml(goalDef, goalVal)
     + (id === 'm1' ? _m1VaultPreviewHtml() : '')
     + tagsHtml
     + (t.tierSelector && !editingYourList ? renderTierSelector(id) : '')
@@ -327,13 +350,10 @@ function ylEditTaskHtml(t) {
     + ' onclick="removeFromYourList(\'' + id + '\')" style="cursor:pointer;">'
     + '<div class="task-body" style="flex:1;">'
     + '<div class="task-name">' + (t.name || '') + '</div>'
-    + (t.sectionTitle ? '<div style="font-size:12px;color:var(--text-muted);font-style:italic;margin-top:2px;">' + (t.sectionIcon || '') + ' ' + t.sectionTitle + '</div>' : '')
+    + (t.sectionTitle ? '<div class="task-desc">' + t.sectionTitle + '</div>' : '')
     + '</div>'
-    + '<button onclick="event.stopPropagation();removeFromYourList(\'' + id + '\')" title="Remove from Your List" style="'
-    + 'flex-shrink:0;background:transparent;border:1px solid rgba(192,83,74,0.35);border-radius:4px;'
-    + 'color:#e07068;font-size:13px;padding:3px 8px;cursor:pointer;transition:all 0.15s;white-space:nowrap;"'
-    + ' onmouseover="this.style.background=\'rgba(192,83,74,0.12)\'" onmouseout="this.style.background=\'transparent\'">'
-    + '✕ Remove</button>'
+    + '<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();removeFromYourList(\'' + id + '\')"'
+    + ' title="Remove from Your List"><i class="ph ph-x"></i>Remove</button>'
     + '</div>';
 }
 
@@ -344,93 +364,172 @@ function removeFromYourList(id) {
   render();
 }
 
-/* ── BIS GRID: always renders all 16 standard slots so positions never shift ── */
-// Interleaved order mirrors WoW character sheet: left col (Head→Wrists) / right col (Hands→Ring 2)
-const _BIS_GRID_SLOTS = [
-  'Head',     'Hands',
-  'Neck',     'Waist',
-  'Shoulders','Legs',
-  'Back',     'Feet',
-  'Chest',    'Ring 1',
-  'Wrists',   'Ring 2',
-  'Trinket 1','Trinket 2',
-  'Main Hand','Off Hand',
-];
+/* ── BIS PAPER DOLL ────────────────────────────────────────────────────────
+   Two mirrored columns of socketed slots around the character render.
+   _BIS_DOLL_SLOTS is the single source of truth: the header count, the
+   progress line and the "still hunting" strip are all derived from it, so
+   the totals can never drift from what is on screen.
+─────────────────────────────────────────────────────────────────────────── */
+const _BIS_DOLL_LEFT  = ['Head', 'Neck', 'Shoulders', 'Back', 'Chest', 'Wrists', 'Main Hand', 'Off Hand'];
+const _BIS_DOLL_RIGHT = ['Hands', 'Waist', 'Legs', 'Feet', 'Ring 1', 'Ring 2', 'Trinket 1', 'Trinket 2'];
+const _BIS_DOLL_SLOTS = [..._BIS_DOLL_LEFT, ..._BIS_DOLL_RIGHT];
 
-// Center oval gap per row (px): gently curved ellipse with generous breathing room
-// Row pairs: Head/Hands, Neck/Waist, Shoulders/Legs, Back/Feet,
-//            Chest/Ring1, Wrists/Ring2, Trinket1/2, MH/OH
-const _BIS_OVAL_WIDTHS = [120, 152, 172, 180, 180, 172, 152, 120];
+// Map the BiS tasks in the list onto doll slots. Shield sits in Off Hand and
+// Ranged in Main Hand, matching the character sheet.
+function _bisBySlot(tasks) {
+  const bySlot = {};
+  tasks.forEach(t => {
+    const m = (t.name || '').match(/^\[([^\]]+)\]/);
+    if (!m) return;
+    const slot = m[1];
+    if (!bySlot[slot]) bySlot[slot] = t;
+    if (slot === 'Shield' && !bySlot['Off Hand'])  bySlot['Off Hand']  = t;
+    if (slot === 'Ranged' && !bySlot['Main Hand']) bySlot['Main Hand'] = t;
+  });
+  return bySlot;
+}
+
+// Everything the doll and its chrome need to agree on, computed once.
+function _bisDollStats(tasks, done) {
+  const bySlot  = _bisBySlot(tasks);
+  const total   = _BIS_DOLL_SLOTS.length;
+  const secured = _BIS_DOLL_SLOTS.filter(s => bySlot[s] && done[bySlot[s].id]).length;
+  const open    = _BIS_DOLL_SLOTS.filter(s => !(bySlot[s] && done[bySlot[s].id]));
+  const empty   = _BIS_DOLL_SLOTS.filter(s => !bySlot[s]);
+  return { bySlot, total, secured, open, empty };
+}
+
+function _bisSlotHtml(slot, t, isDone, cache) {
+  const art     = _BIS_SLOT_ART[slot];
+  const artHtml = art ? '<img src="' + art + '" class="art" alt="">' : '';
+  if (!t) {
+    // No item chosen yet: frame plus dimmed slot art, or a bare plus when the
+    // repo has no art for that slot (Back has no cloak icon).
+    return '<div class="slot empty">' + (artHtml || '<i class="ph ph-plus"></i>') + '</div>';
+  }
+  const item    = _bisItemName(t.name);
+  const apiIcon = cache[item.toLowerCase()];
+  // A dead CDN icon fades out so the dimmed slot art shows through: never a
+  // broken-image glyph.
+  const itemHtml = apiIcon
+    ? '<img src="' + escHtml(apiIcon) + '" class="item" alt="" onerror="this.style.opacity=0">'
+    : '';
+  const cls = 'slot' + (isDone ? '' : ' target');
+  return '<div class="' + cls + '">' + artHtml + itemHtml + '</div>';
+}
+
+function _bisItemName(name) {
+  const m = (name || '').match(/^\[([^\]]+)\]\s*(.+)$/);
+  return m ? m[2] : (name || '');
+}
 
 function _renderBisCard(slot, t, done, isRight, cache) {
+  const sideClass = isRight ? ' bis-grid-card--right' : '';
   if (!t) {
-    const ph = _BIS_SLOT_ICONS[slot]
-      ? '<img src="' + _BIS_SLOT_ICONS[slot] + '" class="bis-grid-icon bis-task-icon--placeholder" style="opacity:0.18;" alt="">'
-      : '<div class="bis-grid-icon"></div>';
-    const info = '<div class="bis-grid-info"><div class="bis-grid-slot">' + slot + '</div>'
-      + '<div class="bis-grid-name bis-grid-add">+ Add item</div></div>';
-    return '<div class="bis-grid-card bis-grid-empty' + (isRight ? ' bis-grid-card--right' : '') + '" onclick="openBisSlotCreate(\'' + slot + '\')" title="Add item for ' + slot + '">'
-      + (isRight ? info + ph : ph + info) + '</div>';
+    return '<div class="bis-grid-card bis-grid-empty' + sideClass + '"'
+      + ' onclick="openBisSlotCreate(\'' + slot + '\')" title="Choose an item for ' + escHtml(slot) + '">'
+      + _bisSlotHtml(slot, null, false, cache)
+      + '<div class="bis-grid-info">'
+      + '<div class="bis-grid-slot">' + escHtml(slot) + '</div>'
+      + '<div class="bis-grid-add">+ Choose an item</div>'
+      + '</div></div>';
   }
-  const id      = t.id;
-  const isDone  = !!done[id];
-  const m2      = (t.name || '').match(/^\[([^\]]+)\]\s*(.+)$/);
-  const item    = m2 ? m2[2] : (t.name || '');
-  const apiIcon = cache[item.toLowerCase()];
-  const iconSrc = apiIcon || _BIS_SLOT_ICONS[slot] || '';
-  const iconHtml = iconSrc
-    ? '<img src="' + escHtml(iconSrc) + '" class="bis-grid-icon' + (apiIcon ? '' : ' bis-task-icon--placeholder') + '" alt="' + escHtml(slot) + '">'
-    : '';
-  const desc     = t.desc || '';
-  const descHtml = desc ? '<div class="bis-grid-desc">' + escHtml(desc) + '</div>' : '';
-  const editBtn  = '<button class="bis-grid-edit-btn" onclick="event.stopPropagation();openBisEditModal(event,\'' + id + '\')" title="Edit">✏</button>';
-  const nameRow  = '<div class="bis-grid-name-row">'
+  const id     = t.id;
+  const isDone = !!done[id];
+  const item   = _bisItemName(t.name);
+  const desc   = t.desc || '';
+  const editBtn = '<button class="bis-grid-edit-btn" onclick="event.stopPropagation();openBisEditModal(event,\'' + id + '\')"'
+    + ' title="Edit item"><i class="ph ph-pencil-simple"></i></button>';
+  return '<div class="bis-grid-card' + (isDone ? ' done' : ' bis-grid-target') + sideClass + '">'
+    + _bisSlotHtml(slot, t, isDone, cache)
+    + '<div class="bis-grid-info">'
+    + '<div class="bis-grid-slot">' + escHtml(slot) + '</div>'
+    + '<div class="bis-grid-name-row">'
     + (isRight ? editBtn : '')
     + '<span class="bis-grid-name" title="' + escHtml(item) + '">' + escHtml(item) + '</span>'
     + (isRight ? '' : editBtn)
-    + '</div>';
-  const checkEl = '<div class="task-check" onclick="event.stopPropagation();toggle(\'' + id + '\',this)" style="cursor:pointer;flex-shrink:0;"></div>';
-  const info    = '<div class="bis-grid-info">'
-    + '<div class="bis-grid-slot">' + escHtml(slot) + '</div>'
-    + nameRow + descHtml
-    + '</div>';
-  return '<div class="task bis-grid-card' + (isDone ? ' done' : '') + (isRight ? ' bis-grid-card--right' : '') + '">'
-    + (isRight ? info + iconHtml + checkEl : checkEl + iconHtml + info)
+    + '</div>'
+    + (desc ? '<div class="bis-grid-desc">' + escHtml(desc) + '</div>' : '')
+    + '</div>'
+    + '<div class="task-check' + (isDone ? ' done' : '') + '" title="' + (isDone ? 'Acquired' : 'Mark as acquired') + '"'
+    + ' onclick="event.stopPropagation();toggle(\'' + id + '\',this)"></div>'
     + '</div>';
 }
 
 function renderBisGrid(tasks, done) {
-  const cache  = JSON.parse(localStorage.getItem('wow_mn_item_icons') || '{}');
-  const bySlot = {};
-  tasks.forEach(t => {
-    const m = (t.name || '').match(/^\[([^\]]+)\]/);
-    if (m && !bySlot[m[1]]) bySlot[m[1]] = t;
-    if (m && m[1] === 'Shield' && !bySlot['Off Hand'])  bySlot['Off Hand']  = t;
-    if (m && m[1] === 'Ranged' && !bySlot['Main Hand']) bySlot['Main Hand'] = t;
-  });
+  const cache = JSON.parse(localStorage.getItem('wow_mn_item_icons') || '{}');
+  const st    = _bisDollStats(tasks, done);
 
-  const leftSlots  = _BIS_GRID_SLOTS.filter((_, i) => i % 2 === 0);
-  const rightSlots = _BIS_GRID_SLOTS.filter((_, i) => i % 2 === 1);
-
-  // 8 paired rows; center gap widens/narrows to carve an oval for the character render
-  const rowsHtml = leftSlots.map((ls, rowIdx) => {
-    const rs   = rightSlots[rowIdx];
-    const gap  = _BIS_OVAL_WIDTHS[rowIdx];
-    return '<div class="bis-row">'
-      + _renderBisCard(ls, bySlot[ls], done, false, cache)
-      + '<div class="bis-oval-gap" style="width:' + gap + 'px;"></div>'
-      + _renderBisCard(rs, bySlot[rs], done, true, cache)
-      + '</div>';
-  }).join('');
+  const col = (slots, isRight) => '<div class="bis-col">'
+    + slots.map(s => _renderBisCard(s, st.bySlot[s], done, isRight, cache)).join('')
+    + '</div>';
 
   const armory    = loadArmoryData(currentChar);
   const renderUrl = armory?.renderUrl || null;
   const charHtml  = renderUrl
-    ? '<img src="' + escHtml(renderUrl) + '" class="bis-char-render" alt="Character">'
-    : '<div class="bis-char-placeholder"></div>';
+    ? '<img src="' + escHtml(renderUrl) + '" class="bis-char-render" alt="' + escHtml(charDisplayName(currentChar)) + '">'
+    : '<div class="bis-char-placeholder"><i class="ph ph-user"></i>Sync with Battle.net to show your character render here.</div>';
 
-  return '<div class="bis-rows">' + rowsHtml + '</div>'
-    + '<div class="bis-char-overlay">' + charHtml + '</div>';
+  const ilvl = armory?.ilvl ? 'ilvl ' + armory.ilvl + ' · ' : '';
+  const plate = '<div class="bis-doll-plate">'
+    + '<div class="bis-doll-plate-name">' + escHtml(charDisplayName(currentChar)) + '</div>'
+    + '<div class="bis-doll-plate-sub">' + ilvl + st.secured + ' of ' + st.total + ' slots secured</div>'
+    + '</div>';
+
+  return '<div class="bis-doll">'
+    + col(_BIS_DOLL_LEFT, false)
+    + '<div class="bis-doll-render">'
+    + '<div class="bis-doll-bloom"></div>'
+    + '<div class="bis-char-frame">' + charHtml + '</div>'
+    + plate
+    + '</div>'
+    + col(_BIS_DOLL_RIGHT, true)
+    + '</div>'
+    + _bisHuntingHtml(st);
+}
+
+/* Footer strip: mini sockets for the slots still open, in doll order. */
+function _bisHuntingHtml(st) {
+  if (!st.open.length) {
+    return '<div class="bis-hunting">'
+      + '<span class="bis-hunting-label">All secured</span>'
+      + '<span class="bis-hunting-note">Every slot on your list is accounted for. Nothing left to hunt this season.</span>'
+      + '</div>';
+  }
+  const minis = st.open.slice(0, 6).map(s => {
+    const art = _BIS_SLOT_ART[s];
+    return '<div class="slot-mini" title="' + escHtml(s) + '">'
+      + (art ? '<img src="' + art + '" alt="' + escHtml(s) + '">' : '<i class="ph ph-plus"></i>')
+      + '</div>';
+  }).join('');
+  const more  = st.open.length > 6 ? ' <span class="bis-hunting-label">+' + (st.open.length - 6) + '</span>' : '';
+  const note  = st.empty.length
+    ? st.open.length + ' slot' + (st.open.length === 1 ? '' : 's') + ' open, and ' + st.empty.length
+      + ' still without a target: pick items for those first so the list can tell you what to farm.'
+    : st.open.length + ' slot' + (st.open.length === 1 ? '' : 's') + ' left to farm. Spend bonus rolls on '
+      + st.open[0] + ' first: it is the highest priority still missing.';
+  return '<div class="bis-hunting">'
+    + '<span class="bis-hunting-label">Still hunting</span>'
+    + '<div class="bis-hunting-slots">' + minis + more + '</div>'
+    + '<span class="bis-hunting-note">' + note + '</span>'
+    + '<button class="btn-primary" onclick="openBisModal()"><i class="ph ph-list-plus"></i>Add missing to my list</button>'
+    + '</div>';
+}
+
+/* Panel header for the doll: count and progress derive from the slot array. */
+function _bisDollHeaderHtml(st) {
+  return '<div class="section-icon"><i class="ph-fill ph-sword"></i></div>'
+    + '<div class="section-title-wrap">'
+    + '<div class="section-title">Best in Slot</div>'
+    + '<div class="section-meta">' + escHtml(charDisplayName(currentChar)) + ' · target list for this season</div>'
+    + '</div>'
+    + '<div class="bis-doll-head">'
+    + '<div class="bis-doll-secured">'
+    + '<div class="bis-doll-secured-val">' + st.secured + '<span> / ' + st.total + '</span></div>'
+    + '<div class="bis-doll-secured-label">Slots secured</div>'
+    + '</div>'
+    + '<button class="btn btn-sm" onclick="openBisModal()"><i class="ph ph-pencil-simple"></i>Edit list</button>'
+    + '</div>';
 }
 
 /* ── YOUR LIST TASK HTML HELPER (shared by grouped + flat views) ── */
@@ -451,10 +550,9 @@ function ylTaskHtml(t, done, goals, notes, bossKills) {
     const gComplete = !gUncapped && goalVal >= goalDef.max;
     const gMaxHtml  = gUncapped ? '' : '<span class="goal-max"> / ' + goalDef.max + '</span>';
     goalHtml = '<div class="goal-tracker" onclick="event.stopPropagation()">'
-      + '<button class="goal-btn" onclick="adjustGoal(\'' + id + '\',' + goalDef.max + ',-1)">−</button>'
+      + '<button class="goal-btn" title="One fewer" onclick="adjustGoal(\'' + id + '\',' + goalDef.max + ',-1)"><i class="ph ph-minus"></i></button>'
       + '<span class="goal-val ' + (gComplete ? 'goal-complete' : '') + '">' + goalVal + gMaxHtml + '</span>'
-      + '<button class="goal-btn" onclick="adjustGoal(\'' + id + '\',' + goalDef.max + ',1)">+</button>'
-      + '<span class="goal-label">' + goalDef.label + '</span>'
+      + '<button class="goal-btn" title="One more" onclick="adjustGoal(\'' + id + '\',' + goalDef.max + ',1)"><i class="ph ph-plus"></i></button>'
       + '</div>';
   }
 
@@ -474,8 +572,8 @@ function ylTaskHtml(t, done, goals, notes, bossKills) {
 
   let sectionTag = '';
   if (t.sectionTitle && !yourListGrouped) {
-    sectionTag = '<div class="task-tags" style="margin-top:0.35rem;">'
-      + '<span class="tag" style="background:rgba(201,168,76,0.1);color:var(--light-gold);border-color:rgba(201,168,76,0.25);font-size:10px;">' + t.sectionIcon + ' ' + t.sectionTitle + '</span>'
+    sectionTag = '<div class="task-tags">'
+      + '<span class="tag tag-outline">' + t.sectionTitle + '</span>'
       + '</div>';
   }
 
@@ -484,21 +582,22 @@ function ylTaskHtml(t, done, goals, notes, bossKills) {
 
   const taskHtml = '<div class="task yl-task' + (done[id] ? ' done' : '') + '" draggable="true" data-id="' + id + '"'
     + ' ondragstart="ylDragStart(event)" ondragover="ylDragOver(event)" ondrop="ylDrop(event)" ondragend="ylDragEnd(event)">'
-    + '<div class="yl-drag-handle" onclick="event.stopPropagation()" title="Drag to reorder">⠿</div>'
+    + '<div class="yl-drag-handle" onclick="event.stopPropagation()" title="Drag to reorder"><i class="ph ph-dots-six-vertical"></i></div>'
     + '<div class="task-check" onclick="event.stopPropagation();toggle(\'' + id + '\',this)" style="cursor:pointer;"></div>'
     + '<div class="task-body">'
     + '<div class="task-name">' + _bisTaskNameHtml(t.name, searchQuery) + '</div>'
     + (hd ? '<div class="task-desc">' + hd + '</div>' : '')
-    + (milestoneNote ? '<div class="milestone-note">' + milestoneNote + '</div>' : '')
+    + (milestoneNote ? '<div class="milestone-note"><i class="ph-fill ph-check"></i>' + milestoneNote + '</div>' : '')
+    + goalMeterHtml(goalDef, goalVal)
     + (id === 'm1' ? _m1VaultPreviewHtml() : '')
     + (t.tierSelector ? renderTierSelector(id) : '')
     + bossHtml
     + sectionTag
     + noteHtml(id, notes)
     + '</div>'
-    + '<div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">'
+    + '<div class="task-side">'
     + noteBtnHtml(id, notes)
-    + (id.startsWith('custom_bis_') ? '<button class="task-hide" title="Edit item" onclick="openBisEditModal(event,\'' + id + '\')">✏️</button>' : '')
+    + (id.startsWith('custom_bis_') ? '<button class="task-hide" title="Edit item" onclick="openBisEditModal(event,\'' + id + '\')"><i class="ph ph-pencil-simple"></i></button>' : '')
     + '</div>'
     + goalHtml
     + '</div>';
@@ -551,7 +650,7 @@ function _m1VaultPreviewHtml() {
       const r   = _vaultRewardForKey(run.mythic_level);
       if (!r) return '';
       return '<div class="vault-slot">'
-        + '<span class="vault-slot-label">🔓 ' + s.label + '</span>'
+        + '<span class="vault-slot-label"><i class="ph-fill ph-lock-open"></i>' + s.label + '</span>'
         + '<span class="vault-slot-track" style="color:' + r.color + '">'
         + r.track + ' ' + r.upLevel + '/' + r.upMax + '</span>'
         + '<span class="vault-slot-ilvl">' + r.ilvl + '</span>'
@@ -559,7 +658,7 @@ function _m1VaultPreviewHtml() {
     } else {
       const need = s.needed - total;
       return '<div class="vault-slot vault-slot-locked">'
-        + '<span class="vault-slot-label">🔐 ' + s.label + '</span>'
+        + '<span class="vault-slot-label"><i class="ph-fill ph-lock"></i>' + s.label + '</span>'
         + '<span class="vault-slot-missing">' + need + ' more run' + (need > 1 ? 's' : '') + ' needed</span>'
         + '</div>';
     }
@@ -583,15 +682,15 @@ function renderMythicPlusRunsHtml() {
   if (weeklyData.week !== getWeekKey()) return '';
 
   const runs = weeklyData.runs;
-  const timerIcons = { 3: '⏱⏱⏱', 2: '⏱⏱', 1: '⏱', 0: '' };
+  const timer = n => '<i class="ph ph-clock"></i>'.repeat(n);
 
   const rows = runs.map(r => {
     const lvlColor = r.mythic_level >= 10 ? 'var(--light-gold)' : 'var(--text-secondary)';
-    const timer    = timerIcons[r.num_keystone_upgrades] || '';
+    const timerHtml = timer(r.num_keystone_upgrades || 0);
     return '<div class="mp-run-row">'
       + '<span class="mp-run-level" style="color:' + lvlColor + '">+' + r.mythic_level + '</span>'
       + '<span class="mp-run-name">' + (r.dungeon || r.short_name || 'Unknown') + '</span>'
-      + (timer ? '<span class="mp-run-timer" title="Timed">' + timer + '</span>' : '')
+      + (timerHtml ? '<span class="mp-run-timer" title="Timed">' + timerHtml + '</span>' : '')
       + '</div>';
   }).join('');
 
@@ -599,6 +698,15 @@ function renderMythicPlusRunsHtml() {
     + '<div class="mp-runs-label">This week\'s runs <span style="font-size:10px;opacity:0.5;">(from armory sync)</span></div>'
     + '<div class="mp-runs-grid">' + rows + '</div>'
     + '</div>';
+}
+
+/* "Cøffee · Unholy Death Knight · 12 of 47 done" for the list header. */
+function _ylBannerCharLine() {
+  const armory = loadArmoryData(currentChar);
+  const cls    = loadCharClass(currentChar);
+  const def    = cls ? CLASSES.find(x => x.id === cls) : null;
+  const spec   = [armory?.spec, def?.name].filter(Boolean).join(' ');
+  return [charDisplayName(currentChar), spec].filter(Boolean).join(' · ');
 }
 
 function render() {
@@ -623,27 +731,31 @@ function render() {
       container.appendChild(buildEditBar());
     }
 
-    // Your List identity banner (with inline Edit button)
+    // List header: title, who it belongs to, a fading rule, then the controls
     const ylBanner = document.createElement('div');
     ylBanner.className = 'yl-view-banner';
-    ylBanner.innerHTML = '<span class="yl-banner-icon">⭐</span>'
-      + '<span class="yl-banner-title">Your List</span>'
-      + '<span class="yl-banner-char">' + charDisplayName(currentChar) + '</span>'
-      + '<button class="yl-bis-jump-btn" onclick="scrollToBisSection()" title="Scroll to BiS Gear">⚔ BiS Gear</button>'
-      + '<button id="btn-edit-yourlist" class="yl-edit-btn" onclick="startEditingYourList()">'
-      + (editingYourList ? '✓ Done' : '✏ Edit') + '</button>';
+    ylBanner.innerHTML = '<span class="yl-banner-title">Your list</span>'
+      + '<span class="yl-banner-char">' + _ylBannerCharLine() + '</span>'
+      + '<span class="yl-rule"></span>'
+      + '<div class="btn-cluster">'
+      + '<button class="btn btn-sm" onclick="scrollToBisSection()" title="Scroll to BiS Gear">'
+      + '<i class="ph-fill ph-sword"></i>BiS gear</button>'
+      + '<button id="btn-edit-yourlist" class="btn btn-sm" onclick="startEditingYourList()">'
+      + (editingYourList ? '<i class="ph ph-check"></i>Done' : '<i class="ph ph-pencil-simple"></i>Edit list')
+      + '</button>'
+      + '</div>';
     container.appendChild(ylBanner);
 
     // Gather all tasks from SECTIONS that are in the list
     const selected = [];
     SECTIONS.forEach(sec => {
       sec.tasks.forEach(t => {
-        if (yourList.has(t.id)) selected.push({ ...t, sectionTitle: sec.title, sectionIcon: sec.icon, sectionIconClass: sec.iconClass });
+        if (yourList.has(t.id)) selected.push({ ...t, sectionTitle: sec.title, sectionIcon: sec.icon });
       });
     });
     loadCustomTasks().forEach(t => {
       if (yourList.has('custom_' + t.id))
-        selected.push({ ...t, id: 'custom_' + t.id, sectionTitle: t.id.startsWith('bis_') ? 'Best in Slot Gear' : 'Custom', sectionIcon: t.id.startsWith('bis_') ? '⚔️' : '✦', sectionIconClass: 'icon-custom' });
+        selected.push({ ...t, id: 'custom_' + t.id, sectionTitle: t.id.startsWith('bis_') ? 'Best in Slot' : 'Custom', sectionIcon: t.id.startsWith('bis_') ? 'ph-fill ph-sword' : 'ph ph-plus-circle' });
     });
 
     // Apply search + tag filters
@@ -663,16 +775,16 @@ function render() {
         // Empty list in edit mode: show helpful prompt
         const emptyEl = document.createElement('div');
         emptyEl.className = 'yourlist-empty';
-        emptyEl.innerHTML = '<div style="font-size:2rem;margin-bottom:0.5rem;">⭐</div>'
+        emptyEl.innerHTML = '<i class="ph-fill ph-star empty-mark"></i>'
           + 'Your list is empty.<br>'
-          + '<span style="font-size:13px;margin-top:0.4rem;display:block;">Switch to the <strong style="font-style:normal;color:var(--light-gold);">All</strong> tab to pick tasks to add.</span>';
+          + '<span>Open <strong>Everything</strong> in the rail to pick the tasks you care about.</span>';
         container.appendChild(emptyEl);
       } else {
         const emptyEl = document.createElement('div');
         emptyEl.className = 'yourlist-empty';
         emptyEl.innerHTML = selected.length === 0
-          ? '<div style="font-size:2rem;margin-bottom:0.5rem;">⭐</div>Your list is empty.<br><span style="font-size:13px;margin-top:0.4rem;display:block;">Click <strong style="font-style:normal;color:var(--light-gold);">✏ Edit</strong> above to pick tasks.</span>'
-          : '<div style="font-size:2rem;margin-bottom:0.5rem;">🔍</div>No tasks match <strong style="color:var(--void-glow);">"' + searchQuery + '"</strong>';
+          ? '<i class="ph-fill ph-star empty-mark"></i>Your list is empty.<br><span>Use <strong>Edit list</strong> above to pick tasks.</span>'
+          : '<i class="ph ph-magnifying-glass empty-mark"></i>No tasks match <strong>"' + escHtml(searchQuery) + '"</strong>';
         container.appendChild(emptyEl);
       }
     } else if (yourListGrouped) {
@@ -683,19 +795,19 @@ function render() {
       SECTIONS.forEach(sec => {
         const secTasks = sec.tasks
           .filter(t => yourList.has(t.id) && matchesSearch({ ...t, sectionTitle: sec.title }))
-          .map(t => ({ ...t, sectionTitle: sec.title, sectionIcon: sec.icon, sectionId: sec.id, sectionIconClass: sec.iconClass }));
+          .map(t => ({ ...t, sectionTitle: sec.title, sectionIcon: sec.icon, sectionId: sec.id }));
         if (secTasks.length) sectionGroups.push({ sec, tasks: secTasks });
       });
       const allCustom = loadCustomTasks()
         .filter(t => yourList.has('custom_' + t.id));
       const bisSelected = allCustom
         .filter(t => t.id.startsWith('bis_') && matchesSearch({ ...t, id: 'custom_' + t.id, sectionTitle: 'Best in Slot Gear' }))
-        .map(t => ({ ...t, id: 'custom_' + t.id, sectionTitle: 'Best in Slot Gear', sectionIcon: '⚔️', sectionId: 'bis', sectionIconClass: 'icon-custom' }));
+        .map(t => ({ ...t, id: 'custom_' + t.id, sectionTitle: 'Best in Slot', sectionIcon: 'ph-fill ph-sword', sectionId: 'bis' }));
       const customSelected = allCustom
         .filter(t => !t.id.startsWith('bis_') && matchesSearch({ ...t, id: 'custom_' + t.id, sectionTitle: 'Custom' }))
-        .map(t => ({ ...t, id: 'custom_' + t.id, sectionTitle: 'Custom', sectionIcon: '✦', sectionId: 'custom', sectionIconClass: 'icon-custom' }));
-      sectionGroups.push({ sec: { title: 'Best in Slot Gear', icon: '⚔️', iconClass: 'icon-custom', id: 'bis' }, tasks: bisSelected });
-      if (customSelected.length) sectionGroups.push({ sec: { title: 'Custom', icon: '✦', iconClass: 'icon-custom', id: 'custom' }, tasks: customSelected });
+        .map(t => ({ ...t, id: 'custom_' + t.id, sectionTitle: 'Custom', sectionIcon: 'ph ph-plus-circle', sectionId: 'custom' }));
+      sectionGroups.push({ sec: { title: 'Best in Slot', icon: 'ph-fill ph-sword', id: 'bis' }, tasks: bisSelected });
+      if (customSelected.length) sectionGroups.push({ sec: { title: 'Custom', icon: 'ph ph-plus-circle', id: 'custom' }, tasks: customSelected });
 
       const nonBisSelected = filteredSelected.filter(t => !t.id.startsWith('custom_bis_'));
       totalVisible = nonBisSelected.length;
@@ -712,20 +824,24 @@ function render() {
         });
 
         const secDone = sortedTasks.filter(t => done[t.id]).length;
+        const isDoll  = isBis && !editingYourList;
         const wrap = document.createElement('div');
         wrap.className = 'yl-section-group';
         if (isBis) wrap.id = 'yl-bis-section';
         const ylHeader = document.createElement('div');
         ylHeader.className = 'yl-section-header';
-        ylHeader.innerHTML = '<div class="section-icon ' + sec.iconClass + '">' + sec.icon + '</div>'
-          + '<div class="section-title-wrap">' + ylSecTitleHtml(sec) + '</div>'
-          + '<span class="yl-section-count"><span class="done">' + secDone + '</span> / ' + sortedTasks.length + '</span>';
+        ylHeader.innerHTML = isDoll
+          ? _bisDollHeaderHtml(_bisDollStats(sortedTasks, done))
+          : '<div class="section-icon"><i class="' + secIconClass(sec) + '"></i></div>'
+            + '<div class="section-title-wrap">' + ylSecTitleHtml(sec) + '</div>'
+            + '<span class="yl-section-count"><span class="done">' + secDone + '</span>'
+            + '<span class="goal-max"> / ' + sortedTasks.length + '</span></span>';
         wrap.appendChild(ylHeader);
 
         const body = document.createElement('div');
-        body.className = 'section-body yl-section-body' + (isBis && !editingYourList ? ' bis-grid-body' : '');
+        body.className = 'section-body yl-section-body' + (isDoll ? ' bis-grid-body' : '');
         body.dataset.secId = sec.id;
-        body.innerHTML = (isBis && !editingYourList)
+        body.innerHTML = isDoll
           ? renderBisGrid(sortedTasks, done)
           : sortedTasks.map(t => editingYourList ? ylEditTaskHtml(t) : ylTaskHtml(t, done, goals, notes, bossKills)).join('');
         wrap.appendChild(body);
@@ -763,9 +879,8 @@ function render() {
     updateSearchResultCount(filteredSelected.length, selected.length);
 
     // Update toolbar buttons
-    const _viewBtn = document.getElementById('btn-yourlist-view');
-    _viewBtn.textContent = yourListGrouped ? '☰ Flat List' : '⊞ Grouped';
-    _viewBtn.title = yourListGrouped ? 'Switch to flat list' : 'Switch to grouped by category';
+    updateViewToggleBtn();
+    renderNav();
     return;
   }
 
@@ -776,19 +891,19 @@ function buildEditBar() {
   const charOpts = characters.filter(c => c !== currentChar)
     .map(c => '<option value="' + c + '">' + c + '</option>').join('');
   const copyHtml = characters.length > 1
-    ? '<select id="copy-to-select" style="font-family:\'Cinzel\',serif;font-size:11px;padding:0.35rem 0.5rem;background:var(--bg-panel);border:1px solid var(--border-bright);border-radius:4px;color:var(--text-secondary);cursor:pointer;margin-right:2px;">'
+    ? '<select id="copy-to-select" class="mini-select">'
       + '<option value="">Copy to…</option>'
       + '<option value="__all__">All characters</option>'
       + charOpts
       + '</select>'
-      + '<button class="btn-cancel" style="font-family:\'Cinzel\',serif;font-size:11px;padding:0.4rem 0.9rem;cursor:pointer;" onclick="copyListToSelected()">Copy</button>'
+      + '<button class="btn btn-sm" onclick="copyListToSelected()">Copy</button>'
     : '';
   editBar.innerHTML = '<span>Tap a task to add or remove it from <strong>Your List</strong>.</span>'
     + '<div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">'
-    + '<button class="btn-cancel" style="font-family:\'Cinzel\',serif;font-size:11px;padding:0.4rem 0.9rem;cursor:pointer;" onclick="openBeginnerPreset()">🧭 Starter Guide</button>'
+    + '<button class="btn btn-sm" onclick="openBeginnerPreset()"><i class="ph ph-compass"></i>Starter guide</button>'
     + copyHtml
-    + '<button class="btn-cancel" style="font-family:\'Cinzel\',serif;font-size:11px;padding:0.4rem 0.9rem;cursor:pointer;" onclick="clearYourList()">Clear All</button>'
-    + '<button class="btn-primary" style="font-size:11px;padding:0.4rem 0.9rem;" onclick="doneEditingYourList()">✓ Done</button>'
+    + '<button class="btn btn-sm" onclick="clearYourList()"><i class="ph ph-broom"></i>Clear all</button>'
+    + '<button class="btn-primary btn-sm" onclick="doneEditingYourList()"><i class="ph ph-check"></i>Done</button>'
     + '</div>';
   return editBar;
 }
@@ -857,10 +972,10 @@ function buildEditBar() {
 
       if (isAll && sec.priority !== lastPriority) {
         lastPriority = sec.priority;
-        const [cls, text] = PRIORITY_META[sec.priority];
+        const [cls, icon, text] = PRIORITY_META[sec.priority];
         const lbl = document.createElement('div');
         lbl.className = 'priority-label ' + cls;
-        lbl.textContent = text;
+        lbl.innerHTML = '<i class="' + icon + '"></i>' + text;
         container.appendChild(lbl);
       }
 
@@ -868,12 +983,13 @@ function buildEditBar() {
         const d = document.createElement('div');
         d.className = 'section section-hidden';
         d.innerHTML = '<div class="section-header" onclick="">'
-          + '<div class="section-icon ' + sec.iconClass + '" style="width:40px;height:40px;font-size:22px;">' + sec.icon + '</div>'
+          + '<div class="section-icon"><i class="' + secIconClass(sec) + '"></i></div>'
           + '<div class="section-title-wrap">'
           + secTitleHtml(sec)
-          + '<div class="section-meta">Hidden from All view</div>'
+          + '<div class="section-meta">Hidden from the Everything view</div>'
           + '</div>'
-          + '<button class="section-hide" title="Unhide section" onclick="toggleHideSection(event,\'' + sec.id + '\')">👁</button>'
+          + '<button class="section-hide" title="Unhide section" onclick="toggleHideSection(event,\'' + sec.id + '\')">'
+          + '<i class="ph ph-eye"></i></button>'
           + '</div>';
         container.appendChild(d);
         return;
@@ -882,16 +998,19 @@ function buildEditBar() {
       const div = document.createElement('div');
       div.className = 'section' + (isSectionHidden ? ' section-hidden' : '');
       div.dataset.section = sec.id;
-      const hiddenCountSpan = hiddenCount > 0 ? '<span class="hidden-count">(' + hiddenCount + ' hidden)</span>' : '';
+      const hiddenCountSpan = hiddenCount > 0 ? '<span class="hidden-count">' + hiddenCount + ' hidden</span>' : '';
       div.innerHTML = '<div class="section-header' + (isOpen ? ' open' : '') + '" onclick="toggleSection(\'' + sec.id + '\')">'
-        + '<div class="section-icon ' + sec.iconClass + '" style="width:40px;height:40px;font-size:22px;">' + sec.icon + '</div>'
+        + '<div class="section-icon"><i class="' + secIconClass(sec) + '"></i></div>'
         + '<div class="section-title-wrap">'
         + secTitleHtml(sec)
         + '<div class="section-meta">' + sec.meta + '</div>'
         + '</div>'
-        + '<span class="section-count"><span class="done">' + secDone + '</span>&thinsp;/&thinsp;' + visibleTasks.filter(function(t){return !hidden[t.id];}).length + hiddenCountSpan + '</span>'
-        + '<button class="section-hide" title="' + (isSectionHidden ? 'Unhide section' : 'Hide section from All view') + '" onclick="toggleHideSection(event,\'' + sec.id + '\')">' + (isSectionHidden ? '👁' : '🚫') + '</button>'
-        + '<span class="chevron" style="transform:rotate(' + (isOpen ? '0' : '-90') + 'deg)">▼</span>'
+        + '<span class="section-count"><span class="done">' + secDone + '</span>'
+        + '<span class="goal-max"> / ' + visibleTasks.filter(function(t){return !hidden[t.id];}).length + '</span>'
+        + hiddenCountSpan + '</span>'
+        + '<button class="section-hide" title="' + (isSectionHidden ? 'Unhide section' : 'Hide this section') + '" onclick="toggleHideSection(event,\'' + sec.id + '\')">'
+        + '<i class="ph ' + (isSectionHidden ? 'ph-eye' : 'ph-eye-slash') + '"></i></button>'
+        + '<span class="chevron" style="transform:rotate(' + (isOpen ? '0' : '-90') + 'deg)"><i class="ph ph-caret-down"></i></span>'
         + '</div>';
 
       const secBody = document.createElement('div');
@@ -913,17 +1032,16 @@ function buildEditBar() {
   // Show/update the reveal hidden button
   const revealBtn = document.getElementById('btn-reveal');
   revealBtn.style.display = (anyHidden || revealHidden) ? '' : 'none';
-  revealBtn.textContent = revealHidden ? '🚫 Hide Hidden' : '👁 Show Hidden';
+  revealBtn.innerHTML = '<i class="ph ' + (revealHidden ? 'ph-eye-slash' : 'ph-eye') + '"></i>';
+  revealBtn.title = revealHidden ? 'Hide hidden tasks' : 'Show hidden tasks';
 
 
-  // Update view toggle label
-  const viewBtn = document.getElementById('btn-yourlist-view');
-  viewBtn.textContent = yourListGrouped ? '☰ Flat List' : '⊞ Grouped';
-  viewBtn.title = yourListGrouped ? 'Switch to flat list' : 'Switch to grouped by category';
+  updateViewToggleBtn();
 
   // Apply to All hidden when not on yourlist tab
 
   renderCustomSection();
+  renderNav();
 }
 
 function toggle(id, taskEl) {
@@ -942,13 +1060,21 @@ function toggle(id, taskEl) {
 }
 function toggleSection(id) { collapsed[id] = !collapsed[id]; render(); }
 
+/* Section mark: SECTIONS[].icon holds a Phosphor class name. */
+function secIconClass(sec) {
+  return (sec && sec.icon) || 'ph-fill ph-shooting-star';
+}
+
+/* Panel title row: name, then the "do first" / "new" tags. */
 function secTitleHtml(sec) {
-  if (!sec.url) return '<div class="section-title">' + sec.title + '</div>';
-  return '<div class="section-title">'
-    + '<a href="' + sec.url + '" target="_blank" rel="noopener" class="section-title-link"'
-    + ' onclick="event.stopPropagation()" title="Icy Veins guide">'
-    + sec.title + '</a>'
-    + '</div>';
+  const title = sec.url
+    ? '<a href="' + sec.url + '" target="_blank" rel="noopener" class="section-title-link"'
+      + ' onclick="event.stopPropagation()" title="Icy Veins guide">' + sec.title + '</a>'
+    : sec.title;
+  let tags = '';
+  if (sec.priority === 1) tags += '<span class="tag tag-accent">Do first</span>';
+  if ((sec.tasks || []).some(t => (t.tags || []).includes('tag-127'))) tags += '<span class="tag tag-outline">New</span>';
+  return '<div class="section-title-row"><span class="section-title">' + title + '</span>' + tags + '</div>';
 }
 
 function ylSecTitleHtml(sec) {
@@ -992,18 +1118,12 @@ function startEditingYourList() {
   if (editingYourList) { doneEditingYourList(); return; }
   editingYourList = true;
   activeFilters = new Set(['yourlist']);
-  document.querySelectorAll('.tab-btn').forEach(b => {
-    b.classList.toggle('active', b.getAttribute('data-filter') === 'yourlist');
-  });
   render();
 }
 
 function doneEditingYourList() {
   editingYourList = false;
   activeFilters = new Set(['yourlist']);
-  document.querySelectorAll('.tab-btn').forEach(b => {
-    b.classList.toggle('active', b.getAttribute('data-filter') === 'yourlist');
-  });
   render();
 }
 
@@ -1096,6 +1216,80 @@ function resetAll() {
   localStorage.removeItem(bossKey());
   render();
 }
+/* ═══════════════════════════════════════════
+   CATEGORY NAV (rail)
+   One row per category with a done/total count
+   for the active character. Counts come from
+   the same reducer that feeds the progress bar,
+   so the rail and the panels always agree.
+═══════════════════════════════════════════ */
+const NAV_CATEGORIES = [
+  { filter: 'yourlist',      label: 'Your list',     icon: 'ph-fill ph-star' },
+  { filter: 'all',           label: 'Everything',    icon: 'ph ph-list' },
+  { filter: 'voidforge',     label: 'Voidforge',     icon: 'ph ph-spiral' },
+  { filter: 'prey',          label: 'Prey',          icon: 'ph ph-crosshair' },
+  { filter: 'delve',         label: 'Delves',        icon: 'ph ph-mountains' },
+  { filter: 'mythic',        label: 'Mythic+',       icon: 'ph ph-crosshair-simple' },
+  { filter: 'raid',          label: 'Raids',         art:  'img/mainhandslot.webp' },
+  { filter: 'void-assaults', label: 'Void assaults', icon: 'ph ph-spiral' },
+  { filter: 'ritual-sites',  label: 'Ritual sites',  icon: 'ph ph-sparkle' },
+  { filter: 'currency',      label: 'Upgrades',      art:  'img/chestslot.webp' },
+  { filter: 'world',         label: 'World events',  icon: 'ph ph-globe-hemisphere-west' },
+  { filter: 'professions',   label: 'Professions',   icon: 'ph ph-hammer' },
+  { filter: 'pvp',           label: 'PvP',           art:  'img/secondaryhandslot.webp' },
+  { filter: 'housing',       label: 'Housing',       icon: 'ph ph-house-line' },
+  { filter: 'optional',      label: 'Optional',      icon: 'ph ph-shooting-star' },
+  { filter: 'custom',        label: 'Custom',        icon: 'ph ph-plus-circle' },
+];
+
+/* done / total for one nav row, using the same visibility rules as render(). */
+function _navCount(filter, done, hidden, yourList, customTasks) {
+  let total = 0, complete = 0;
+  const tally = id => { total++; if (done[id]) complete++; };
+
+  if (filter === 'yourlist') {
+    SECTIONS.forEach(sec => sec.tasks.forEach(t => { if (yourList.has(t.id)) tally(t.id); }));
+    customTasks.forEach(t => {
+      const id = 'custom_' + t.id;
+      if (yourList.has(id) && !t.id.startsWith('bis_')) tally(id);
+    });
+    return { done: complete, total };
+  }
+  if (filter === 'custom') {
+    customTasks.filter(t => !t.id.startsWith('bis_')).forEach(t => tally('custom_' + t.id));
+    return { done: complete, total };
+  }
+  SECTIONS.forEach(sec => {
+    if (filter !== 'all' && !sec.categories.includes(filter)) return;
+    if (hidden['section_' + sec.id] && !revealHidden) return;
+    sec.tasks.forEach(t => { if (!hidden[t.id]) tally(t.id); });
+  });
+  return { done: complete, total };
+}
+
+function renderNav() {
+  const el = document.getElementById('nav-list');
+  if (!el) return;
+  const done        = loadDone();
+  const hidden      = loadHidden();
+  const yourList    = new Set(loadYourList());
+  const customTasks = loadCustomTasks();
+
+  el.innerHTML = NAV_CATEGORIES.map(c => {
+    const n      = _navCount(c.filter, done, hidden, yourList, customTasks);
+    const active = activeFilters.has(c.filter);
+    const mark   = c.art
+      ? '<img src="' + c.art + '" alt="">'
+      : '<i class="' + (active && c.filter !== 'yourlist' ? c.icon.replace('ph ph-', 'ph-fill ph-') : c.icon) + '"></i>';
+    return '<button class="nav-row' + (active ? ' active' : '') + '" data-filter="' + c.filter + '"'
+      + ' onclick="setFilter(\'' + c.filter + '\',this)">'
+      + mark
+      + '<span class="nav-row-label">' + c.label + '</span>'
+      + '<span class="nav-row-count">' + n.done + '/' + n.total + '</span>'
+      + '</button>';
+  }).join('');
+}
+
 function setFilter(f, btn) {
   if (f === 'all') {
     activeFilters = new Set(['all']);
@@ -1112,10 +1306,7 @@ function setFilter(f, btn) {
     renderChars();
   }
 
-  document.querySelectorAll('.tab-btn').forEach(b => {
-    const val = b.getAttribute('data-filter');
-    b.classList.toggle('active', activeFilters.has(val));
-  });
+  renderNav();
   render();
 }
 
@@ -1127,35 +1318,56 @@ function filterByTag(tag) {
 /* ═══════════════════════════════════════════
    CHARACTERS
 ═══════════════════════════════════════════ */
+/* Roster row: [role socket] [name / spec · ilvl] [M+ score].
+   The role icon is mandatory: a character with no role set shows the socket
+   empty (frame only) rather than falling back to a glyph. */
+const _ROLE_ART = {
+  tank:  { src: 'img/tankrole.webp',   label: 'Tank' },
+  heal:  { src: 'img/healerrole.webp', label: 'Healer' },
+  dps:   { src: 'img/dpsrole.webp',    label: 'Damage' },
+};
+
 function renderChars() {
   document.getElementById('char-list').innerHTML = characters.map(c => {
-    const cls = loadCharClass(c);
-    const def = cls ? CLASSES.find(x => x.id === cls) : null;
-    const borderStyle = def
-      ? isLightMode
-        ? `border-color:var(--border-bright); box-shadow:0 0 0 1px ${def.color}44;`
-        : `border-color:${def.color}; box-shadow:0 0 0 1px ${def.color}22;`
-      : '';
-    const group = loadCharGroupFor(c);
-    const gm = GROUP_META[group];
-    const groupDot = gm ? `<span style="font-size:9px;color:${gm.color};line-height:1;" title="${gm.label.replace(/[⭐◆🌿]/g,'').trim()}">${gm.dot}</span>` : '';
+    const cls    = loadCharClass(c);
+    const def    = cls ? CLASSES.find(x => x.id === cls) : null;
     const armory = loadArmoryData(c);
-    const ilvlBadge = armory && armory.ilvl
-      ? `<span class="char-ilvl-badge" title="iLvl ${armory.ilvl} · synced ${new Date(armory.lastSync).toLocaleDateString()}">${armory.ilvl}</span>`
+    const role   = _ROLE_ART[loadCharRole(c)] || null;
+    const isNow  = c === currentChar;
+
+    // Class colour is a 2px left edge only, never the whole border.
+    const edge = def
+      ? `<span class="char-class-edge" style="background:linear-gradient(to bottom, transparent, ${def.color}, transparent);"></span>`
       : '';
-    const mythicBadge = armory && armory.mythicRating
-      ? `<span class="char-ilvl-badge" style="color:${armory.mythicColor||'var(--void-glow)'};" title="Mythic+ Rating ${armory.mythicRating}">${armory.mythicRating}</span>`
-      : '';
-    const portrait = armory?.portrait;
+
+    // Socket contents: role icon first, then the class icon, then the armory
+    // portrait. Nothing known leaves the frame deliberately empty, never an
+    // emoji or a letter.
+    let socketInner = '';
+    if (role)                   socketInner = `<img src="${role.src}" alt="${role.label}" title="${role.label}">`;
+    else if (def)               socketInner = `<img src="${def.icon}" class="char-class-icon" alt="">`;
+    else if (armory?.portrait)  socketInner = `<img src="${armory.portrait}" class="char-portrait" alt="">`;
+
     const displayName = charDisplayName(c);
-    const realmSlug = charRealmSlugFromId(c);
-    const showRealm = realmSlug && characters.filter(x => charDisplayName(x) === displayName).length > 1;
-    const realmBadge = showRealm ? `<span class="char-realm-badge">${realmSlug.replace(/-/g, ' ')}</span>` : '';
-    const iconHtml = portrait
-      ? `<img src="${portrait}" class="char-portrait" alt="${displayName}">`
-      : def ? `<img src="${def.icon}" class="char-class-icon" alt="${displayName}">` : '';
-    return `<button class="char-btn${c===currentChar?' active':''}" onclick="switchChar('${c}')" style="display:inline-flex;align-items:center;gap:6px;${borderStyle}">
-        ${iconHtml}${displayName}${realmBadge}${groupDot}${ilvlBadge}${mythicBadge}
+    const realmSlug   = charRealmSlugFromId(c);
+    const showRealm   = realmSlug && characters.filter(x => charDisplayName(x) === displayName).length > 1;
+    const realmBadge  = showRealm ? ` <span class="char-realm-badge">${realmSlug.replace(/-/g, ' ')}</span>` : '';
+
+    const specName = [armory?.spec, def?.name].filter(Boolean).join(' ');
+    const ilvl     = armory?.ilvl ? `<span class="char-ilvl-badge">${armory.ilvl}</span>` : '';
+    const sub      = [specName, ilvl].filter(Boolean).join(' · ');
+    const score    = armory?.mythicRating
+      ? `<span class="char-score" title="Mythic+ rating ${armory.mythicRating}">${armory.mythicRating}</span>`
+      : '';
+
+    return `<button class="char-btn${isNow ? ' active' : ''}" onclick="switchChar('${c}')" title="${displayName}">
+        ${edge}
+        <span class="role-socket">${socketInner}</span>
+        <span class="char-btn-body">
+          <span class="char-name">${displayName}${realmBadge}</span>
+          ${sub ? `<span class="char-sub">${sub}</span>` : ''}
+        </span>
+        ${score}
       </button>`;
   }).join('');
 }
@@ -1172,15 +1384,15 @@ function toggleCharMenu(e) {
     menu.innerHTML =
       `<button class="char-manage-item${isSynced ? ' char-manage-item--disabled' : ''}"
           onclick="${isSynced ? '' : `openRenameChar('${currentChar}');closeCharMenu()`}">
-        ✏ Edit character
+        <i class="ph ph-pencil-simple"></i>Edit character
         ${isSynced ? '<span class="char-manage-hint">synced via Battle.net</span>' : ''}
       </button>`
       + (multiChar
         ? `<button class="char-manage-item char-manage-item--danger" onclick="openRemoveCharModal();closeCharMenu()">
-            ✕ Remove character
+            <i class="ph ph-trash"></i>Remove character
            </button>
            <button class="char-manage-item" onclick="openRearrangeModal();closeCharMenu()">
-            ⇅ Rearrange list
+            <i class="ph ph-arrows-down-up"></i>Rearrange list
            </button>`
         : '');
     menu.classList.add('open');
@@ -1218,8 +1430,8 @@ function renderRearrangeList() {
       ${imgHtml}
       <span class="rearrange-name">${escHtml(charDisplayName(c))}${charRealmSlugFromId(c) ? `<span class="char-realm-badge" style="margin-left:4px;">${charRealmSlugFromId(c).replace(/-/g,' ')}</span>` : ''}</span>
       <div class="rearrange-arrows">
-        <button class="rearrange-btn" ${i===0?'disabled':''} onclick="moveChar(${i},-1)">↑</button>
-        <button class="rearrange-btn" ${i===characters.length-1?'disabled':''} onclick="moveChar(${i},1)">↓</button>
+        <button class="rearrange-btn" ${i===0?'disabled':''} onclick="moveChar(${i},-1)"><i class="ph ph-arrow-up"></i></button>
+        <button class="rearrange-btn" ${i===characters.length-1?'disabled':''} onclick="moveChar(${i},1)"><i class="ph ph-arrow-down"></i></button>
       </div>
     </div>`;
   }).join('');
@@ -1248,7 +1460,7 @@ function renderRemoveList() {
     return `<div class="rearrange-row">
       ${imgHtml}
       <span class="rearrange-name">${escHtml(charDisplayName(c))}${realmBadge}</span>
-      <button class="rearrange-btn rearrange-btn--danger" onclick="deleteCharFromList('${escHtml(c)}')">✕</button>
+      <button class="rearrange-btn rearrange-btn--danger" title="Remove" onclick="deleteCharFromList('${escHtml(c)}')"><i class="ph ph-trash"></i></button>
     </div>`;
   }).join('');
 }
@@ -1276,10 +1488,6 @@ function switchChar(name) {
   revealHidden = false;
   editingYourList = false;
   activeFilters = new Set(['yourlist']);
-  document.querySelectorAll('.tab-btn').forEach(b => {
-    const val = b.getAttribute('data-filter');
-    b.classList.toggle('active', activeFilters.has(val));
-  });
   renderChars();
   renderClassLinksBar();
   render();
@@ -1404,21 +1612,29 @@ function renderEventAlerts() {
     }
   });
 
-  if (!alerts.length) { el.innerHTML = ''; return; }
+  // The always-on event strip and a proximity alert say the same thing about the
+  // same event, so only one of them shows at a time.
+  const strip = document.querySelector('.event-strip');
+  if (!alerts.length) {
+    el.innerHTML = '';
+    if (strip) strip.style.display = '';
+    return;
+  }
+  if (strip) strip.style.display = 'none';
 
   el.innerHTML = alerts.map(a => {
     const key = a.type === 'starting' ? 'start_' + a.event.name : a.event.name;
-    const icon = a.type === 'ending' ? '⚠️' : '📅';
+    const icon = a.type === 'ending' ? 'ph-fill ph-warning-diamond' : 'ph ph-calendar-blank';
     const timeStr = a.type === 'ending'
       ? (a.daysLeft === 0 ? 'ends today!' : a.daysLeft === 1 ? 'ends tomorrow' : 'ends in ' + a.daysLeft + ' days')
       : 'starts tomorrow';
     const isUrgent = a.type === 'ending' && a.daysLeft <= 1;
     const safeKey = key.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
     return '<div class="event-alert' + (isUrgent ? ' urgent' : '') + '">'
-      + '<span class="ea-icon">' + icon + '</span>'
+      + '<i class="ea-icon ' + icon + '"></i>'
       + '<span class="ea-text"><a href="' + a.event.url + '" target="_blank" class="ea-link">' + a.event.name + '</a>'
       + ' <span class="ea-when">' + timeStr + '</span></span>'
-      + '<button class="ea-dismiss" onclick="dismissEventAlert(\'' + safeKey + '\')" title="Dismiss">&times;</button>'
+      + '<button class="ea-dismiss" onclick="dismissEventAlert(\'' + safeKey + '\')" title="Dismiss"><i class="ph ph-x"></i></button>'
       + '</div>';
   }).join('');
 }
@@ -1494,7 +1710,7 @@ function updateLastChanceBtn() {
   const btn = document.getElementById('btn-last-chance');
   if (!btn) return;
   btn.classList.toggle('active', lastChanceMode);
-  btn.textContent = lastChanceMode ? '⚡ Last Chance ON' : '⚡ Last Chance';
+  btn.innerHTML = '<i class="ph-fill ph-lightning"></i>' + (lastChanceMode ? 'Last chance on' : 'Last chance');
 }
 
 function renderLastChanceBanner() {
@@ -1507,21 +1723,19 @@ function renderLastChanceBanner() {
     banner = document.createElement('div');
     banner.id = 'last-chance-banner';
     banner.className = 'last-chance-banner';
-    // Insert below reset-bar
-    const resetBar = document.querySelector('.reset-bar');
-    if (resetBar && resetBar.parentNode) {
-      resetBar.parentNode.insertBefore(banner, resetBar.nextSibling);
-    }
+    // Lives at the top of the content column, above the event strip
+    const slot = document.getElementById('last-chance-slot');
+    if (slot) slot.appendChild(banner);
   }
   const done    = loadDone();
   const hidden  = loadHidden();
   let remaining = 0;
   SECTIONS.forEach(sec => sec.tasks.filter(t => !hidden[t.id] && !done[t.id]).forEach(() => remaining++));
   loadCustomTasks().forEach(t => { if (!done['custom_' + t.id]) remaining++; });
-  banner.innerHTML = '<span class="lc-pulse">⚡</span>'
-    + '<span class="lc-text">Last Chance Mode: showing only uncompleted tasks</span>'
+  banner.innerHTML = '<i class="lc-pulse ph-fill ph-lightning"></i>'
+    + '<span class="lc-text">Last chance mode: showing only what is still open</span>'
     + '<span class="lc-count">' + remaining + ' remaining</span>'
-    + '<button class="lc-close" onclick="toggleLastChance()" title="Exit Last Chance Mode">✕</button>';
+    + '<button class="lc-close" onclick="toggleLastChance()" title="Exit last chance mode"><i class="ph ph-x"></i></button>';
 }
 
 /* ═══════════════════════════════════════════
@@ -1547,7 +1761,7 @@ function renderCustomSection() {
   if (activeFilters.has('all')) {
     const lbl = document.createElement('div');
     lbl.className = 'priority-label p-custom';
-    lbl.textContent = '✦ Custom Tasks';
+    lbl.innerHTML = '<i class="ph ph-plus-circle"></i>Custom tasks';
     wrap.appendChild(lbl);
   }
 
@@ -1558,8 +1772,8 @@ function renderCustomSection() {
     addBar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;';
     const countText = tasks.length === 0 ? 'No custom tasks yet'
       : (tasks.filter(t => done['custom_' + t.id]).length + ' / ' + tasks.length + ' done');
-    addBar.innerHTML = '<div style="font-family:\'Cinzel\',serif;font-size:13px;color:var(--text-secondary);letter-spacing:0.05em;">' + countText + '</div>'
-      + '<button class="btn-primary" style="font-size:12px;padding:0.5rem 1.2rem;letter-spacing:0.1em;" onclick="openCustomModal()">+ Add Task</button>';
+    addBar.innerHTML = '<div class="rail-label">' + countText + '</div>'
+      + '<button class="btn-primary" onclick="openCustomModal()"><i class="ph ph-plus"></i>Add task</button>';
     wrap.appendChild(addBar);
   }
 
@@ -1575,10 +1789,10 @@ function renderCustomSection() {
       ? 'toggleYourListTask(\'' + id + '\')'
       : 'toggleCustom(\'' + t.id + '\',this)';
     const starCol = editingYourList
-      ? '<span style="flex-shrink:0;font-size:13px;color:' + (inList ? 'var(--light-gold)' : 'var(--text-muted)') + ';">' + (inList ? '⭐' : '☆') + '</span>'
-      : '<div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">'
+      ? '<span class="task-star" style="' + (inList ? '' : 'color:var(--text-600)') + '"><i class="' + (inList ? 'ph-fill ph-star' : 'ph ph-star') + '"></i></span>'
+      : '<div class="task-side">'
         + noteBtnHtml(id, notes)
-        + '<button class="task-del" title="Delete task" onclick="deleteCustomTask(event,\'' + t.id + '\')">✕</button>'
+        + '<button class="task-del" title="Delete task" onclick="deleteCustomTask(event,\'' + t.id + '\')"><i class="ph ph-trash"></i></button>'
         + '</div>';
     return '<div class="task' + (isDone ? ' done' : '') + (inList ? ' in-yourlist' : '') + '">'
       + '<div class="task-check" onclick="event.stopPropagation();' + checkFn + '" style="cursor:pointer;"></div>'
@@ -1591,7 +1805,7 @@ function renderCustomSection() {
       + '</div>';
   }
 
-  const emptyHtml = '<div class="custom-empty" style="border:none;padding:2.5rem 1rem;"><div style="font-size:2rem;margin-bottom:0.5rem;">✦</div>Nothing here yet. Hit <strong>+ Add Task</strong> above to get started.</div>';
+  const emptyHtml = '<div class="custom-empty" style="border:none;"><i class="ph ph-plus-circle empty-mark"></i>Nothing here yet. Hit <strong>Add task</strong> above to get started.</div>';
 
   if (isCustomOnly) {
     const body = document.createElement('div');
@@ -1605,13 +1819,14 @@ function renderCustomSection() {
     secHead.className = 'section-header' + (isOpen ? ' open' : '');
     secHead.setAttribute('onclick', 'toggleSection(\'custom\')');
     secHead.style.marginBottom = '0';
-    secHead.innerHTML = '<div class="section-icon icon-optional">✦</div>'
+    secHead.innerHTML = '<div class="section-icon"><i class="ph ph-plus-circle"></i></div>'
       + '<div class="section-title-wrap">'
-      + '<div class="section-title">Custom Tasks</div>'
+      + '<div class="section-title-row"><span class="section-title">Custom tasks</span></div>'
       + '<div class="section-meta">Your personal weekly to-dos · Saved per character · Never auto-reset</div>'
       + '</div>'
-      + '<span class="section-count"><span class="done">' + tasks.filter(t => done['custom_' + t.id]).length + '</span>&thinsp;/&thinsp;' + tasks.length + '</span>'
-      + '<span class="chevron" style="transform:rotate(' + (isOpen ? '0' : '-90') + 'deg)">▼</span>';
+      + '<span class="section-count"><span class="done">' + tasks.filter(t => done['custom_' + t.id]).length + '</span>'
+      + '<span class="goal-max"> / ' + tasks.length + '</span></span>'
+      + '<span class="chevron" style="transform:rotate(' + (isOpen ? '0' : '-90') + 'deg)"><i class="ph ph-caret-down"></i></span>';
     header.appendChild(secHead);
 
     const body = document.createElement('div');
@@ -1619,7 +1834,7 @@ function renderCustomSection() {
     body.id = 'body-custom';
     const addBtn = document.createElement('div');
     addBtn.style.cssText = 'padding:0.65rem 1rem; border-bottom:1px solid var(--border); display:flex; gap:0.6rem;';
-    addBtn.innerHTML = '<button class="btn-primary" style="font-size:11px;padding:0.35rem 0.9rem;" onclick="openCustomModal()">+ Add Task</button>';
+    addBtn.innerHTML = '<button class="btn-primary btn-sm" onclick="openCustomModal()"><i class="ph ph-plus"></i>Add task</button>';
     body.appendChild(addBtn);
     if (tasks.length === 0) {
       const emp = document.createElement('div');
@@ -1633,8 +1848,9 @@ function renderCustomSection() {
   }
 
   wrap.appendChild(header);
-  const container = document.getElementById('sections-container');
-  container.insertBefore(wrap, container.firstChild);
+  // Custom tasks close out the list rather than opening it: they are the
+  // user's own additions, not the week's headline content.
+  document.getElementById('sections-container').appendChild(wrap);
 }
 
 function escHtml(s) {
@@ -1702,11 +1918,13 @@ function _bisSlotRank(name) {
   return idx === -1 ? 999 : idx;
 }
 
+/* Slot art shipped in img/. There is no cloak icon, so Back is deliberately
+   absent: its socket renders as frame + plus rather than borrowing the chest
+   art, which would read as the wrong slot. */
 const _BIS_SLOT_ICONS = {
   'Head':      'img/headslot.webp',
   'Neck':      'img/neckslot.webp',
   'Shoulders': 'img/shoulderslot.webp',
-  'Back':      'img/chestslot.webp',
   'Chest':     'img/chestslot.webp',
   'Wrists':    'img/wristslot.webp',
   'Hands':     'img/handslot.webp',
@@ -1722,6 +1940,9 @@ const _BIS_SLOT_ICONS = {
   'Shield':    'img/secondaryhandslot.webp',
   'Ranged':    'img/mainhandslot.webp',
 };
+
+// The doll sockets use the same art (Back stays art-less, see above).
+const _BIS_SLOT_ART = _BIS_SLOT_ICONS;
 
 // Used in the BiS gear list modal rows
 function _bisSlotIcon(slot, itemName) {
@@ -1934,8 +2155,8 @@ function _renderBisPhase(phase) {
       const classesId  = cls.key.replace('deathknight','death-knight').replace('demonhunter','demon-hunter');
       const classDef   = CLASSES.find(c => c.id === classesId);
       const iconHtml   = classDef
-        ? `<img src="${classDef.icon}" style="width:20px;height:20px;flex-shrink:0;image-rendering:auto;">`
-        : `<span class="bis-class-icon">${cls.icon}</span>`;
+        ? `<img src="${classDef.icon}" class="bis-class-art" alt="">`
+        : `<i class="bis-class-icon ${cls.icon}"></i>`;
       return `<button class="bis-class-btn" style="${colorStyle}" onclick="_bisPickClass('${cls.key}')">
         ${iconHtml}
         <span class="bis-class-label">${cls.label}</span>
@@ -1947,7 +2168,7 @@ function _renderBisPhase(phase) {
     const cls = WOW_CLASSES.find(c => c.key === _bisClass);
     titleEl.textContent = cls.label;
     subEl.textContent   = `${cls.armor} armor · Choose a specialization.`;
-    breadEl.innerHTML   = `<button class="bis-crumb-btn" onclick="_renderBisPhase('class')">← Classes</button>`;
+    breadEl.innerHTML   = `<button class="bis-crumb-btn" onclick="_renderBisPhase('class')"><i class="ph ph-arrow-left"></i>Classes</button>`;
 
     const roleBadge = {
       tank: '<img src="img/tankrole.webp" style="width:14px;height:14px;vertical-align:middle;margin-left:4px;opacity:0.9;">',
@@ -1962,7 +2183,7 @@ function _renderBisPhase(phase) {
       return `<button class="bis-spec-btn" style="${dimmed}" onclick="_bisPickSpec('${sp.key}')">${sp.label}${role}${newTag}</button>`;
     }).join('');
     content.innerHTML   = `<div class="bis-spec-grid">${specs}</div>`;
-    footer.innerHTML    = '<button class="btn-cancel" onclick="_renderBisPhase(\'class\')">← Back</button>';
+    footer.innerHTML    = '<button class="btn-cancel" onclick="_renderBisPhase(\'class\')"><i class="ph ph-arrow-left"></i>Back</button>';
 
   } else if (phase === 'gear') {
     const cls  = WOW_CLASSES.find(c => c.key === _bisClass);
@@ -1971,8 +2192,8 @@ function _renderBisPhase(phase) {
 
     titleEl.textContent = `${cls.label}: ${sp.label}`;
     subEl.textContent   = `Select items to add to Your List as tasks. Each imports as a completable gear-tracking task.`;
-    breadEl.innerHTML   = `<button class="bis-crumb-btn" onclick="_renderBisPhase('class')">← Classes</button>
-      <span style="margin:0 0.3rem;opacity:0.5;">›</span>
+    breadEl.innerHTML   = `<button class="bis-crumb-btn" onclick="_renderBisPhase('class')"><i class="ph ph-arrow-left"></i>Classes</button>
+      <i class="ph ph-caret-right" style="opacity:0.5;margin:0 0.2rem;"></i>
       <button class="bis-crumb-btn" onclick="_renderBisPhase('spec')">${cls.label}</button>`;
 
     if (!data.length) {
@@ -1980,7 +2201,7 @@ function _renderBisPhase(phase) {
         BiS list for <strong>${cls.label} · ${sp.label}</strong> is coming soon.<br>
         Check <a href="https://www.icy-veins.com/wow/${_bisClass.replace('deathknight','death-knight').replace('demonhunter','demon-hunter')}-${_bisSpec}-pve-dps-gear-best-in-slot" target="_blank" rel="noopener">Icy Veins</a> for up-to-date gear recommendations.
       </div>`;
-      footer.innerHTML = '<button class="btn-cancel" onclick="_renderBisPhase(\'spec\')">← Back</button>';
+      footer.innerHTML = '<button class="btn-cancel" onclick="_renderBisPhase(\'spec\')"><i class="ph ph-arrow-left"></i>Back</button>';
       return;
     }
 
@@ -2012,8 +2233,8 @@ function _renderBisPhase(phase) {
       <div class="bis-gear-list">${rows}</div>`;
 
     footer.innerHTML = `
-      <button class="btn-cancel" onclick="_renderBisPhase('spec')">← Back</button>
-      <button class="btn-primary" onclick="_bisImportSelected()">⚔ Import Selected</button>`;
+      <button class="btn-cancel" onclick="_renderBisPhase('spec')"><i class="ph ph-arrow-left"></i>Back</button>
+      <button class="btn-primary" onclick="_bisImportSelected()"><i class="ph-fill ph-sword"></i>Import selected</button>`;
 
     // Fetch icons for items not yet in cache, then re-render if any found
     _fetchMissingBisIcons(data);
@@ -2194,10 +2415,10 @@ function renderSummaryTab(tab) {
 
   const tabBar = `
     <div class="summary-tabs">
-      <button class="summary-tab${tab==='current'?' active':''}" onclick="renderSummaryTab('current')">📊 ${currentChar}</button>
-      <button class="summary-tab${tab==='alts'?' active':''}" onclick="renderSummaryTab('alts')">👥 All Alts</button>
-      <button class="summary-tab" onclick="renderEfficiencyTab()">📈 Efficiency</button>
-      <button class="summary-tab" onclick="renderHeatmapTab()">🗺 Heatmap</button>
+      <button class="summary-tab${tab==='current'?' active':''}" onclick="renderSummaryTab('current')"><i class="ph ph-chart-bar"></i>${escHtml(charDisplayName(currentChar))}</button>
+      <button class="summary-tab${tab==='alts'?' active':''}" onclick="renderSummaryTab('alts')"><i class="ph ph-users"></i>All alts</button>
+      <button class="summary-tab" onclick="renderEfficiencyTab()"><i class="ph ph-chart-line-up"></i>Efficiency</button>
+      <button class="summary-tab" onclick="renderHeatmapTab()"><i class="ph ph-map-trifold"></i>Heatmap</button>
     </div>`;
 
   if (tab === 'current') {
@@ -2216,7 +2437,7 @@ function renderSummaryTab(tab) {
       const secDone = visible.filter(t => done[t.id]).length;
       grandTotal += visible.length;
       grandDone  += secDone;
-      rows.push({ title: sec.title, icon: sec.icon, iconClass: sec.iconClass, done: secDone, total: visible.length });
+      rows.push({ title: sec.title, icon: secIconClass(sec), done: secDone, total: visible.length });
     });
     const customTasks = isYLScope
       ? loadCustomTasks().filter(t => ylSet.has('custom_' + t.id) && !t.id.startsWith('bis_'))
@@ -2225,7 +2446,7 @@ function renderSummaryTab(tab) {
       const cDone = customTasks.filter(t => done['custom_' + t.id]).length;
       grandTotal += customTasks.length;
       grandDone  += cDone;
-      rows.push({ title: 'Custom Tasks', icon: '✦', iconClass: 'icon-optional', done: cDone, total: customTasks.length });
+      rows.push({ title: 'Custom tasks', icon: 'ph ph-plus-circle', done: cDone, total: customTasks.length });
     }
     const pct = grandTotal ? Math.round((grandDone / grandTotal) * 100) : 0;
     content.innerHTML = tabBar + `
@@ -2235,12 +2456,12 @@ function renderSummaryTab(tab) {
         const complete = r.done === r.total && r.total > 0;
         return `
         <div class="summary-section">
-          <div class="section-icon ${r.iconClass}" style="width:22px;height:22px;font-size:11px;flex-shrink:0;">${r.icon}</div>
+          <span class="section-icon"><i class="${r.icon}"></i></span>
           <span class="summary-label" title="${r.title}">${r.title}</span>
           <div class="summary-bar-track">
             <div class="summary-bar-fill${complete?' complete':''}" style="width:${p}%"></div>
           </div>
-          <span class="summary-count" style="${complete?'color:var(--success-bright)':''}">${r.done}/${r.total}</span>
+          <span class="summary-count"${complete ? ' style="color:var(--arc-400)"' : ''}>${r.done}/${r.total}</span>
         </div>`;
       }).join('')}
       <div class="summary-total">
@@ -2274,10 +2495,10 @@ function renderSummaryTab(tab) {
     });
 
     const altRowHtml = r => {
-      const barColor = r.pct === 100 ? 'var(--success-bright)'
-        : r.pct >= 60 ? 'var(--void-glow)'
-        : r.pct >= 30 ? 'var(--light-gold)'
-        : 'var(--void-purple)';
+      const barColor = r.pct === 100 ? 'var(--arc-300)'
+        : r.pct >= 60 ? 'var(--arc-400)'
+        : r.pct >= 30 ? 'var(--arc-600)'
+        : 'var(--arc-800)';
       const clsColor = r.clsDef ? r.clsDef.color : 'var(--border-bright)';
       return '<div class="alt-row' + (r.name === currentChar ? ' alt-row-active' : '') + '" onclick="closeSummary();switchChar(\'' + r.name + '\')">'
         + '<div class="alt-row-left">'
@@ -2288,7 +2509,7 @@ function renderSummaryTab(tab) {
         + r.name + (r.name === currentChar ? ' <span style="color:var(--text-muted);font-size:10px;">(active)</span>' : '')
         + '</div></div>'
         + '<div class="alt-row-right">'
-        + (r.streak > 0 ? '<span class="alt-streak" title="' + r.streak + ' week streak">🔥 ' + r.streak + '</span>' : '')
+        + (r.streak > 0 ? '<span class="alt-streak" title="' + r.streak + ' week streak"><i class="ph-fill ph-flame"></i>' + r.streak + '</span>' : '')
         + '<div class="alt-progress-wrap">'
         + '<div class="alt-progress-track"><div class="alt-progress-fill" style="width:' + r.pct + '%;background:' + barColor + ';"></div></div>'
         + '<span class="alt-progress-label" style="color:' + (r.pct===100?'var(--success-bright)':'var(--text-secondary)') + ';">' + r.done + '/' + r.total + '</span>'
@@ -2374,6 +2595,8 @@ function copyDiscordSummary() {
   const partial  = rows.filter(r => r.done > 0 && r.done < r.total);
   const untouched = rows.filter(r => r.done === 0);
 
+  // Outbound Discord text, not page chrome: these glyphs are the right medium
+  // for a chat message and must NOT become Phosphor markup.
   const sectionLines = [];
   if (complete.length)  sectionLines.push('✅ ' + complete.map(r => r.title).join(' · '));
   if (partial.length)   sectionLines.push('🔄 ' + partial.map(r => r.title + ' ' + r.done + '/' + r.total).join(' · '));
@@ -2395,7 +2618,7 @@ function copyDiscordSummary() {
   ].join('\n');
 
   navigator.clipboard.writeText(text).then(() => {
-    showShareToast('📋 Summary copied for Discord!');
+    showShareToast('Summary copied for Discord');
   }).catch(() => {
     prompt('Copy this summary:', text);
   });
@@ -2432,28 +2655,28 @@ function openExportImport() {
   btns.innerHTML = `<button class="btn-cancel" onclick="closeDataModal()">Close</button>`;
   content.innerHTML = `
     <div class="data-option" onclick="exportCharData()">
-      <div class="data-option-icon">📤</div>
+      <div class="data-option-icon"><i class="ph ph-upload-simple"></i></div>
       <div class="data-option-body">
         <div class="data-option-title">Export Character</div>
         <div class="data-option-desc">Download ${currentChar}'s progress, custom tasks, hidden tasks, and Your List as a JSON file.</div>
       </div>
     </div>
     <div class="data-option" onclick="openImportPicker()">
-      <div class="data-option-icon">📥</div>
+      <div class="data-option-icon"><i class="ph ph-download-simple"></i></div>
       <div class="data-option-body">
         <div class="data-option-title">Import Character</div>
         <div class="data-option-desc">Load a previously exported JSON file to restore or transfer character data.</div>
       </div>
     </div>
     <div class="data-option" onclick="exportAllData()">
-      <div class="data-option-icon">💾</div>
+      <div class="data-option-icon"><i class="ph ph-floppy-disk"></i></div>
       <div class="data-option-body">
         <div class="data-option-title">Export All Characters</div>
         <div class="data-option-desc">Download every character's data as a single backup JSON file.</div>
       </div>
     </div>
     <div class="data-option" onclick="closeDataModal();localStorage.removeItem('wow_mn_welcomed');openWelcome()">
-      <div class="data-option-icon">🧭</div>
+      <div class="data-option-icon"><i class="ph ph-compass"></i></div>
       <div class="data-option-body">
         <div class="data-option-title">Site Guide</div>
         <div class="data-option-desc">Reopen the feature walkthrough shown on your first visit.</div>
@@ -2529,12 +2752,12 @@ function showImportPreview(data) {
       <strong>Characters:</strong>
       <div style="margin-top:0.4rem;">${charList}</div>
     </div>
-    <div class="import-warning">⚠ Existing data for matching characters will be overwritten. This cannot be undone.</div>`;
+    <div class="import-warning"><i class="ph-fill ph-warning-diamond"></i>Existing data for matching characters will be overwritten. This cannot be undone.</div>`;
 
   window._pendingImport = data;
   btns.innerHTML = `
-    <button class="btn-cancel" onclick="openExportImport()">← Back</button>
-    <button class="btn-primary" onclick="confirmFileImport()">✓ Confirm Import</button>`;
+    <button class="btn-cancel" onclick="openExportImport()"><i class="ph ph-arrow-left"></i>Back</button>
+    <button class="btn-primary" onclick="confirmFileImport()"><i class="ph ph-check"></i>Confirm import</button>`;
 }
 
 function confirmFileImport() {
@@ -2597,7 +2820,7 @@ function whatsNext() {
   }
 
   if (candidates.length === 0) {
-    alert('Everything is done! Great work this week. 🎉');
+    alert('Everything is done. Great work this week.');
     _confetti.celebrate();
     return;
   }
@@ -2608,9 +2831,6 @@ function whatsNext() {
   // Switch to the right view to reveal it
   if (!activeFilters.has('all')) {
     activeFilters = new Set(['all']);
-    document.querySelectorAll('.tab-btn').forEach(b => {
-      b.classList.toggle('active', b.getAttribute('data-filter') === 'all');
-    });
     render();
   }
 
@@ -2680,13 +2900,13 @@ function noteHtml(id, notes) {
         oninput="saveNote('${id}')"
         onblur="saveNote('${id}')"
       >${escHtml(val)}</textarea>
-      <div class="task-note-saved" id="note-saved-${id}">✓ Saved</div>
+      <div class="task-note-saved" id="note-saved-${id}"><i class="ph ph-check"></i>Saved</div>
     </div>`;
 }
 
 function noteBtnHtml(id, notes) {
   const hasNote = !!(notes[id]);
-  return `<button class="task-note-toggle${hasNote ? ' has-note' : ''}" id="note-btn-${id}" title="${hasNote ? 'Edit note' : 'Add note'}" onclick="toggleNote(event,'${id}')">📝</button>`;
+  return `<button class="task-note-toggle${hasNote ? ' has-note' : ''}" id="note-btn-${id}" title="${hasNote ? 'Edit note' : 'Add note'}" onclick="toggleNote(event,'${id}')"><i class="ph ph-note-pencil"></i></button>`;
 }
 
 /* ═══════════════════════════════════════════
@@ -2732,7 +2952,7 @@ function renderInlineHistory() {
   history.filter(e => e.week !== currentWeek).slice(0, 11).forEach(e => allWeeks.push(e));
 
   if (allWeeks.length === 0) {
-    el.innerHTML = '<span style="font-family:\'Cinzel\',serif;font-size:11px;color:var(--text-muted);font-style:italic;">No history yet</span>';
+    el.innerHTML = '<div class="inline-history-label">No history yet</div>';
     return;
   }
 
@@ -2745,13 +2965,13 @@ function renderInlineHistory() {
   const bars = allWeeks.map(e => {
     const pct  = e.total ? Math.round((e.done / e.total) * 100) : 0;
     const full = e.done === e.total && e.total > 0;
-    const color = full ? 'var(--success-bright)'
-      : pct >= 60 ? 'var(--void-glow)'
-      : pct >= 30 ? 'var(--light-gold)'
-      : 'var(--void-purple)';
+    const color = full ? 'var(--arc-300)'
+      : pct >= 60 ? 'var(--arc-400)'
+      : pct >= 30 ? 'var(--arc-600)'
+      : 'var(--arc-800)';
     const d     = new Date(e.week + 'T15:00:00Z');
     const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
-    const title = `${label}: ${e.done}/${e.total} (${pct}%)${full?' ⭐':''}`;
+    const title = `${label}: ${e.done}/${e.total} (${pct}%)${full?' · complete':''}`;
     return `<div class="hist-bar-wrap" title="${title}">
       <div class="hist-bar-track">
         <div class="hist-bar-fill${e.isCurrent?' hist-bar-now':''}" style="height:${Math.max(4,pct)}%;background:${color};"></div>
@@ -2760,26 +2980,25 @@ function renderInlineHistory() {
     </div>`;
   }).join('');
 
+  const avg = Math.round(allWeeks.reduce((sum, e) => sum + (e.done / e.total), 0) / allWeeks.length * 100);
+  const streakLine = streak > 0
+    ? `${streak}-week streak intact`
+    : (allWeeks.length > 1 ? `${allWeeks.length} weeks tracked` : 'First week tracked');
+
   el.innerHTML = `
     <div class="inline-history-inner">
-      <div class="inline-history-label">History</div>
+      <div class="inline-history-label">
+        <i class="ph-fill ph-flame"></i><span class="inline-streak">${streakLine}</span>
+      </div>
       <div class="inline-history-bars">${bars}</div>
       <div class="inline-history-stats">
         <div class="inline-hist-stat">
-          <div class="inline-hist-stat-val">${allWeeks.length}</div>
-          <div class="inline-hist-stat-label">Weeks</div>
+          <div class="inline-hist-stat-val">${best ? Math.round((best.done / best.total) * 100) : 0}%</div>
+          <div class="inline-hist-stat-label">Best week</div>
         </div>
         <div class="inline-hist-stat">
-          <div class="inline-hist-stat-val" style="color:var(--light-gold);">🔥 ${streak}</div>
-          <div class="inline-hist-stat-label">Streak</div>
-        </div>
-        <div class="inline-hist-stat">
-          <div class="inline-hist-stat-val" style="color:var(--success-bright);">${best ? Math.round((best.done/best.total)*100) : 0}%</div>
-          <div class="inline-hist-stat-label">Best Week</div>
-        </div>
-        <div class="inline-hist-stat">
-          <div class="inline-hist-stat-val">${Math.round(allWeeks.reduce((s,e) => s + (e.done/e.total), 0) / allWeeks.length * 100)}%</div>
-          <div class="inline-hist-stat-label">Avg</div>
+          <div class="inline-hist-stat-val">${avg}%</div>
+          <div class="inline-hist-stat-label">Average</div>
         </div>
       </div>
     </div>`;
@@ -2799,10 +3018,10 @@ function renderEfficiencyTab() {
   const weekLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 
   const tabBar = '<div class="summary-tabs">'
-    + '<button class="summary-tab" onclick="renderSummaryTab(\'current\')">📊 ' + currentChar + '</button>'
-    + '<button class="summary-tab" onclick="renderSummaryTab(\'alts\')">👥 All Alts</button>'
-    + '<button class="summary-tab active" onclick="renderEfficiencyTab()">📈 Efficiency</button>'
-    + '<button class="summary-tab" onclick="renderHeatmapTab()">🗺 Heatmap</button>'
+    + '<button class="summary-tab" onclick="renderSummaryTab(\'current\')"><i class="ph ph-chart-bar"></i>' + escHtml(charDisplayName(currentChar)) + '</button>'
+    + '<button class="summary-tab" onclick="renderSummaryTab(\'alts\')"><i class="ph ph-users"></i>All alts</button>'
+    + '<button class="summary-tab active" onclick="renderEfficiencyTab()"><i class="ph ph-chart-line-up"></i>Efficiency</button>'
+    + '<button class="summary-tab" onclick="renderHeatmapTab()"><i class="ph ph-map-trifold"></i>Heatmap</button>'
     + '</div>';
 
   // Gather per-section stats from history entries that have section data
@@ -2822,8 +3041,7 @@ function renderEfficiencyTab() {
     const rate    = s.totalTasks ? (s.totalDone / s.totalTasks) : 0;
     const pct     = Math.round(rate * 100);
     const secDef  = SECTIONS.find(sec => sec.id === id);
-    const icon    = secDef ? secDef.icon : '✦';
-    const iconCls = secDef ? secDef.iconClass : 'icon-optional';
+    const icon    = secDef ? secIconClass(secDef) : 'ph ph-plus-circle';
     // Trend: compare last 3 weeks vs prior 3 weeks
     const recent  = weeksWithData.slice(0, 3).filter(e => e.sections && e.sections[id]);
     const older   = weeksWithData.slice(3, 6).filter(e => e.sections && e.sections[id]);
@@ -2831,14 +3049,14 @@ function renderEfficiencyTab() {
     if (recent.length >= 2 && older.length >= 1) {
       const rAvg = recent.reduce((a, e) => a + (e.sections[id].done / e.sections[id].total), 0) / recent.length;
       const oAvg = older.reduce((a, e) => a + (e.sections[id].done / e.sections[id].total), 0) / older.length;
-      if (rAvg - oAvg > 0.15)       trend = '<span class="eff-trend up" title="Improving">↑</span>';
-      else if (oAvg - rAvg > 0.15)  trend = '<span class="eff-trend down" title="Declining">↓</span>';
-      else                           trend = '<span class="eff-trend flat" title="Steady">→</span>';
+      if (rAvg - oAvg > 0.15)       trend = '<span class="eff-trend up" title="Improving"><i class="ph ph-arrow-up"></i></span>';
+      else if (oAvg - rAvg > 0.15)  trend = '<span class="eff-trend down" title="Declining"><i class="ph ph-arrow-down"></i></span>';
+      else                           trend = '<span class="eff-trend flat" title="Steady"><i class="ph ph-arrow-right"></i></span>';
     }
     // Nudge for consistently skipped sections
     const skipNudge = (s.appearances >= 3 && pct < 25)
       ? '<div class="eff-nudge">Skipped most weeks. Consider hiding this section if it\'s not relevant.</div>' : '';
-    return { id, title: s.title, icon, iconCls, pct, appearances: s.appearances, trend, skipNudge };
+    return { id, title: s.title, icon, pct, appearances: s.appearances, trend, skipNudge };
   }).sort((a, b) => b.pct - a.pct);
 
   if (weeksWithData.length === 0) {
@@ -2847,12 +3065,12 @@ function renderEfficiencyTab() {
   }
 
   const rowsHtml = rows.map(r => {
-    const barColor = r.pct >= 80 ? 'var(--success-bright)'
-      : r.pct >= 50 ? 'var(--void-glow)'
-      : r.pct >= 25 ? 'var(--light-gold)'
-      : 'var(--void-purple)';
+    const barColor = r.pct >= 80 ? 'var(--arc-300)'
+      : r.pct >= 50 ? 'var(--arc-400)'
+      : r.pct >= 25 ? 'var(--arc-600)'
+      : 'var(--arc-800)';
     return '<div class="eff-row">'
-      + '<div class="section-icon ' + r.iconCls + '" style="width:22px;height:22px;font-size:11px;flex-shrink:0;">' + r.icon + '</div>'
+      + '<span class="section-icon eff-icon"><i class="' + r.icon + '"></i></span>'
       + '<span class="summary-label" title="' + r.title + '">' + r.title + '</span>'
       + r.trend
       + '<div class="summary-bar-track">'
@@ -2866,7 +3084,7 @@ function renderEfficiencyTab() {
 
   content.innerHTML = tabBar
     + '<div class="summary-week">Based on ' + weeksWithData.length + ' week' + (weeksWithData.length !== 1 ? 's' : '') + ' of data for ' + currentChar + ' · Week of ' + weekLabel + '</div>'
-    + '<div class="eff-legend"><span class="eff-trend up">↑</span> Improving &nbsp; <span class="eff-trend flat">→</span> Steady &nbsp; <span class="eff-trend down">↓</span> Declining</div>'
+    + '<div class="eff-legend"><span class="eff-trend up"><i class="ph ph-arrow-up"></i></span> Improving <span class="eff-trend flat"><i class="ph ph-arrow-right"></i></span> Steady <span class="eff-trend down"><i class="ph ph-arrow-down"></i></span> Declining</div>'
     + rowsHtml;
 }
 
@@ -2877,10 +3095,10 @@ function renderHeatmapTab() {
   const currentWeek = getWeekKey();
 
   const tabBar = '<div class="summary-tabs">'
-    + '<button class="summary-tab" onclick="renderSummaryTab(\'current\')">📊 ' + currentChar + '</button>'
-    + '<button class="summary-tab" onclick="renderSummaryTab(\'alts\')">👥 All Alts</button>'
-    + '<button class="summary-tab" onclick="renderEfficiencyTab()">📈 Efficiency</button>'
-    + '<button class="summary-tab active" onclick="renderHeatmapTab()">🗺 Heatmap</button>'
+    + '<button class="summary-tab" onclick="renderSummaryTab(\'current\')"><i class="ph ph-chart-bar"></i>' + escHtml(charDisplayName(currentChar)) + '</button>'
+    + '<button class="summary-tab" onclick="renderSummaryTab(\'alts\')"><i class="ph ph-users"></i>All alts</button>'
+    + '<button class="summary-tab" onclick="renderEfficiencyTab()"><i class="ph ph-chart-line-up"></i>Efficiency</button>'
+    + '<button class="summary-tab active" onclick="renderHeatmapTab()"><i class="ph ph-map-trifold"></i>Heatmap</button>'
     + '</div>';
 
   if (characters.length === 0) {
@@ -2933,13 +3151,14 @@ function renderHeatmapTab() {
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
   }
 
+  // One accent ramp, four steps: the heatmap reads by lightness, not by hue.
   function cellBg(pct, hasData) {
-    if (!hasData)    return 'var(--bg-deep)';
-    if (pct === 100) return 'var(--success-bright)';
-    if (pct >= 60)   return 'var(--void-glow)';
-    if (pct >= 30)   return 'var(--light-gold)';
-    if (pct > 0)     return '#7744aa';
-    return 'var(--bg-panel)';
+    if (!hasData)    return 'var(--ink-900)';
+    if (pct === 100) return 'var(--arc-300)';
+    if (pct >= 60)   return 'var(--arc-400)';
+    if (pct >= 30)   return 'var(--arc-600)';
+    if (pct > 0)     return 'var(--arc-800)';
+    return 'var(--ink-800)';
   }
 
   // Sort chars by group order
@@ -2956,7 +3175,7 @@ function renderHeatmapTab() {
 
   const rowsHtml = sorted.map(c => {
     const clsColor  = c.clsDef ? c.clsDef.color : 'var(--border-bright)';
-    const groupDot  = GROUP_META[c.group] ? '<span style="color:' + GROUP_META[c.group].color + ';margin-right:3px;">' + GROUP_META[c.group].dot + '</span>' : '';
+    const groupDot  = GROUP_META[c.group] ? '<i class="' + GROUP_META[c.group].icon + '" style="color:' + GROUP_META[c.group].color + ';margin-right:4px;font-size:10px;"></i>' : '';
     const isActive  = c.name === currentChar;
 
     const cells = weeks.map(w => {
@@ -2969,7 +3188,7 @@ function renderHeatmapTab() {
         ? c.name + ' · ' + fmtWeekPlain(w) + ': ' + entry.done + '/' + entry.total + ' (' + pct + '%)'
         : c.name + ' · ' + fmtWeekPlain(w) + ': no data';
       const opacity = hasData ? '' : ';opacity:0.18';
-      const label   = pct === 100 && hasData ? '✓' : (hasData && pct > 0 ? pct + '%' : '');
+      const label   = pct === 100 && hasData ? '<i class="ph-fill ph-check"></i>' : (hasData && pct > 0 ? pct + '%' : '');
       return '<div class="hm-cell' + (isCur ? ' hm-cur' : '') + '" style="background:' + bg + opacity + ';" title="' + tooltip + '">' + label + '</div>';
     }).join('');
 
@@ -2988,11 +3207,11 @@ function renderHeatmapTab() {
     + rowsHtml
     + '</div>'
     + '<div class="hm-legend">'
-    + '<span class="hm-swatch" style="background:var(--success-bright)"></span> 100%'
-    + ' <span class="hm-swatch" style="background:var(--void-glow)"></span> 60–99%'
-    + ' <span class="hm-swatch" style="background:var(--light-gold)"></span> 30–59%'
-    + ' <span class="hm-swatch" style="background:#7744aa"></span> 1–29%'
-    + ' <span class="hm-swatch" style="background:var(--bg-deep);opacity:0.18;"></span> No data'
+    + '<span class="hm-swatch" style="background:var(--arc-300)"></span> 100%'
+    + ' <span class="hm-swatch" style="background:var(--arc-400)"></span> 60-99%'
+    + ' <span class="hm-swatch" style="background:var(--arc-600)"></span> 30-59%'
+    + ' <span class="hm-swatch" style="background:var(--arc-800)"></span> 1-29%'
+    + ' <span class="hm-swatch" style="background:var(--ink-900)"></span> No data'
     + '</div>';
 }
 
@@ -3030,7 +3249,7 @@ function renderInlineEvent() {
     inner = `<span class="inline-event-none">No upcoming events</span>`;
   }
 
-  el.innerHTML = `${inner}<a href="events.html" class="inline-event-btn">📅 All Events</a>`;
+  el.innerHTML = `<i class="ph-fill ph-warning-diamond"></i>${inner}<a href="events.html" class="inline-event-btn">All events<i class="ph ph-arrow-right"></i></a>`;
 }
 
 /* ═══════════════════════════════════════════
@@ -3040,62 +3259,62 @@ function renderInlineEvent() {
 ═══════════════════════════════════════════ */
 const WELCOME_STEPS = [
   {
-    icon: '⚜️',
+    icon: 'ph-fill ph-moon-stars',
     title: 'Welcome to The Azeroth Agenda',
     body: 'Your weekly reset tracker for World of Warcraft. Every character, every task, every boss, all in one place. Make every Tuesday count.',
     note: null,
   },
   {
-    icon: '🔑',
+    icon: 'ph ph-key',
     title: 'Choose Your Experience',
     body: 'Connect Battle.net for automatic syncing, or dive in offline and track manually.',
     note: null,
     interactive: 'bnet-choice',
   },
   {
-    icon: '⬇️',
+    icon: 'ph ph-download-simple',
     title: 'Import Your Characters',
     body: 'Select the characters you want to track. All level 80+ characters on your account are listed below.',
     note: null,
     interactive: 'bnet-import',
   },
   {
-    icon: '🧝',
+    icon: 'ph ph-user-plus',
     title: 'Add Your Characters',
     body: 'Each character tracks its own progress independently. Add your main to get started. You can add alts anytime from the character bar.',
     note: null,
     interactive: 'char-setup',
   },
   {
-    icon: '📜',
+    icon: 'ph ph-scroll',
     title: 'Build Your List',
     body: '<strong>Your List</strong> is your personal weekly checklist: only the tasks that matter to you. Pick a preset to get started instantly, or skip and build it yourself.',
     note: null,
     interactive: 'list-setup',
   },
   {
-    icon: '🏆',
+    icon: 'ph-fill ph-trophy',
     title: 'Everything That\'s Tracked',
     body: '<ul class="welcome-feature-list">'
       + '<li><strong>Raids:</strong> per-boss bubble tracking across all four difficulties; boss kills auto-checked from Battle.net after each reset</li>'
       + '<li><strong>Mythic+:</strong> weekly run counter with Vault Preview showing reward tiers per key level; auto-filled from your API data</li>'
       + '<li><strong>Delves:</strong> tier selector and run counting toward the Great Vault</li>'
-      + '<li><strong>⚔️ BiS Gear:</strong> all 40 specs covered; items auto-checked off when you equip them via armory sync</li>'
+      + '<li><strong>BiS gear:</strong> all 40 specs covered; items auto-checked off when you equip them via armory sync</li>'
       + '<li><strong>Custom Tasks:</strong> add anything not in the default list</li>'
-      + '<li><strong>📊 Summary · ⚡ Last Chance · 🔗 Share Plan:</strong> weekly history, focus mode, and shareable links</li>'
+      + '<li><strong>Summary, last chance, share plan:</strong> weekly history, focus mode, and shareable links</li>'
       + '</ul>',
     note: 'Everything resets automatically each Tuesday at 15:00 UTC.',
   },
   {
-    icon: '🌟',
+    icon: 'ph-fill ph-shooting-star',
     title: "You're All Set!",
     body: 'Your progress saves automatically every time you check something off. Come back after each reset and work through your list.'
       + '<ul class="welcome-feature-list" style="margin-top:0.75rem;">'
-      + '<li>Use <strong>🔑 Battle.net</strong> in the header to connect your account at any time</li>'
-      + '<li>Once connected, hit <strong>🔄 Sync</strong> to pull your latest data from Blizzard</li>'
-      + '<li>Check <strong>📅 Events</strong> and <strong>📋 Changelog</strong> in the header to stay up to date</li>'
+      + '<li>Use <strong>Battle.net</strong> at the foot of the rail to connect your account at any time</li>'
+      + '<li>Once connected, hit <strong>Sync</strong> in the roster header to pull your latest data from Blizzard</li>'
+      + '<li>Check <strong>Events</strong> and <strong>Changelog</strong> to stay up to date</li>'
       + '</ul>',
-    note: 'Reopen this guide anytime from the ⇅ Data menu.',
+    note: 'Reopen this guide anytime from the character data menu in the utility bar.',
   },
 ];
 
@@ -3152,8 +3371,8 @@ function loginWithBnet() {
     if (welcomeBtn) { welcomeBtn.textContent = 'Connecting…'; welcomeBtn.disabled = true; }
   }
   function _resetBtns() {
-    if (loginEl)    { loginEl.textContent = '🔑 Battle.net'; loginEl.style.opacity = ''; loginEl.style.pointerEvents = ''; }
-    if (welcomeBtn) { welcomeBtn.textContent = 'Connect Battle.net →'; welcomeBtn.disabled = false; }
+    if (loginEl)    { loginEl.innerHTML = '<i class="ph ph-key"></i>Battle.net'; loginEl.style.opacity = ''; loginEl.style.pointerEvents = ''; }
+    if (welcomeBtn) { welcomeBtn.innerHTML = 'Connect Battle.net<i class="ph ph-arrow-right"></i>'; welcomeBtn.disabled = false; }
   }
 
   // Try popup first: keeps the user on the page
@@ -3240,7 +3459,7 @@ function renderWelcomeStep() {
     '<span class="welcome-dot' + (i === _welcomeStep ? ' active' : '') + '"></span>'
   ).join('');
 
-  document.getElementById('welcome-icon').textContent  = step.icon;
+  document.getElementById('welcome-icon').innerHTML    = '<i class="' + step.icon + '"></i>';
   document.getElementById('welcome-title').textContent = step.title;
   document.getElementById('welcome-body').innerHTML    = step.body;
 
@@ -3263,7 +3482,7 @@ function renderWelcomeStep() {
       + '<li>BiS items checked off when you equip them</li>'
       + '<li>Progress backed up to the cloud</li>'
       + '</ul>'
-      + '<button class="welcome-bnet-login-btn" onclick="loginWithBnet()">Connect Battle.net →</button>'
+      + '<button class="welcome-bnet-login-btn" onclick="loginWithBnet()">Connect Battle.net<i class="ph ph-arrow-right"></i></button>'
       + '</div>'
       + '<div class="welcome-bnet-card">'
       + '<div class="welcome-bnet-card-tag" style="color:var(--text-muted);">No account needed</div>'
@@ -3275,7 +3494,7 @@ function renderWelcomeStep() {
       + '<li>Weekly history &amp; streaks</li>'
       + '<li>Saves locally in your browser</li>'
       + '</ul>'
-      + '<button class="welcome-offline-btn" onclick="_welcomeChooseOffline()">Continue Offline →</button>'
+      + '<button class="welcome-offline-btn" onclick="_welcomeChooseOffline()">Continue offline<i class="ph ph-arrow-right"></i></button>'
       + '</div>'
       + '</div>';
   } else if (step.interactive === 'bnet-import') {
@@ -3301,14 +3520,14 @@ function renderWelcomeStep() {
           + '<div class="beginner-stage-label">' + s.label + '</div>'
           + '<div class="beginner-stage-sub">' + s.sublabel + '</div>'
           + '</div>'
-          + '<span class="beginner-stage-arrow">→</span>'
+          + '<span class="beginner-stage-arrow"><i class="ph ph-arrow-right"></i></span>'
           + '</div>'
         ).join('')
       + '</div>'
       + '<div class="welcome-stage-skip">or <button class="welcome-skip-inline" onclick="welcomeNext()">skip: I\'ll build it manually</button></div>';
   } else if (step.interactive === 'char-setup') {
     const hint = _welcomeIsLoggedIn()
-      ? '<div class="welcome-import-hint">💡 After setup, use <strong>⬇ Import</strong> in the character bar to pull all your alts from Battle.net automatically.</div>'
+      ? '<div class="welcome-import-hint"><i class="ph ph-info"></i>After setup, use <strong>Import</strong> in the roster header to pull all your alts from Battle.net automatically.</div>'
       : '';
     interactEl.innerHTML =
       '<div class="welcome-char-form" id="welcome-char-form">'
@@ -3337,7 +3556,7 @@ function renderWelcomeStep() {
     nextBtn.style.display = 'none';
   } else {
     nextBtn.style.display = '';
-    nextBtn.textContent = isLast ? "Let's Go!" : 'Next →';
+    nextBtn.innerHTML = isLast ? "Let's go" : 'Next<i class="ph ph-arrow-right"></i>';
     // Char-setup: Next is locked until the user has added at least one real character.
     nextBtn.disabled = (_welcomeStep === _WELCOME_CHAR_STEP && !characters.some(c => c !== 'Main'));
   }
@@ -3362,7 +3581,7 @@ function welcomeAddChar() {
 
   const form = document.getElementById('welcome-char-form');
   if (form) {
-    form.innerHTML = '<div class="welcome-char-success">✓ <strong>' + name + '</strong> added. Let\'s keep going!</div>';
+    form.innerHTML = '<div class="welcome-char-success"><i class="ph ph-check"></i><strong>' + name + '</strong> added. Let\'s keep going.</div>';
   }
   setTimeout(welcomeNext, 900);
 }
@@ -3373,7 +3592,7 @@ function welcomeApplyStage(stageId) {
   const label = stage ? stage.label.split(': ')[0] : stageId;
   const interactEl = document.getElementById('welcome-interactive');
   if (interactEl) {
-    interactEl.innerHTML = '<div class="welcome-char-success">✓ Your List set up for <strong>' + label + '</strong>!</div>';
+    interactEl.innerHTML = '<div class="welcome-char-success"><i class="ph ph-check"></i>Your list set up for <strong>' + label + '</strong>.</div>';
   }
   setTimeout(welcomeNext, 900);
 }
@@ -3428,7 +3647,7 @@ function _renderWelcomeImportList(el) {
     }
   });
   html += '</div>'
-    + '<button class="btn-primary" style="width:100%;" onclick="_welcomeAddBnetChars()">✓ Add Selected Characters</button>';
+    + '<button class="btn-primary" style="width:100%;justify-content:center;" onclick="_welcomeAddBnetChars()"><i class="ph ph-check"></i>Add selected characters</button>';
   el.innerHTML = html;
 }
 
@@ -3451,7 +3670,7 @@ function _welcomeAddBnetChars() {
     renderChars(); render();
     var interactEl = document.getElementById('welcome-interactive');
     if (interactEl) {
-      interactEl.innerHTML = '<div class="welcome-char-success">✓ ' + added + ' character' + (added !== 1 ? 's' : '') + ' added. Syncing armory data in the background…</div>';
+      interactEl.innerHTML = '<div class="welcome-char-success"><i class="ph ph-check"></i>' + added + ' character' + (added !== 1 ? 's' : '') + ' added. Syncing armory data in the background…</div>';
     }
     if (typeof autoSyncArmory === 'function') autoSyncArmory();
     setTimeout(welcomeNext, 1200);
@@ -3472,7 +3691,7 @@ function openWhatsNew() {
   const v = VERSIONS[0];
   const isReturning = !!localStorage.getItem('wow_mn_seen_version');
 
-  document.getElementById('wn-icon').textContent = isReturning ? '🔮' : '🌙';
+  document.getElementById('wn-icon').innerHTML = '<i class="' + (isReturning ? 'ph-fill ph-sparkle' : 'ph-fill ph-moon-stars') + '"></i>';
   document.getElementById('wn-title').textContent = isReturning
     ? 'Welcome back, ' + currentChar + '!'
     : "What's New";
@@ -3504,7 +3723,7 @@ function closeWhatsNew() {
 }
 
 /* ── INIT ── */
-renderChars(); renderClassLinksBar(); render(); renderInlineHistory(); renderInlineEvent(); updateCountdown(); setInterval(updateCountdown, 1000); _fetchResetTime();
+renderChars(); renderNav(); renderClassLinksBar(); render(); renderInlineHistory(); renderInlineEvent(); updateCountdown(); setInterval(updateCountdown, 1000); _fetchResetTime();
 updateLastChanceBtn(); renderLastChanceBanner();
 renderEventAlerts();
 function shouldShowWelcome() {
@@ -3525,13 +3744,10 @@ if (shouldShowWelcome()) {
   openWhatsNew();
 }
 
-// Sync toolbar button labels to persisted state
-document.getElementById('btn-theme').textContent   = isLightMode ? '🌙 Dark'   : '☀️ Light';
-document.getElementById('btn-compact').textContent  = isCompact   ? '⊞ Full'   : '⊟ Compact';
-if (isCompact) {
-  document.getElementById('btn-compact').style.color       = 'var(--void-glow)';
-  document.getElementById('btn-compact').style.borderColor = 'var(--void-purple)';
-}
+// Sync toolbar button icons to persisted state
+updateThemeBtn();
+updateCompactBtn();
+updateViewToggleBtn();
 
 
 /* ---- Modal overlay close listeners ---- */
@@ -3589,7 +3805,7 @@ async function openImportChars() {
     const detail = err && err.message ? ' (' + err.message + ')' : '';
     content.innerHTML = '<div style="color:var(--color-danger);padding:0.5rem 0;">'
       + 'Failed to load characters' + detail + '.'
-      + ' <button class="btn-reset-all" style="margin-top:0.4rem;" onclick="openImportChars()">↺ Retry</button>'
+      + ' <button class="btn btn-sm" style="margin-top:0.4rem;" onclick="openImportChars()"><i class="ph ph-arrows-clockwise"></i>Retry</button>'
       + '</div>';
   }
 }

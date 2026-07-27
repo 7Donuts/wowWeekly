@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Azeroth Agenda: Patch Notes & Hotfixes</title>
-<link rel="stylesheet" href="midnight.css">
+<link rel="stylesheet" href="midnight.css?v=1.10.0">
 <style>
   .pn-wrapper {
     max-width: 1400px;
@@ -14,22 +14,6 @@
     z-index: 1;
   }
 
-  .back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-family: 'Cinzel', serif;
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    color: var(--text-secondary);
-    text-decoration: none;
-    border: 1px solid var(--border);
-    padding: 0.4rem 0.9rem;
-    border-radius: 4px;
-    margin-bottom: 2rem;
-    transition: all 0.2s;
-  }
-  .back-link:hover { color: var(--light-pale); border-color: var(--border-bright); background: var(--bg-card); }
 
   .pn-filter-bar {
     display: flex;
@@ -50,7 +34,7 @@
     transition: all 0.15s;
   }
   .pn-filter-btn:hover { border-color: var(--border-bright); color: var(--text-primary); }
-  .pn-filter-btn.active { background: var(--void-purple); border-color: var(--void-purple); color: white; }
+  .pn-filter-btn.active { background: rgba(145,132,217,0.22); border-color: var(--arc-400); color: var(--text-100); }
 
   .pn-patch {
     margin-bottom: 1.5rem;
@@ -104,11 +88,11 @@
     border-radius: 3px;
     white-space: nowrap;
   }
-  .pnc-fix     { background: rgba(234,88,68,0.12);  color: #e85844; border: 1px solid rgba(234,88,68,0.2); }
-  .pnc-buff    { background: rgba(106,191,128,0.1); color: var(--success-bright); border: 1px solid rgba(106,191,128,0.2); }
-  .pnc-nerf    { background: rgba(201,168,76,0.1);  color: var(--light-gold); border: 1px solid rgba(201,168,76,0.2); }
-  .pnc-class   { background: rgba(160,125,224,0.1); color: var(--void-glow); border: 1px solid rgba(160,125,224,0.2); }
-  .pnc-content { background: rgba(74,143,92,0.1);   color: #7ecf94; border: 1px solid rgba(74,143,92,0.2); }
+  .pnc-fix     { background: transparent; color: var(--color-danger); border: 1px solid rgba(207,143,143,0.35); }
+  .pnc-buff    { background: rgba(145,132,217,0.16); color: var(--arc-300); border: 1px solid var(--arc-600); }
+  .pnc-nerf    { background: transparent; color: var(--text-400); border: 1px solid var(--line-600); }
+  .pnc-class   { background: transparent; color: var(--arc-400); border: 1px solid var(--arc-700); }
+  .pnc-content { background: transparent; color: var(--text-300); border: 1px solid var(--line-600); }
 
   .pn-body { padding: 0.75rem 0; }
   .pn-body.hidden { display: none; }
@@ -135,11 +119,11 @@
     min-width: 52px;
     text-align: center;
   }
-  .pnb-fix      { background: rgba(234,88,68,0.12);  color: #e85844; border: 1px solid rgba(234,88,68,0.2); }
-  .pnb-buff     { background: rgba(106,191,128,0.1); color: var(--success-bright); border: 1px solid rgba(106,191,128,0.2); }
-  .pnb-nerf     { background: rgba(201,168,76,0.12); color: var(--light-gold); border: 1px solid rgba(201,168,76,0.25); }
-  .pnb-class    { background: rgba(160,125,224,0.1); color: var(--void-glow); border: 1px solid rgba(160,125,224,0.2); }
-  .pnb-content  { background: rgba(74,143,92,0.1);   color: #7ecf94; border: 1px solid rgba(74,143,92,0.2); }
+  .pnb-fix      { background: transparent; color: var(--color-danger); border: 1px solid rgba(207,143,143,0.35); }
+  .pnb-buff     { background: rgba(145,132,217,0.16); color: var(--arc-300); border: 1px solid var(--arc-600); }
+  .pnb-nerf     { background: transparent; color: var(--text-400); border: 1px solid var(--line-600); }
+  .pnb-class    { background: transparent; color: var(--arc-400); border: 1px solid var(--arc-700); }
+  .pnb-content  { background: transparent; color: var(--text-300); border: 1px solid var(--line-600); }
   .pnb-system   { background: rgba(90,80,112,0.2);   color: var(--text-secondary); border: 1px solid var(--border); }
 
   .pn-entry-text {
@@ -171,6 +155,9 @@
     color: var(--text-muted);
     font-style: italic;
   }
+
+  .pn-link { color: var(--arc-400); text-decoration: none; border-bottom: 1px solid rgba(181,171,252,0.35); }
+  .pn-link:hover { color: var(--arc-300); border-bottom-color: var(--arc-300); }
 
   .pn-source-note {
     display: flex;
@@ -230,8 +217,8 @@
   }
   .live-indicator.loading { color: var(--text-muted); border-color: var(--border); background: transparent; }
   .live-indicator.loading::before { background: var(--text-muted); animation: none; }
-  .live-indicator.error { color: #e85844; border-color: rgba(234,88,68,0.3); background: rgba(234,88,68,0.06); }
-  .live-indicator.error::before { background: #e85844; animation: none; }
+  .live-indicator.error { color: var(--color-danger); border-color: rgba(207,143,143,0.3); background: transparent; }
+  .live-indicator.error::before { background: var(--color-danger); animation: none; }
   @keyframes livePulse {
     0%,100% { opacity: 1; } 50% { opacity: 0.3; }
   }
@@ -309,7 +296,7 @@
   }
   .rss-error {
     padding: 1rem 1.1rem;
-    color: #e85844;
+    color: var(--color-danger);
     font-size: 14px;
     font-style: italic;
   }
@@ -346,28 +333,25 @@
 </style>
 </head>
 <body>
-<div class="pn-wrapper">
+<div class="page pn-wrapper">
 
-  <header style="text-align:center;padding:2rem 0 1.75rem;border-bottom:1px solid var(--border);margin-bottom:2rem;">
-    <div class="header-eyebrow">World of Warcraft</div>
-    <h1>The Azeroth Agenda<br><span>Patch Notes &amp; Hotfixes</span></h1>
-    <p class="subtitle">Curated changes for Patch 12.0.x, Lingering Shadows, Season 1</p>
-    <div class="patch-badge">Patch 12.0.5 · Last Updated May 14, 2026</div>
-    <div class="credit-bar" style="display:flex;justify-content:center;align-items:center;gap:0.5rem;margin-top:0.9rem;font-size:14px;color:var(--text-muted);">
-      Curated &amp; maintained by <span class="credit-name">Seven</span>
-      <span style="color:var(--border-bright);margin:0 0.4rem;">·</span>
-      <a href="index.html" class="byline-link">⬅ The Azeroth Agenda</a>
-      <span style="color:var(--border-bright);margin:0 0.4rem;">·</span>
-      <a href="changelog.html" class="byline-link">📋 Changelog</a>
+  <div class="page-head">
+    <div class="brand-sigil"><i class="ph-fill ph-book-open-text"></i></div>
+    <div class="page-head-text">
+      <div class="page-eyebrow">The Azeroth Agenda</div>
+      <div class="page-title">Patch notes <span>and hotfixes</span></div>
+      <div class="page-sub">Curated changes for Patch 12.0.x, Lingering Shadows, Season 1. Last updated May 14, 2026.</div>
     </div>
-  </header>
-
-  <a href="index.html" class="back-link">← The Azeroth Agenda</a>
+    <div class="page-nav">
+      <a href="index.html" class="btn"><i class="ph ph-arrow-left"></i>The agenda</a>
+      <a href="changelog.html" class="btn"><i class="ph ph-scroll"></i>Changelog</a>
+    </div>
+  </div>
 
   <div class="pn-source-note">
-    🔗 Sources: <a href="https://us.battle.net/support/en/article/000035597" target="_blank" style="color:var(--void-glow);">Blizzard Hotfix Blog</a>
+    <i class="ph ph-link-simple"></i> Sources: <a href="https://us.battle.net/support/en/article/000035597" target="_blank" class="pn-link">Blizzard Hotfix Blog</a>
     &nbsp;·&nbsp;
-    <a href="https://www.wowhead.com/news/wow-hotfixes" target="_blank" style="color:var(--void-glow);">Wowhead Hotfix Tracker</a>
+    <a href="https://www.wowhead.com/news/wow-hotfixes" target="_blank" class="pn-link">Wowhead Hotfix Tracker</a>
     &nbsp;·&nbsp; Entries curated for PvE, class, and content relevance. Not all system/UI hotfixes listed.
   </div>
 
@@ -378,10 +362,10 @@
       <span class="live-feed-title">Live: Wowhead News Feed</span>
       <span class="live-feed-meta" id="live-feed-meta">Fetching latest articles…</span>
       <span class="live-feed-timestamp" id="live-feed-timestamp"></span>
-      <span class="chevron" id="live-chev" style="transform:rotate(0deg)">▼</span>
+      <span class="chevron" id="live-chev" style="transform:rotate(0deg)"><i class="ph ph-caret-down"></i></span>
     </div>
     <div class="live-feed-body" id="live-feed-body">
-      <div class="rss-loading" id="rss-loading">⟳ Fetching Wowhead RSS feed…</div>
+      <div class="rss-loading" id="rss-loading"><i class="ph ph-arrows-clockwise"></i> Fetching Wowhead RSS feed…</div>
     </div>
   </div>
 
@@ -391,9 +375,9 @@
 
   <div id="patchnotes-container"></div>
 
-  <footer style="border-top:1px solid var(--border);padding-top:1.5rem;text-align:center;font-size:14px;color:var(--text-muted);font-style:italic;margin-top:2.5rem;">
-    The Azeroth Agenda &nbsp;·&nbsp; Curated by Seven &nbsp;·&nbsp; Patch 12.0.5 · May 2026
-  </footer>
+  <div class="page-foot">
+    The Azeroth Agenda · Curated by Seven · Patch 12.0.5 · May 2026
+  </div>
 </div>
 
 <script>
@@ -439,7 +423,7 @@ const PATCHES = [
     date: 'May 13, 2026',
     summary: 'Raid tuning, PvP fixes, Stormarion Assault adjustment',
     entries: [
-      { type: 'nerf', text: 'The Sundered Sanctum, Solariel the Fallen: Void Cascade cast time reduced (10→8 seconds) but damage increased by 20%.', detail: 'The longer cast was allowing groups to consistently interrupt without cooldown coordination.', tag: 'raid' },
+      { type: 'nerf', text: 'The Sundered Sanctum, Solariel the Fallen: Void Cascade cast time reduced (10 to 8 seconds) but damage increased by 20%.', detail: 'The longer cast was allowing groups to consistently interrupt without cooldown coordination.', tag: 'raid' },
       { type: 'buff', text: 'The Sundered Sanctum, Mythic: Kael\'thas Reborn: Pyroblast Overload now has a 0.5s wind-up indicator added.', detail: 'Accessibility improvement following community feedback.', tag: 'raid' },
       { type: 'fix', text: 'Stormarion Assault, Stand Your Ground weekly quest now correctly awards the Victorious Stormarion Pinnacle Cache on completion.', detail: 'Was awarding a Champion-quality cache instead for some players.', tag: 'content' },
       { type: 'buff', text: 'Paladin, Holy: Holy Light healing increased by 6% in PvE.', detail: '', tag: 'Paladin' },
@@ -580,7 +564,7 @@ function renderPatchNotes() {
           </div>
           <div class="pn-patch-summary">${p.summary}</div>
           <div class="pn-badge-row">${badgeHtml}</div>
-          <span class="chevron" id="pnchev-${i}" style="transform:rotate(${open?'0':'-90'}deg)">▼</span>
+          <span class="chevron" id="pnchev-${i}" style="transform:rotate(${open?'0':'-90'}deg)"><i class="ph ph-caret-down"></i></span>
         </div>
         <div class="pn-body${open?'':' hidden'}" id="pnb-${i}">
           ${p.entries.map(e => {
@@ -657,10 +641,10 @@ function classifyItem(title, desc) {
 }
 
 const TAG_STYLE = {
-  hotfix:  'background:rgba(234,88,68,0.1);color:#e85844;border-color:rgba(234,88,68,0.25);',
-  patch:   'background:rgba(201,168,76,0.1);color:var(--light-gold);border-color:rgba(201,168,76,0.25);',
-  ptr:     'background:rgba(160,125,224,0.1);color:var(--void-glow);border-color:rgba(160,125,224,0.2);',
-  blizzard:'background:rgba(74,143,92,0.1);color:#7ecf94;border-color:rgba(74,143,92,0.2);',
+  hotfix:  'color:var(--color-danger);border-color:rgba(207,143,143,0.35);',
+  patch:   'background:rgba(145,132,217,0.16);color:var(--arc-300);border-color:var(--arc-600);',
+  ptr:     'color:var(--arc-400);border-color:var(--arc-700);',
+  blizzard:'color:var(--text-300);border-color:var(--line-600);',
 };
 
 function renderRssItems(items) {
@@ -702,9 +686,9 @@ function rssFeedError(msg) {
   document.getElementById('live-feed-body').innerHTML = `
     <div class="rss-error">
       Feed unavailable: ${msg}.<br>
-      <a href="https://www.wowhead.com/news" target="_blank" style="color:var(--void-glow);">Browse Wowhead News ↗</a>
+      <a href="https://www.wowhead.com/news" target="_blank" class="pn-link">Browse Wowhead News <i class="ph ph-arrow-square-out"></i></a>
       &nbsp;·&nbsp;
-      <a href="https://www.wowhead.com/news/wow-hotfixes" target="_blank" style="color:var(--void-glow);">Hotfix Tracker ↗</a>
+      <a href="https://www.wowhead.com/news/wow-hotfixes" target="_blank" class="pn-link">Hotfix Tracker <i class="ph ph-arrow-square-out"></i></a>
     </div>`;
 }
 

@@ -3,3 +3,4 @@ wrangler.jsonc
 cloudflare
 .gitignore
 node_modules
+tools

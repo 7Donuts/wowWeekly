@@ -4,22 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Azeroth Agenda: World Events Calendar</title>
-<link rel="stylesheet" href="midnight.css">
+<link rel="stylesheet" href="midnight.css?v=1.10.0">
 </head>
 <body>
-<div class="wrapper">
+<div class="page">
 
-  <header>
-    <div class="header-eyebrow">World of Warcraft</div>
-    <h1>The Azeroth Agenda<br><span>Event Calendar</span></h1>
-    <p class="subtitle">Patch 12.0.5 · Lingering Shadows · Season 1</p>
-    <div class="patch-badge">May 2026 – May 2027</div>
-    <div class="credit-bar">
-      Curated &amp; maintained by <span class="credit-name">Seven</span>
-      <span class="byline-dot" style="margin:0 0.4rem;">·</span>
-      <a href="index.html" class="byline-link">← The Azeroth Agenda</a>
+  <div class="page-head">
+    <div class="brand-sigil"><i class="ph ph-calendar-dots"></i></div>
+    <div class="page-head-text">
+      <div class="page-eyebrow">The Azeroth Agenda</div>
+      <div class="page-title">Event <span>calendar</span></div>
+      <div class="page-sub">Patch 12.0.5 · Lingering Shadows · May 2026 to May 2027</div>
     </div>
-  </header>
+    <div class="page-nav">
+      <a href="index.html" class="btn"><i class="ph ph-arrow-left"></i>The agenda</a>
+      <button class="btn btn-icon" id="btn-theme" onclick="toggleTheme()" title="Toggle dark / light mode"><i class="ph ph-sun"></i></button>
+    </div>
+  </div>
 
   <!-- CURRENT EVENTS BANNER -->
   <div class="ev-now-banner" id="now-banner"></div>
@@ -34,19 +35,15 @@
     <button class="ev-filter-btn" data-cat="tag-delve" onclick="setEvFilter('tag-delve',this)">Delves</button>
   </div>
 
-  <!-- THEME TOGGLE -->
-  <div style="text-align:right;margin-bottom:1rem;">
-    <button class="btn-reset-all" id="btn-theme" onclick="toggleTheme()" title="Toggle dark/light mode">☀️ Light</button>
-  </div>
-
   <!-- EVENT LIST -->
   <div id="events-container"></div>
 
 </div>
 
 <!-- ── External JS modules ── -->
-<script src="js/data-events.js"></script>
-<script src="js/theme.js"></script>
+<script src="js/data-events.js?v=1.10.0"></script>
+<script src="js/theme.js?v=1.10.0"></script>
+<script>updateThemeBtn();</script>
 
 <script>
 
@@ -176,7 +173,7 @@ function renderEvents() {
 }
 
 /* ── INIT ── */
-document.getElementById('btn-theme').textContent = isLightMode ? '🌙 Dark' : '☀️ Light';
+updateThemeBtn();
 renderNowBanner();
 renderEvents();
 </script>

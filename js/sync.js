@@ -57,11 +57,11 @@
     if (!el || !syncUser) return;
     clearTimeout(_syncStatusTimer);
     if (state === 'saving') {
-      el.textContent  = '↑ Saving…';
+      el.textContent  = 'Saving…';
       el.className    = 'sync-status sync-saving';
       el.style.display = '';
     } else if (state === 'saved') {
-      el.textContent  = '✓ Synced';
+      el.textContent  = 'Synced';
       el.className    = 'sync-status sync-saved';
       el.style.display = '';
       _syncStatusTimer = setTimeout(() => { el.style.display = 'none'; }, 4000);
@@ -183,13 +183,13 @@
       const statusEl = document.getElementById('sync-status');
       if (statusEl) statusEl.style.display = 'none';
       if (hadSession && typeof showToast === 'function') {
-        showToast('Session expired: click 🔑 Battle.net to sign in again.');
+        showToast('Session expired: use Battle.net at the foot of the rail to sign in again.');
       }
     }
   }
 
   // Apply last-known auth state immediately so returning users see their battletag
-  // right away instead of the "🔑 Battle.net" logged-out state while the /api/user
+  // right away instead of the "Battle.net" logged-out state while the /api/user
   // check is in flight. The name is shown dimmed until the server confirms.
   function _applyOptimisticAuth() {
     const tag = localStorage.getItem('wow_mn_last_battletag');

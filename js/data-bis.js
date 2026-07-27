@@ -3,21 +3,21 @@
 // Classes without full data show a "coming soon" message in the UI.
 
 const WOW_CLASSES = [
-  { key: 'deathknight',  label: 'Death Knight',  color: '#C41E3A', icon: '💀', armor: 'Plate',
+  { key: 'deathknight',  label: 'Death Knight',  color: '#C41E3A', icon: 'ph-fill ph-skull', armor: 'Plate',
     specs: [
       { key: 'blood',   label: 'Blood',   role: 'tank' },
       { key: 'frost',   label: 'Frost',   role: 'dps' },
       { key: 'unholy',  label: 'Unholy',  role: 'dps' },
     ]
   },
-  { key: 'demonhunter',  label: 'Demon Hunter',  color: '#A330C9', icon: '👁', armor: 'Leather',
+  { key: 'demonhunter',  label: 'Demon Hunter',  color: '#A330C9', icon: 'ph-fill ph-eye', armor: 'Leather',
     specs: [
       { key: 'havoc',     label: 'Havoc',     role: 'dps' },
       { key: 'vengeance', label: 'Vengeance', role: 'tank' },
       { key: 'devourer',  label: 'Devourer',  role: 'dps', tag: 'new' },
     ]
   },
-  { key: 'druid',        label: 'Druid',         color: '#FF7C0A', icon: '🌿', armor: 'Leather',
+  { key: 'druid',        label: 'Druid',         color: '#FF7C0A', icon: 'ph-fill ph-leaf', armor: 'Leather',
     specs: [
       { key: 'balance',     label: 'Balance',     role: 'dps' },
       { key: 'feral',       label: 'Feral',       role: 'dps' },
@@ -25,70 +25,70 @@ const WOW_CLASSES = [
       { key: 'restoration', label: 'Restoration', role: 'heal' },
     ]
   },
-  { key: 'evoker',       label: 'Evoker',         color: '#33937F', icon: '🐉', armor: 'Mail',
+  { key: 'evoker',       label: 'Evoker',         color: '#33937F', icon: 'ph-fill ph-flying-saucer', armor: 'Mail',
     specs: [
       { key: 'augmentation', label: 'Augmentation', role: 'dps' },
       { key: 'devastation',  label: 'Devastation',  role: 'dps' },
       { key: 'preservation', label: 'Preservation', role: 'heal' },
     ]
   },
-  { key: 'hunter',       label: 'Hunter',         color: '#AAD372', icon: '🏹', armor: 'Mail',
+  { key: 'hunter',       label: 'Hunter',         color: '#AAD372', icon: 'ph-fill ph-paw-print', armor: 'Mail',
     specs: [
       { key: 'beastmastery',    label: 'Beast Mastery',    role: 'dps' },
       { key: 'marksmanship',    label: 'Marksmanship',     role: 'dps' },
       { key: 'survival',        label: 'Survival',         role: 'dps' },
     ]
   },
-  { key: 'mage',         label: 'Mage',           color: '#3FC7EB', icon: '❄️', armor: 'Cloth',
+  { key: 'mage',         label: 'Mage',           color: '#3FC7EB', icon: 'ph-fill ph-snowflake', armor: 'Cloth',
     specs: [
       { key: 'arcane', label: 'Arcane', role: 'dps' },
       { key: 'fire',   label: 'Fire',   role: 'dps' },
       { key: 'frost',  label: 'Frost',  role: 'dps' },
     ]
   },
-  { key: 'monk',         label: 'Monk',           color: '#00FF98', icon: '☯️', armor: 'Leather',
+  { key: 'monk',         label: 'Monk',           color: '#00FF98', icon: 'ph-fill ph-yin-yang', armor: 'Leather',
     specs: [
       { key: 'brewmaster',  label: 'Brewmaster',  role: 'tank' },
       { key: 'mistweaver',  label: 'Mistweaver',  role: 'heal' },
       { key: 'windwalker',  label: 'Windwalker',  role: 'dps' },
     ]
   },
-  { key: 'paladin',      label: 'Paladin',        color: '#F48CBA', icon: '⚔️', armor: 'Plate',
+  { key: 'paladin',      label: 'Paladin',        color: '#F48CBA', icon: 'ph-fill ph-shield-check', armor: 'Plate',
     specs: [
       { key: 'holy',        label: 'Holy',        role: 'heal' },
       { key: 'protection',  label: 'Protection',  role: 'tank' },
       { key: 'retribution', label: 'Retribution', role: 'dps' },
     ]
   },
-  { key: 'priest',       label: 'Priest',         color: '#FFFFFF', icon: '✨', armor: 'Cloth',
+  { key: 'priest',       label: 'Priest',         color: '#FFFFFF', icon: 'ph-fill ph-sparkle', armor: 'Cloth',
     specs: [
       { key: 'discipline', label: 'Discipline', role: 'heal' },
       { key: 'holy',       label: 'Holy',       role: 'heal' },
       { key: 'shadow',     label: 'Shadow',     role: 'dps' },
     ]
   },
-  { key: 'rogue',        label: 'Rogue',          color: '#FFF468', icon: '🗡️', armor: 'Leather',
+  { key: 'rogue',        label: 'Rogue',          color: '#FFF468', icon: 'ph-fill ph-knife', armor: 'Leather',
     specs: [
       { key: 'assassination', label: 'Assassination', role: 'dps' },
       { key: 'outlaw',        label: 'Outlaw',        role: 'dps' },
       { key: 'subtlety',      label: 'Subtlety',      role: 'dps' },
     ]
   },
-  { key: 'shaman',       label: 'Shaman',         color: '#0070DD', icon: '⚡', armor: 'Mail',
+  { key: 'shaman',       label: 'Shaman',         color: '#0070DD', icon: 'ph-fill ph-lightning', armor: 'Mail',
     specs: [
       { key: 'elemental',   label: 'Elemental',   role: 'dps' },
       { key: 'enhancement', label: 'Enhancement', role: 'dps' },
       { key: 'restoration', label: 'Restoration', role: 'heal' },
     ]
   },
-  { key: 'warlock',      label: 'Warlock',        color: '#8788EE', icon: '🔥', armor: 'Cloth',
+  { key: 'warlock',      label: 'Warlock',        color: '#8788EE', icon: 'ph-fill ph-flame', armor: 'Cloth',
     specs: [
       { key: 'affliction',  label: 'Affliction',  role: 'dps' },
       { key: 'demonology',  label: 'Demonology',  role: 'dps' },
       { key: 'destruction', label: 'Destruction', role: 'dps' },
     ]
   },
-  { key: 'warrior',      label: 'Warrior',        color: '#C69B3A', icon: '🛡️', armor: 'Plate',
+  { key: 'warrior',      label: 'Warrior',        color: '#C69B3A', icon: 'ph-fill ph-axe', armor: 'Plate',
     specs: [
       { key: 'arms',       label: 'Arms',       role: 'dps' },
       { key: 'fury',       label: 'Fury',       role: 'dps' },

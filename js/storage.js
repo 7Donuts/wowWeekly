@@ -68,15 +68,14 @@ function getCharPref(k, def) { return loadCharPrefs()[k] ?? def; }
 function renderTierSelector(taskId) {
   const cur = getCharPref('delveTier', 7);
   const gearLabel = cur >= 8 ? 'Hero (ilvl 259–276)' : 'Champion (ilvl 246–263)';
-  const gearColor = cur >= 8 ? 'var(--void-glow)' : 'var(--light-gold)';
   let btns = '';
   for (let t = 1; t <= 11; t++) {
     btns += '<button class="tier-btn' + (cur === t ? ' active' : '') + '" onclick="setDelveTier(' + t + ',\'' + taskId + '\')">T' + t + '</button>';
   }
   return '<div class="tier-selector" onclick="event.stopPropagation()">'
-    + '<span class="tier-label">Your max Delve tier:</span>'
+    + '<span class="tier-label">Max tier</span>'
     + '<div class="tier-btns">' + btns + '</div>'
-    + '<span class="tier-gear-label" style="color:' + gearColor + ';">→ ' + gearLabel + '</span>'
+    + '<span class="tier-gear-label"><i class="ph ph-arrow-right"></i> ' + gearLabel + '</span>'
     + '</div>';
 }
 
@@ -144,6 +143,22 @@ function loadCharRealmSlug(n)     {
 }
 function saveCharRealmSlug(n, s)  { if (s) localStorage.setItem('wow_mn_realmslug_' + n, s); else localStorage.removeItem('wow_mn_realmslug_' + n); }
 function realmToSlug(name)        { return (name||'').toLowerCase().replace(/[''']/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''); }
+/* Combat role of a character: 'tank' | 'heal' | 'dps' | ''.
+   Derived from the synced spec against the spec tables in data-bis.js, with an
+   explicit per-character override (wow_mn_role_*) taking precedence. Returns ''
+   when nothing is known, which the roster reads as "leave the socket empty". */
+function saveCharRole(n, r) { if (r) localStorage.setItem('wow_mn_role_' + n, r); else localStorage.removeItem('wow_mn_role_' + n); }
+function loadCharRole(n) {
+  const stored = localStorage.getItem('wow_mn_role_' + n);
+  if (stored) return stored;
+  const spec = loadArmoryData(n)?.spec;
+  const cls  = loadCharClass(n);
+  if (!spec || !cls || typeof WOW_CLASSES === 'undefined') return '';
+  const def = WOW_CLASSES.find(c => c.key === cls.replace(/-/g, ''));
+  const sp  = def?.specs.find(s => s.label.toLowerCase() === String(spec).toLowerCase());
+  return sp?.role || '';
+}
+
 function loadArmoryData(n)   { return JSON.parse(localStorage.getItem('wow_mn_armory_' + n) || 'null'); }
 function saveArmoryData(n, d){
   localStorage.setItem('wow_mn_armory_' + n, JSON.stringify(d));

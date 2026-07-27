@@ -30,12 +30,12 @@ let _modalSelectedClass = '';
 
 /* ── CHARACTER GROUP / ROLE PICKER ── */
 const GROUP_META = {
-  main: { label: '⭐ Main', dot: '⭐', color: 'var(--light-gold)' },
-  alt:  { label: '◆ Alt',  dot: '◆',  color: 'var(--void-glow)' },
-  farm: { label: '🌿 Farm', dot: '🌿', color: 'var(--success-bright)' },
+  main: { label: 'Main', icon: 'ph-fill ph-star',    color: 'var(--arc-400)' },
+  alt:  { label: 'Alt',  icon: 'ph-fill ph-diamond', color: 'var(--arc-500)' },
+  farm: { label: 'Farm', icon: 'ph-fill ph-leaf',    color: 'var(--text-400)' },
 };
 const GROUP_ORDER = ['main', 'alt', 'farm', ''];
-const GROUP_LABELS = { main: '⭐ Main', alt: '◆ Alt', farm: '🌿 Farm', '': 'Ungrouped' };
+const GROUP_LABELS = { main: 'Main', alt: 'Alt', farm: 'Farm', '': 'Ungrouped' };
 
 let _modalSelectedGroup = '';
 
@@ -52,21 +52,17 @@ function renderGroupPicker(selectedGroup) {
   _modalSelectedGroup = selectedGroup || '';
   const container = document.getElementById('group-picker');
   if (!container) return;
-  const groups = [
-    { id: 'main', label: '⭐ Main', color: 'var(--light-gold)' },
-    { id: 'alt',  label: '◆ Alt',  color: 'var(--void-glow)' },
-    { id: 'farm', label: '🌿 Farm', color: 'var(--success-bright)' },
-    { id: '',     label: 'None',   color: 'var(--border-bright)' },
-  ];
+  const groups = GROUP_ORDER.map(id => ({
+    id,
+    label: id ? GROUP_META[id].label : 'None',
+    icon:  id ? GROUP_META[id].icon  : '',
+  }));
   container.innerHTML = groups.map(g => {
     const active = _modalSelectedGroup === g.id;
-    return '<button onclick="selectCharGroup(\'' + g.id + '\')" style="'
-      + 'font-family:\'Cinzel\',serif;font-size:11px;letter-spacing:0.06em;'
-      + 'padding:4px 12px;border-radius:3px;cursor:pointer;transition:all 0.15s;'
-      + 'border:1.5px solid ' + (active ? g.color : 'var(--border)') + ';'
-      + 'background:' + (active ? g.color.replace(')', ',0.12)').replace('var(', 'var(') + '' : 'transparent') + ';'
-      + 'color:' + (active ? (isLightMode ? 'var(--text-primary)' : g.color) : 'var(--text-secondary)') + ';'
-      + '">' + g.label + '</button>';
+    return '<button class="pick-chip' + (active ? ' active' : '') + '"'
+      + ' onclick="selectCharGroup(\'' + g.id + '\')">'
+      + (g.icon ? '<i class="' + g.icon + '"></i>' : '')
+      + g.label + '</button>';
   }).join('');
 }
 
@@ -81,22 +77,11 @@ function renderClassPicker(selectedId) {
   if (!container) return;
   container.innerHTML = CLASSES.map(c => {
     const isActive = _modalSelectedClass === c.id;
-    const textColor = isActive ? (isLightMode ? 'var(--text-primary)' : c.color) : 'var(--text-secondary)';
-    return `<button onclick="selectClass('${c.id}')" style="
-      font-family:'Cinzel',serif; font-size:11px; letter-spacing:0.06em;
-      padding:4px 9px; border-radius:4px; cursor:pointer;
-      border: 1.5px solid ${isActive ? c.color : 'var(--border)'};
-      background: ${isActive ? c.color + '22' : 'transparent'};
-      color: ${textColor};
-      transition: all 0.15s;
-    "><img src="${c.icon}" style="width:18px;height:18px;vertical-align:middle;margin-right:5px;image-rendering:auto;">${c.name}</button>`;
-  }).join('') +
-  `<button onclick="selectClass('')" style="
-    font-family:'Cinzel',serif; font-size:11px; letter-spacing:0.06em;
-    padding:4px 9px; border-radius:4px; cursor:pointer;
-    border: 1.5px solid ${!_modalSelectedClass ? 'var(--border-bright)' : 'var(--border)'};
-    background: transparent; color: var(--text-muted); transition: all 0.15s;
-  ">None</button>`;
+    return `<button class="pick-chip${isActive ? ' active' : ''}" onclick="selectClass('${c.id}')"
+      style="${isActive ? `border-color:${c.color};` : ''}">
+      <img src="${c.icon}" alt="">${c.name}</button>`;
+  }).join('')
+  + `<button class="pick-chip${!_modalSelectedClass ? ' active' : ''}" onclick="selectClass('')">None</button>`;
 }
 
 function selectClass(id) {
@@ -117,92 +102,41 @@ function renderClassLinksBar() {
   const bar = document.getElementById('class-links-bar');
   if (!bar) return;
   const cls = loadCharClass(currentChar);
-  if (!cls) { bar.style.display = 'none'; return; }
-  const def = CLASSES.find(c => c.id === cls);
+  const def = cls ? CLASSES.find(c => c.id === cls) : null;
   if (!def) { bar.style.display = 'none'; return; }
+  bar.style.display = '';
 
-  const slug       = cls;
-  const icyUrl     = `https://www.icy-veins.com/wow/${slug}-guide`;
-  const murlokUrl  = `https://murlok.io/${slug}`;
-  const wowheadUrl = `https://www.wowhead.com/guides/classes#${cls.replace(/-/g, '')}`;
-  const blizzUrl   = `https://worldofwarcraft.blizzard.com/en-us/game/classes/${slug}`;
+  const armory = (typeof loadArmoryData === 'function') ? loadArmoryData(currentChar) : null;
+  const realm  = (typeof loadCharRealm  === 'function') ? loadCharRealm(currentChar) : '';
+  const region = (typeof loadBnetCreds  === 'function') ? (loadBnetCreds()?.region || 'us') : 'us';
 
-  const r = parseInt(def.color.slice(1,3),16);
-  const g = parseInt(def.color.slice(3,5),16);
-  const b = parseInt(def.color.slice(5,7),16);
-  const rgba = (a) => `rgba(${r},${g},${b},${a})`;
+  const links = [
+    { icon: 'ph ph-book-open-text',        label: 'Icy Veins', href: `https://www.icy-veins.com/wow/${cls}-guide` },
+    { icon: 'ph ph-chart-bar',             label: 'Murlok.io', href: `https://murlok.io/${cls}` },
+    { icon: 'ph ph-magnifying-glass',      label: 'Wowhead',   href: `https://www.wowhead.com/guides/classes#${cls.replace(/-/g, '')}` },
+    { icon: 'ph ph-globe-hemisphere-west', label: 'Blizzard',  href: `https://worldofwarcraft.blizzard.com/en-us/game/classes/${cls}` },
+  ];
+  if (realm) {
+    links.push({
+      icon: 'ph ph-chart-line-up', label: 'Raider.IO',
+      href: `https://raider.io/characters/${region}/${realm.toLowerCase().replace(/\s+/g, '-')}/${charDisplayName(currentChar).toLowerCase()}`,
+    });
+  }
 
-  const barBg     = isLightMode ? 'var(--bg-panel)'      : rgba(0.06);
-  const barBorder = isLightMode ? 'var(--border)'        : rgba(0.45);
-  const labelClr  = isLightMode ? 'var(--text-primary)'  : def.color;
-  const resClr    = isLightMode ? 'var(--text-muted)'    : rgba(0.5);
-  const linkClr   = isLightMode ? 'var(--text-primary)'  : def.color;
-  const linkBg    = isLightMode ? 'var(--bg-card)'       : rgba(0.1);
-  const linkBgHov = isLightMode ? 'var(--bg-card-hover)' : rgba(0.2);
+  const spec  = [armory?.spec, def.name].filter(Boolean).join(' ');
+  const guild = armory?.guild ? `<span class="cl-guild">(${armory.guild})</span>` : '';
+  const stats = [
+    armory?.ilvl        ? `<span class="cl-stat"><i class="ph-fill ph-sword"></i>ilvl ${armory.ilvl}</span>` : '',
+    armory?.mythicRating ? `<span class="cl-stat"><i class="ph ph-key"></i>${armory.mythicRating}</span>`    : '',
+  ].join('');
 
-  // Armory data: shown if synced
-  const armory      = (typeof loadArmoryData === 'function') ? loadArmoryData(currentChar) : null;
-  const specLabel   = armory?.spec ? armory.spec + ' ' + def.name : def.name;
-  const guildLabel  = armory?.guild ? ` <span style="color:${resClr};font-size:11px;font-family:sans-serif;font-style:italic;">(${armory.guild})</span>` : '';
-
-  // External profile links: only shown if realm is set
-  const realm       = (typeof loadCharRealm === 'function') ? loadCharRealm(currentChar) : '';
-  const region      = (typeof loadBnetCreds === 'function') ? (loadBnetCreds()?.region || 'us') : 'us';
-  const realmSlug   = realm.toLowerCase().replace(/\s+/g, '-');
-  const charSlug    = currentChar.toLowerCase();
-  const rioProfileUrl = realm ? `https://raider.io/characters/${region}/${realmSlug}/${charSlug}` : '';
-
-  const ilvlHtml = armory?.ilvl ? `
-    <span style="
-      font-family:'Cinzel',serif; font-size:11px; letter-spacing:0.05em;
-      color:var(--success-bright); background:rgba(74,174,94,0.12);
-      border:1px solid rgba(74,174,94,0.35); border-radius:4px;
-      padding:2px 8px; white-space:nowrap; flex-shrink:0;
-    " title="Equipped item level · synced ${new Date(armory.lastSync).toLocaleDateString()}">
-      ⚔ iLvl ${armory.ilvl}
-    </span>` : '';
-
-  const mScore     = armory?.mythicRating || 0;
-  const mColor     = armory?.mythicColor || _mythicScoreColor(mScore);
-  const mythicHtml = armory ? `
-    <span style="
-      font-family:'Cinzel',serif; font-size:11px; letter-spacing:0.05em;
-      color:${mColor}; background:rgba(0,0,0,0.2);
-      border:1px solid ${mColor}55; border-radius:4px;
-      padding:2px 8px; white-space:nowrap; flex-shrink:0;
-    " title="Mythic+ Rating · synced ${new Date(armory.lastSync).toLocaleDateString()}">
-      🔑 ${mScore > 0 ? mScore : '-'}
-    </span>` : '';
-
-  const linkStyle = `
-    font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.07em;
-    padding:3px 10px; border-radius:4px; text-decoration:none;
-    border:1px solid ${barBorder}; color:${linkClr};
-    background:${linkBg}; transition:all 0.2s; white-space:nowrap;`;
-
-  bar.style.cssText = `
-    display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;
-    padding:0.6rem 0.9rem; margin-bottom:1.25rem;
-    background:${barBg}; border:1px solid ${barBorder};
-    border-radius:8px; font-size:13px;
-  `;
   bar.innerHTML = `
-    <span style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.06em;color:${labelClr};flex-shrink:0;display:inline-flex;align-items:center;gap:5px;">
-      <img src="${def.icon}" style="width:20px;height:20px;image-rendering:auto;">${specLabel}${guildLabel}
+    <span class="cl-identity">
+      <img src="${def.icon}" alt="">
+      <span class="cl-spec">${spec}</span>${guild}
     </span>
-    <span style="color:${resClr};font-size:11px;white-space:nowrap;">Resources:</span>
-    <a href="${icyUrl}"     target="_blank" rel="noopener" style="${linkStyle}"
-       onmouseover="this.style.background='${linkBgHov}'" onmouseout="this.style.background='${linkBg}'">📖 Icy Veins</a>
-    <a href="${murlokUrl}"  target="_blank" rel="noopener" style="${linkStyle}"
-       onmouseover="this.style.background='${linkBgHov}'" onmouseout="this.style.background='${linkBg}'">📊 Murlok.io</a>
-    <a href="${wowheadUrl}" target="_blank" rel="noopener" style="${linkStyle}"
-       onmouseover="this.style.background='${linkBgHov}'" onmouseout="this.style.background='${linkBg}'">🔍 Wowhead</a>
-    <a href="${blizzUrl}"   target="_blank" rel="noopener" style="${linkStyle}"
-       onmouseover="this.style.background='${linkBgHov}'" onmouseout="this.style.background='${linkBg}'">🌐 Blizzard</a>
-    ${rioProfileUrl ? `<a href="${rioProfileUrl}" target="_blank" rel="noopener" style="${linkStyle}"
-       onmouseover="this.style.background='${linkBgHov}'" onmouseout="this.style.background='${linkBg}'">📈 Raider.IO</a>` : ''}
-    <span style="flex:1;min-width:0.5rem;"></span>
-    ${ilvlHtml}
-    ${mythicHtml}
-  `;
+    <span class="rail-label">Resources</span>
+    ${links.map(l => `<a class="cl-link" href="${l.href}" target="_blank" rel="noopener"><i class="${l.icon}"></i>${l.label}</a>`).join('')}
+    <span class="yl-rule"></span>
+    ${stats}`;
 }

@@ -15,7 +15,7 @@ function _handleSessionExpired() {
 async function armorySync(charName) {
   const slug = loadCharRealmSlug(charName);
   if (!slug) {
-    showToast('Set a realm for ' + charDisplayName(charName) + ' via the ✏️ edit button first.');
+    showToast('Set a realm for ' + charDisplayName(charName) + ' first, via Manage characters in the roster header.');
     return;
   }
 
@@ -231,11 +231,11 @@ async function syncAllCharsButton() {
   const toSync = chars.filter(c => loadCharRealmSlug(c));
 
   if (!toSync.length) {
-    showToast('No characters with a realm set. Use ✏️ to add realm names first.');
+    showToast('No characters with a realm set. Add realm names via Manage characters first.');
     return;
   }
 
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Syncing…'; }
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ph ph-hourglass-high"></i>'; btn.title = 'Syncing…'; }
 
   let synced = 0;
   for (let i = 0; i < toSync.length; i++) {
@@ -244,7 +244,7 @@ async function syncAllCharsButton() {
       const slug   = loadCharRealmSlug(charName);
       const params = new URLSearchParams({ char: charDisplayName(charName).toLowerCase(), realm: slug });
       const res    = await fetch('/api/armory?' + params);
-      if (res.status === 401) { if (btn) { btn.disabled = false; btn.textContent = '🔄 Sync'; } _handleSessionExpired(); return; }
+      if (res.status === 401) { if (btn) { _resetSyncBtn(btn); } _handleSessionExpired(); return; }
       if (!res.ok) continue;
 
       const armory = await res.json();
@@ -263,11 +263,17 @@ async function syncAllCharsButton() {
     if (i < toSync.length - 1) await new Promise(r => setTimeout(r, 400));
   }
 
-  if (btn) { btn.disabled = false; btn.textContent = '🔄 Sync'; }
+  if (btn) _resetSyncBtn(btn);
   if (typeof renderChars === 'function') renderChars();
   if (typeof renderClassLinksBar === 'function') renderClassLinksBar();
   if (typeof render === 'function') render();
   showToast(synced ? `Synced ${synced} character${synced !== 1 ? 's' : ''}` : 'Sync failed. Check your connection.');
+}
+
+function _resetSyncBtn(btn) {
+  btn.disabled = false;
+  btn.innerHTML = '<i class="ph ph-arrows-clockwise"></i>';
+  btn.title = 'Sync all characters from Battle.net';
 }
 
 /* ── TOAST ── */
