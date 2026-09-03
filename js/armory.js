@@ -104,7 +104,11 @@ async function autoSyncArmory() {
     await new Promise(r => setTimeout(r, 400));
   }
 
-  if (anyUpdated) {
+  // Account-wide, so it runs once regardless of how many characters were
+  // refreshed above, and even when none were.
+  const collected = await armorySyncCollections();
+
+  if (anyUpdated || collected > 0) {
     if (typeof renderChars      === 'function') renderChars();
     if (typeof renderClassLinksBar === 'function') renderClassLinksBar();
     if (typeof render           === 'function') render();
@@ -141,9 +145,6 @@ function armoryAutoCheckBis(charName) {
   const customMap = {};
   customTasks.forEach(t => { customMap[t.id] = t; });
 
-  const weekKey = getWeekKey();
-  const doneKey = 'wow_mn_' + charName + '_' + weekKey;
-  const done    = JSON.parse(localStorage.getItem(doneKey) || '{}');
   let autoChecked = 0;
 
   yourList.forEach(ylId => {
@@ -158,11 +159,10 @@ function armoryAutoCheckBis(charName) {
     const equipped = armory.gearItems[gearSlot];
     if (!equipped?.name) return;
     if (equipped.name.toLowerCase() === bisItemName.toLowerCase()) {
-      if (!done[ylId]) { done[ylId] = true; autoChecked++; }
+      if (applyAutoTask(charName, ylId, { done: true }, 'armory').ticked) autoChecked++;
     }
   });
 
-  if (autoChecked > 0) localStorage.setItem(doneKey, JSON.stringify(done));
   return autoChecked;
 }
 
@@ -177,51 +177,65 @@ function armoryAutoTrackMythicPlus(charName) {
   const total    = runs.length;
   const highKeys = runs.filter(r => r.mythic_level >= 10).length;
 
-  const goalsKey = 'wow_mn_goals_' + charName + '_' + getWeekKey();
-  const doneKey  = 'wow_mn_'       + charName + '_' + getWeekKey();
-  const goals    = JSON.parse(localStorage.getItem(goalsKey) || '{}');
-  const done     = JSON.parse(localStorage.getItem(doneKey)  || '{}');
+  // Through applyAutoTask rather than written straight in, so the counters
+  // merge by maximum and a manually un-ticked m1 stays un-ticked. The armory
+  // can no longer walk a counter backwards, which is deliberate: it and the
+  // addon count the same week, and a member syncing two machines in whatever
+  // order they open the site should not see progress go down.
+  applyAutoTask(charName, 'm1', { done: total >= 8, value: Math.min(total, 8) }, 'armory');
+  applyAutoTask(charName, 'v3', { done: total >= 8, value: Math.min(total, 8) }, 'armory');
+  applyAutoTask(charName, 'm4', { value: highKeys }, 'armory');
 
-  const m1Val = Math.min(total, 8);
-  goals['m1'] = m1Val;
-  if (m1Val >= 8) done['m1'] = true; else delete done['m1'];
-  goals['m4'] = highKeys;
-
-  localStorage.setItem(goalsKey, JSON.stringify(goals));
-  localStorage.setItem(doneKey,  JSON.stringify(done));
   return { total, highKeys };
 }
 
 /* ── RAID BOSS AUTO-CHECK ── */
 function armoryAutoCheckRaidBosses(charName) {
   const armory = loadArmoryData(charName);
-  if (!armory?.raidKills || !Object.keys(armory.raidKills).length) return;
+  if (!armory?.raidKills || !Object.keys(armory.raidKills).length) return 0;
 
-  const weekKey  = getWeekKey();
-  const bossKey  = 'wow_mn_bosses_' + charName + '_' + weekKey;
-  const doneKey  = 'wow_mn_' + charName + '_' + weekKey;
-  const kills    = JSON.parse(localStorage.getItem(bossKey) || '{}');
-  const done     = JSON.parse(localStorage.getItem(doneKey) || '{}');
-  let bossChanged = false, doneChanged = false;
-
+  let recorded = 0;
   for (const [taskId, bosses] of Object.entries(armory.raidKills)) {
     for (const [bossId, killed] of Object.entries(bosses)) {
       if (!killed) continue;
-      const k = taskId + '_' + bossId;
-      if (!kills[k]) { kills[k] = true; bossChanged = true; }
-    }
-    // Auto-complete task if every boss in that task is now killed
-    const task = (typeof SECTIONS !== 'undefined')
-      ? SECTIONS.flatMap(s => s.tasks).find(t => t.id === taskId)
-      : null;
-    if (task?.bosses) {
-      const allKilled = task.bosses.every(b => kills[taskId + '_' + b.id]);
-      if (allKilled && !done[taskId]) { done[taskId] = true; doneChanged = true; }
+      // applyAutoBoss derives the task completion from the boss list, so the
+      // "every boss dead" rule lives in exactly one place now that the addon
+      // reports kills through the same door.
+      if (applyAutoBoss(charName, taskId, bossId, 'armory')) recorded++;
     }
   }
+  return recorded;
+}
 
-  if (bossChanged) localStorage.setItem(bossKey, JSON.stringify(kills));
-  if (doneChanged) localStorage.setItem(doneKey,  JSON.stringify(done));
+/* ── COLLECTIONS AUTO-CHECK ──
+   Mounts, toys and achievements from the Battle.net profile. Account-wide, so
+   a collectible ticks on every character rather than the one that looted it.
+
+   The addon reports the same things faster; this is the backstop that credits
+   anything collected before the addon was installed, or on a machine that
+   never syncs the file. Whichever arrives first wins and the other no-ops. */
+async function armorySyncCollections() {
+  try {
+    const res = await fetch('/api/collections');
+    if (res.status === 401) { _handleSessionExpired(); return 0; }
+    if (!res.ok) return 0;
+
+    const data = await res.json();
+    if (!data || data.unavailable) return 0;
+
+    localStorage.setItem('wow_mn_collections', JSON.stringify({
+      mounts: data.mounts?.length || 0,
+      toys: data.toys?.length || 0,
+      achievements: data.achievements?.length || 0,
+      lastSync: Date.now(),
+    }));
+
+    // Same merge path the addon's collections take, so the two cannot
+    // disagree about what "collected" means.
+    return applyLedgerCollections(data, 'armory');
+  } catch (_) {
+    return 0;
+  }
 }
 
 /* ── SYNC ALL BUTTON ── */

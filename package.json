@@ -1,0 +1,8 @@
+{
+  "name": "azeroth-agenda",
+  "private": true,
+  "description": "The Azeroth Agenda: a World of Warcraft weekly task tracker",
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  }
+}

@@ -196,15 +196,39 @@ function getWowWeekResetMs() {
   return new Date(getWowWeekKey() + 'T15:00:00Z').getTime();
 }
 
-// Maps Battle.net raid instance names → our task ID prefix
+// Maps Battle.net raid instance names → our task ID prefix.
+//
+// The Venomous Abyss is Season 2's raid and was missing here, which meant
+// every kill in it was invisible to the auto-check: the armory sync read the
+// encounters, found no prefix, and dropped them. Season 1's three raids stay
+// because their tasks are still on the site under `raid-s1`.
 const RAID_INSTANCE_MAP = {
+  'The Venomous Abyss':    'vab',
   'The Dreamrift':         'rd',
   'The Voidspire':         'vs',
   "March on Quel'Danas":   'mq',
 };
 
-// Maps Battle.net encounter names → our boss ID
+// Maps Battle.net encounter names → our boss ID.
+//
+// Blizzard's journal and the site's own boss lists do not always agree on
+// whether a name carries its article, so both forms are mapped where they
+// differ. The addon's Core/TaskMap.lua carries the same aliases.
 const RAID_BOSS_ID_MAP = {
+  // The Venomous Abyss, Season 2
+  "Nek'zali":                   'nekzali',
+  'Entombed Sentinels':         'sentinels',
+  'Lost Explorers':             'explorers',
+  'The Lost Explorers':         'explorers',
+  'Vashnik':                    'vashnik',
+  'Vashnik the Malignant':      'vashnik',
+  'Sszorak':                    'sszorak',
+  'Twin Fangs':                 'twinfangs',
+  'The Twin Fangs':             'twinfangs',
+  'Coiled Altar':               'coiledaltar',
+  'The Coiled Altar':           'coiledaltar',
+  "Ula'tek":                    'ulatek',
+  // Season 1
   'Chimaerus':                  'chimaerus',
   'Imperator Averzian':         'averzian',
   'Vorasius':                   'vorasius',
@@ -433,6 +457,373 @@ async function handleGetCharacters(request, env) {
   return Response.json(chars);
 }
 
+// ── Collections via Battle.net ───────────────────────────────────────────────
+//
+// Mounts, toys and achievements, so the collectibles section can tick itself.
+// Account-wide rather than per character, which is why it is one endpoint and
+// not part of /api/armory.
+//
+// Matched on name downstream, not id: the addon reads C_MountJournal, this
+// reads the profile API, and the two share no id space. Both agree on names,
+// and the site's task entries already carry the name.
+
+async function handleGetCollections(request, env) {
+  const payload = await verifyJWT(getSessionCookie(request), env.SESSION_SECRET);
+  if (!payload) return new Response('Unauthorized', { status: 401 });
+  if (!env.USER_DATA) return Response.json({ unavailable: true });
+
+  const accessToken = await env.USER_DATA.get('token:' + payload.sub);
+  if (!accessToken) return new Response('Token expired', { status: 401 });
+
+  const region  = payload.region || 'us';
+  const apiBase = `https://${region}.api.blizzard.com`;
+  const headers = {
+    'Authorization':       `Bearer ${accessToken}`,
+    'Battlenet-Namespace': `profile-${region}`,
+  };
+
+  // Collections change slowly and this is three requests, so it is cached for
+  // an hour against the member's own key rather than re-fetched on every page
+  // load. The addon covers the gap: it reports a drop the moment it lands.
+  const cacheKey = 'collections:' + payload.sub;
+  const cached = await env.USER_DATA.get(cacheKey, { type: 'json' });
+  if (cached && cached.lastSync && Date.now() - cached.lastSync < 3600 * 1000) {
+    return Response.json(cached);
+  }
+
+  const [mountsRes, toysRes] = await Promise.all([
+    fetch(`${apiBase}/profile/user/wow/collections/mounts?locale=en_US`, { headers }),
+    fetch(`${apiBase}/profile/user/wow/collections/toys?locale=en_US`,   { headers }),
+  ]);
+
+  if (mountsRes.status === 401) {
+    await env.USER_DATA.delete('token:' + payload.sub);
+    return new Response('Token expired', { status: 401 });
+  }
+
+  const bnetStr = v => (typeof v === 'string' ? v : v?.en_US ?? '');
+
+  let mounts = [];
+  if (mountsRes.ok) {
+    const data = await mountsRes.json().catch(() => null);
+    mounts = (data?.mounts || [])
+      .map(m => bnetStr(m.mount?.name))
+      .filter(Boolean);
+  }
+
+  let toys = [];
+  if (toysRes.ok) {
+    const data = await toysRes.json().catch(() => null);
+    toys = (data?.toys || []).map(t => bnetStr(t.toy?.name)).filter(Boolean);
+  }
+
+  // Achievements are per character, not per account, so this needs one to ask
+  // about. The member's highest-level character is the best proxy for "the one
+  // that has the account-wide achievements", and account-wide is what the
+  // collectibles section is asking about anyway.
+  let achievements = [];
+  const charRes = await fetch(`${apiBase}/profile/user/wow?locale=en_US`, { headers });
+  if (charRes.ok) {
+    const account = await charRes.json().catch(() => null);
+    const best = (account?.wow_accounts || [])
+      .flatMap(a => a.characters || [])
+      .sort((a, b) => (b.level || 0) - (a.level || 0))[0];
+    if (best?.realm?.slug && best?.name) {
+      const achRes = await fetch(
+        `${apiBase}/profile/wow/character/${encodeURIComponent(best.realm.slug)}/`
+        + `${encodeURIComponent(best.name.toLowerCase())}/achievements?locale=en_US`,
+        { headers });
+      if (achRes.ok) {
+        const data = await achRes.json().catch(() => null);
+        achievements = (data?.achievements || [])
+          .filter(a => a.completed_timestamp)
+          .map(a => a.id)
+          .filter(id => typeof id === 'number');
+      }
+    }
+  }
+
+  const result = { mounts, toys, achievements, lastSync: Date.now() };
+  await env.USER_DATA.put(cacheKey, JSON.stringify(result), { expirationTtl: 86400 });
+  return Response.json(result);
+}
+
+// ── Consent ──────────────────────────────────────────────────────────────────
+//
+// What Tabard is allowed to read, decided by the member and by nobody else.
+// Absent means every scope is off, so a member who has never seen this screen
+// is not sharing anything.
+
+const CONSENT_SCOPES = ['agenda.weekly', 'rating.self', 'rating.profile'];
+
+function emptyConsent() {
+  return {
+    v: 1,
+    updated: 0,
+    scopes: Object.fromEntries(CONSENT_SCOPES.map(k => [k, false])),
+    discord: null,
+  };
+}
+
+async function readConsent(env, sub) {
+  if (!env.USER_DATA) return emptyConsent();
+  const raw = await env.USER_DATA.get('consent:' + sub, { type: 'json' });
+  if (!raw) return emptyConsent();
+  // Normalise rather than trust: a scope added after a record was written
+  // must read as false, not undefined.
+  const consent = emptyConsent();
+  consent.updated = raw.updated || 0;
+  consent.discord = raw.discord || null;
+  for (const scope of CONSENT_SCOPES) consent.scopes[scope] = raw.scopes?.[scope] === true;
+  return consent;
+}
+
+async function handleGetConsent(request, env) {
+  const payload = await verifyJWT(getSessionCookie(request), env.SESSION_SECRET);
+  if (!payload) return new Response('Unauthorized', { status: 401 });
+  return Response.json(await readConsent(env, payload.sub));
+}
+
+async function handlePutConsent(request, env) {
+  const payload = await verifyJWT(getSessionCookie(request), env.SESSION_SECRET);
+  if (!payload) return new Response('Unauthorized', { status: 401 });
+  if (!env.USER_DATA) return new Response('KV not configured', { status: 503 });
+
+  let body;
+  try { body = await request.json(); } catch (_) { return new Response('Bad JSON', { status: 400 }); }
+
+  const consent = await readConsent(env, payload.sub);
+  for (const scope of CONSENT_SCOPES) {
+    if (typeof body?.scopes?.[scope] === 'boolean') consent.scopes[scope] = body.scopes[scope];
+  }
+  consent.updated = Date.now();
+
+  await env.USER_DATA.put('consent:' + payload.sub, JSON.stringify(consent));
+  return Response.json(consent);
+}
+
+// ── Ledger upload ────────────────────────────────────────────────────────────
+//
+// The decoded envelope, so Tabard can read it without the member's browser
+// being open. Stored under its own key rather than inside the localStorage
+// blob: it has a different shape, a different lifetime, and revoking it
+// should be one delete.
+
+async function handlePutLedger(request, env) {
+  const payload = await verifyJWT(getSessionCookie(request), env.SESSION_SECRET);
+  if (!payload) return new Response('Unauthorized', { status: 401 });
+  if (!env.USER_DATA) return new Response('KV not configured', { status: 503 });
+
+  let body;
+  try { body = await request.json(); } catch (_) { return new Response('Bad JSON', { status: 400 }); }
+  if (!body || body.fmt !== 'PLW1' || body.v !== 1) {
+    return new Response('Not a PLW1 version 1 envelope', { status: 400 });
+  }
+
+  // Bounded on the way in. A member with a very large ledger should get a
+  // clear rejection rather than a KV write that fails opaquely later.
+  const serialized = JSON.stringify({ ...body, storedAt: Date.now() });
+  if (serialized.length > 900 * 1024) {
+    return new Response('Envelope too large; turn off grade sharing in the addon', { status: 413 });
+  }
+
+  await env.USER_DATA.put('ledger:' + payload.sub, serialized);
+  return Response.json({ ok: true, storedAt: Date.now() });
+}
+
+async function handleGetLedger(request, env) {
+  const payload = await verifyJWT(getSessionCookie(request), env.SESSION_SECRET);
+  if (!payload) return new Response('Unauthorized', { status: 401 });
+  if (!env.USER_DATA) return Response.json({ unavailable: true });
+  const raw = await env.USER_DATA.get('ledger:' + payload.sub);
+  return Response.json(raw ? JSON.parse(raw) : null);
+}
+
+async function handleDeleteLedger(request, env) {
+  const payload = await verifyJWT(getSessionCookie(request), env.SESSION_SECRET);
+  if (!payload) return new Response('Unauthorized', { status: 401 });
+  if (!env.USER_DATA) return new Response('KV not configured', { status: 503 });
+  await env.USER_DATA.delete('ledger:' + payload.sub);
+  return Response.json({ ok: true });
+}
+
+// ── Share API ────────────────────────────────────────────────────────────────
+//
+// Read by Tabard, on the member's behalf. Two independent gates, and both have
+// to pass:
+//
+//   1. The service token proves the caller is Tabard. It does not authorize
+//      anything on its own.
+//   2. The member's consent record says whether this particular scope is
+//      readable. Absent record means no.
+//
+// A refusal names the scope, so Tabard can tell the member which switch to
+// flip rather than reporting a generic failure.
+
+function serviceAuthorized(request, env) {
+  const expected = env.AGENDA_SERVICE_TOKEN;
+  // No token configured means the share API is off, not open.
+  if (!expected) return false;
+  const header = request.headers.get('Authorization') || '';
+  const presented = header.startsWith('Bearer ') ? header.slice(7) : '';
+  return presented.length > 0 && timingSafeEqual(presented, expected);
+}
+
+// Comparison in time independent of where the strings first differ. A plain
+// === leaks the shared secret one byte at a time to anyone who can measure
+// the response.
+function timingSafeEqual(a, b) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+function scopeDenied(scope) {
+  return Response.json(
+    { error: 'scope_denied', scope,
+      message: `The member has not shared ${scope}. They can turn it on under `
+             + `Account, "Share with Discord", on The Azeroth Agenda.` },
+    { status: 403 });
+}
+
+async function shareContext(request, env) {
+  if (!serviceAuthorized(request, env)) {
+    return { error: new Response('Unauthorized', { status: 401 }) };
+  }
+  if (!env.USER_DATA) {
+    return { error: new Response('KV not configured', { status: 503 }) };
+  }
+  const sub = new URL(request.url).searchParams.get('sub');
+  if (!sub) return { error: new Response('Missing sub', { status: 400 }) };
+
+  return { sub, consent: await readConsent(env, sub) };
+}
+
+// Weekly objective completion for one member, per character.
+async function handleShareAgenda(request, env) {
+  const ctx = await shareContext(request, env);
+  if (ctx.error) return ctx.error;
+  if (!ctx.consent.scopes['agenda.weekly']) return scopeDenied('agenda.weekly');
+
+  const raw = await env.USER_DATA.get('user:' + ctx.sub);
+  const blob = raw ? JSON.parse(raw) : {};
+  const weekKey = getWowWeekKey();
+
+  const characters = (blob['wow_midnight_chars'] || []).map((charName) => {
+    const done   = blob['wow_mn_' + charName + '_' + weekKey] || {};
+    const goals  = blob['wow_mn_goals_' + charName + '_' + weekKey] || {};
+    const hidden = blob['wow_mn_hidden_' + charName] || {};
+    const list   = blob['wow_mn_yourlist_' + charName] || [];
+    const src    = blob['wow_mn_autosrc_' + charName + '_' + weekKey] || {};
+
+    // "Your List" is the member's own curated set, which is a far better
+    // denominator than the whole checklist: nobody does all of it, so a
+    // percentage against everything is always low and never means anything.
+    const tracked = list.filter((id) => !hidden[id]);
+    const doneIds = tracked.filter((id) => done[id]);
+
+    return {
+      name: charName,
+      realm: blob['wow_mn_realmslug_' + charName] || null,
+      className: (blob['wow_mn_armory_' + charName] || {}).className || null,
+      ilvl: (blob['wow_mn_armory_' + charName] || {}).ilvl || null,
+      mythicRating: (blob['wow_mn_armory_' + charName] || {}).mythicRating || null,
+      tracked: tracked.length,
+      done: doneIds.length,
+      // Enough to render a card without Tabard needing the task list.
+      items: tracked.map((id) => ({
+        id, done: !!done[id], value: goals[id] ?? null, source: src[id] || null,
+      })),
+    };
+  }).filter((c) => c.tracked > 0);
+
+  const ledgerRaw = await env.USER_DATA.get('ledger:' + ctx.sub);
+  const ledger = ledgerRaw ? JSON.parse(ledgerRaw) : null;
+
+  return Response.json({
+    week: weekKey,
+    characters,
+    ledger: ledger ? { generated: ledger.generated, addon: ledger.addon } : null,
+  });
+}
+
+// What the member thought of one player, read back to the member. Never to
+// anyone else: this endpoint answers only for the ledger belonging to `sub`,
+// and Tabard only ever calls it with the sub of the person who ran the command.
+async function handleShareRating(request, env) {
+  const ctx = await shareContext(request, env);
+  if (ctx.error) return ctx.error;
+  if (!ctx.consent.scopes['rating.self']) return scopeDenied('rating.self');
+
+  const player = (new URL(request.url).searchParams.get('player') || '').trim().toLowerCase();
+  if (!player) return new Response('Missing player', { status: 400 });
+
+  const raw = await env.USER_DATA.get('ledger:' + ctx.sub);
+  if (!raw) return Response.json({ found: false, reason: 'no_ledger' });
+
+  const ledger = JSON.parse(raw);
+  const recent = ledger?.ratings?.recent || [];
+
+  // Name, or name-realm. Realms are matched loosely because the addon
+  // normalises them and the member will type them however they like.
+  const norm = (s) => String(s || '').toLowerCase().replace(/[\s'’-]/g, '');
+  const wanted = norm(player.split('-')[0]);
+  const wantedRealm = player.includes('-') ? norm(player.split('-').slice(1).join('-')) : null;
+
+  const matches = recent.filter((r) => {
+    if (norm(r.name) !== wanted) return false;
+    return !wantedRealm || norm(r.realm) === wantedRealm;
+  });
+
+  return Response.json({
+    found: matches.length > 0,
+    generated: ledger.generated,
+    matches: matches.slice(0, 5),
+  });
+}
+
+// The member's own grading profile. Says something about how they grade, and
+// nothing about anyone they graded. There is deliberately no endpoint that
+// answers "what does the guild think of player X"; see INTEGRATION.md.
+async function handleShareProfile(request, env) {
+  const ctx = await shareContext(request, env);
+  if (ctx.error) return ctx.error;
+  if (!ctx.consent.scopes['rating.profile']) return scopeDenied('rating.profile');
+
+  const raw = await env.USER_DATA.get('ledger:' + ctx.sub);
+  if (!raw) return Response.json({ found: false, reason: 'no_ledger' });
+
+  const ledger = JSON.parse(raw);
+  const ratings = ledger?.ratings;
+  if (!ratings) return Response.json({ found: false, reason: 'ratings_not_shared' });
+
+  return Response.json({
+    found: true,
+    generated: ledger.generated,
+    authored: ratings.authored || 0,
+    runs: ratings.runs || 0,
+    byGrade: ratings.byGrade || {},
+  });
+}
+
+// Records which Discord account is bound to this Battle.net sub, for the
+// member's own audit trail. Does not grant anything: consent is still the
+// only thing the share endpoints read.
+async function handleShareBind(request, env) {
+  if (!serviceAuthorized(request, env)) return new Response('Unauthorized', { status: 401 });
+  if (!env.USER_DATA) return new Response('KV not configured', { status: 503 });
+
+  let body;
+  try { body = await request.json(); } catch (_) { return new Response('Bad JSON', { status: 400 }); }
+  if (!body?.sub || !body?.discord) return new Response('Missing sub or discord', { status: 400 });
+
+  const consent = await readConsent(env, body.sub);
+  consent.discord = String(body.discord);
+  await env.USER_DATA.put('consent:' + body.sub, JSON.stringify(consent));
+  return Response.json({ ok: true, scopes: consent.scopes });
+}
+
 // ── Cloud data sync (KV) ─────────────────────────────────────────────────────
 
 async function handleGetData(request, env) {
@@ -612,6 +1003,22 @@ export default {
     if (pathname === '/api/user')      return handleApiUser(request, env);
     if (pathname === '/api/armory')      return handleGetArmory(request, env);
     if (pathname === '/api/characters')  return handleGetCharacters(request, env);
+    if (pathname === '/api/collections') return handleGetCollections(request, env);
+    if (pathname === '/api/consent') {
+      if (request.method === 'GET') return handleGetConsent(request, env);
+      if (request.method === 'PUT') return handlePutConsent(request, env);
+    }
+    if (pathname === '/api/ledger') {
+      if (request.method === 'GET')    return handleGetLedger(request, env);
+      if (request.method === 'PUT')    return handlePutLedger(request, env);
+      if (request.method === 'DELETE') return handleDeleteLedger(request, env);
+    }
+    // Service to service, for Tabard. Authenticated by a shared secret and
+    // authorized by the member's consent record, separately.
+    if (pathname === '/api/share/agenda'  && request.method === 'GET')  return handleShareAgenda(request, env);
+    if (pathname === '/api/share/rating'  && request.method === 'GET')  return handleShareRating(request, env);
+    if (pathname === '/api/share/profile' && request.method === 'GET')  return handleShareProfile(request, env);
+    if (pathname === '/api/share/bind'    && request.method === 'POST') return handleShareBind(request, env);
     if (pathname === '/api/data') {
       if (request.method === 'GET') return handleGetData(request, env);
       if (request.method === 'PUT') return handlePutData(request, env);

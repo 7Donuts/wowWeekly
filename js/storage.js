@@ -50,6 +50,10 @@ function toggleBoss(taskId, bossId) {
     if (allKilled) done[taskId] = true;
     else delete done[taskId];
     saveDone(done);
+    // Clicking a bubble is a manual action, so the resulting tick is recorded
+    // as one: an automatic source must not later claim credit for it, and
+    // clearing a bubble must not be undone by the next sync.
+    if (typeof markManualToggle === 'function') markManualToggle(taskId, allKilled);
   }
   render();
 }

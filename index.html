@@ -44,6 +44,10 @@
           <span class="byline-dot" id="auth-dot" style="display:none;">·</span>
           <a href="/auth/logout" id="auth-logout" class="account-logout" style="display:none;"><i class="ph ph-sign-out"></i>Sign out</a>
           <span id="sync-status" class="sync-status" style="display:none;"></span>
+          <button class="account-ledger-btn" id="btn-ledger" onclick="openLedgerModal()"
+                  title="Sync from the Party Ledger addon, and choose what Discord can see">
+            <i class="ph-fill ph-plug"></i><span id="ledger-btn-label">Addon &amp; Discord</span>
+          </button>
         </div>
       </div>
 
@@ -288,6 +292,17 @@
   </div>
 </div>
 
+<!-- PARTY LEDGER BRIDGE AND DISCORD SHARING -->
+<div class="modal-overlay" id="modal-ledger">
+  <div class="modal" style="width:600px;">
+    <h3>Party Ledger &amp; Discord</h3>
+    <div id="ledger-modal-content"></div>
+    <div class="modal-btns" style="margin-top:1.25rem;">
+      <button class="btn-cancel" onclick="closeLedgerModal()">Close</button>
+    </div>
+  </div>
+</div>
+
 <input type="file" id="import-file-input" accept=".json" style="display:none;" onchange="handleImportFile(event)">
 <div id="share-toast" class="share-toast"></div>
 
@@ -390,7 +405,8 @@
 <script src="js/data-bis.js?v=1.13.0"></script>
 <script src="js/data-item-ids.js?v=1.13.0"></script>
 <script src="js/storage.js?v=1.13.0"></script>
-<script src="js/armory.js?v=1.13.0"></script>
+<script src="js/ledger.js?v=1.0.0"></script>
+<script src="js/armory.js?v=1.14.0"></script>
 <script src="js/confetti.js?v=1.13.0"></script>
 <script src="js/theme.js?v=1.13.0"></script>
 <script src="js/app.js?v=2.2.0"></script>
