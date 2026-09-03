@@ -335,7 +335,10 @@ function updateDashboardSummary(done, total) {
   }
 
   const dossier = document.getElementById('character-dossier');
-  if (dossier) dossier.style.setProperty('--class-color', def?.color || '#9b80e6');
+  if (dossier) {
+    dossier.style.setProperty('--class-color', def?.color || '#9b80e6');
+    dossier.classList.toggle('is-death-knight', cls === 'death-knight');
+  }
 
   const classIcon = document.getElementById('hero-class-icon');
   const classEmblem = document.getElementById('hero-class-emblem');
