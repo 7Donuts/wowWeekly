@@ -78,6 +78,17 @@ const SECTIONS = [
       { id: 'v5', name: 'Plan your rows on purpose, not by accident',
         desc: 'Pick the two rows that actually improve your weakest slots and drive those to their thresholds. Nine random completions beat nothing, but three deliberate ones beat nine random ones.',
         cadence: 'weekly', tags: ['tag-vault'] },
+      { id: 'v6', name: 'Take a Nebulous Voidcore bonus roll once three slots are filled',
+        desc: 'New in Season 2: the Vault offers a Nebulous Voidcore as a reward option once you fill at least three slots for the following week. That is one bonus roll per week, and a raid boss now costs a single roll rather than two, the same as Mythic+. Rolling on a Heroic kill returns the item on the Myth 1/6 track, so bonus rolls are how you reach Mythic item levels on bosses you are not killing on Mythic.',
+        cadence: 'weekly', tags: ['tag-vault', 'tag-raid', 'tag-121'] },
+      { id: 'v7', name: 'Take Thalassian Tokens of Merit when no Vault slot is an upgrade',
+        goal: {max:3, label:'slots', milestones:[
+          {at:1, note:'2 Thalassian Tokens of Merit'},
+          {at:2, note:'4 Thalassian Tokens of Merit'},
+          {at:3, note:'6 Thalassian Tokens of Merit'},
+        ]},
+        desc: 'A Vault with nothing worth taking is not a wasted Vault. Trade the week for currency instead, at Vaultkeeper Elysa beside the Great Vault. Six tokens buys a Miasmic Jewelbinder, which adds a socket to a Season 2 helm, bracers or belt that does not have one, or a Spark of Tides, which lifts a crafted piece past the seasonal cap. Cheaper rows buy Mistcrest packs and gold.',
+        cadence: 'weekly', tags: ['tag-vault', 'tag-gold', 'tag-121'] },
     ]
   },
 
@@ -112,6 +123,9 @@ const SECTIONS = [
       { id: 'mc6', name: 'Bank Ascendant Venomstones for weapons and trinkets',
         desc: 'Ascendant Venomstones push select items past the normal Myth 6/6 ceiling toward the ilvl 344 band that the last two Mythic Venomous Abyss bosses drop at. Weapons and trinkets carry the most stat weight, so spend there first.',
         cadence: 'weekly', tags: ['tag-gold', 'tag-raid', 'tag-121'] },
+      { id: 'mc_scion', name: 'Earn Midnight Season 2: Serpent Scion for a free Catalyst charge',
+        desc: 'Charges accrue on their own, one at season start and one every two weeks after. This achievement is the only way to get ahead of that clock, and it pays a full extra charge once per season. Any one of three routes finishes it: 1,600 rated PvP, 2,000 Mythic+ rating, or killing Ula\'tek on Heroic or Mythic.',
+        cadence: 'longterm', tags: ['tag-vault', 'tag-raid', 'tag-mythic', 'tag-pvp', 'tag-121'] },
       { id: 'mc7', name: 'Missed weeks are not lost: check your catch-up ceiling',
         desc: 'Each week a crest tier has been earnable raises your personal ceiling whether or not you played. A character starting the season late can farm past the nominal 100 to close the gap, so do not assume a skipped week is gone.',
         cadence: 'weekly', tags: ['tag-gold', 'tag-121'] },
@@ -363,6 +377,13 @@ const SECTIONS = [
       { id: 'vab_curio', name: 'Loot the Slumbering Coil Curio from Ula\'tek and hand it to Kirana',
         desc: 'Ula\'tek drops a universal omni-token instead of a class tier token. Turn it in to Kirana in Silvermoon for any class set piece you choose. You can only hold one at a time, so exchange it before your next kill.',
         cadence: 'weekly', tags: ['tag-raid', 'tag-gold', 'tag-121'] },
+      { id: 'vab_tier', name: 'Assemble your Season 2 four-piece tier set',
+        goal: {max:4, label:'pieces', milestones:[
+          {at:2, note:'2-set bonus active'},
+          {at:4, note:'4-set bonus active'},
+        ]},
+        desc: 'Four sources feed the same set, so you rarely need the raid for all of it. Tokens drop from five bosses, one slot each: Vashnik the Malignant for Chest, Entombed Sentinels for Gloves, The Lost Explorers for Shoulders, Sszorak for Legs and The Twin Fangs for Helm. The rest comes from the Slumbering Coil Curio, class set pieces in the Great Vault, and converting seasonal non-set gear at the Catalyst.',
+        cadence: 'longterm', tags: ['tag-raid', 'tag-vault', 'tag-121'] },
       { id: 'vab_venomcursed', name: 'Take every Venomcursed piece you are offered',
         desc: 'Four Venomcursed armour pieces sit in the raid pool with unique visuals and stat profiles. They are heavily over-budget for their item level, often worth equipping over a higher-track piece from elsewhere.',
         cadence: 'weekly', tags: ['tag-raid', 'tag-121'] },
@@ -386,11 +407,11 @@ const SECTIONS = [
     isNew: true,   // new system or instance in 12.1
     priority: 2,
     tasks: [
-      { id: 'lr1', name: 'Kill The Tidebound Grotto lair boss this week',
-        desc: 'The first Lair. Each Lair puts its world boss in a private instance with its own summoning stone outside, so no shared-world tagging and no lag. Loot is raid-level and the kill contributes to the Great Vault Raid row.',
+      { id: 'lr1', name: 'Kill Nymrissa Wavecaller in The Tidebound Grotto this week',
+        desc: 'The first Lair boss, at 60.0, 66.0 on the Coiled Isle, at the bottom of a large body of water, with a summoning stone outside. Each Lair puts its boss in a private instance, so no shared-world tagging and no lag. Loot is raid-level and the kill contributes to the Great Vault Raid row. The lockout is per difficulty, so a World clear does not stop you killing her again on Normal.',
         cadence: 'weekly', tags: ['tag-raid', 'tag-world', 'tag-vault', 'tag-121'] },
       { id: 'lr2', name: 'Pick your Lair difficulty deliberately',
-        desc: 'Lairs offer World, Normal, Heroic and a flexible Mythic for 15 to 25 players. Reward tracks scale with difficulty, from Veteran gear at World tier up to Myth-track plus a Great Vault slot on Mythic. Bring the biggest group you can assemble.',
+        desc: 'Lairs offer World, Normal, Heroic and a flexible Mythic for 15 to 25 players. Reward tracks scale with difficulty, from Veteran gear at World tier up to Myth-track plus a Great Vault slot on Mythic. World difficulty drops you straight in and fills to 40 players around you; every other difficulty needs a premade before you can zone in, and Normal and Heroic take 10 to 30.',
         cadence: 'weekly', tags: ['tag-raid', 'tag-121'] },
       { id: 'lr3', name: 'Farm the Tidebound Grotto trinket if it is on your BiS list',
         desc: 'The Wavecaller\'s Seastone from The Tidebound Grotto sits at or near the top of several Season 2 trinket rankings, which makes a weekly Lair clear worth it well past the point the gear stops mattering.',
@@ -437,6 +458,9 @@ const SECTIONS = [
       { id: 'pf1', name: 'Complete the Weekly Profession Quest (Silvermoon trainer)',
         desc: 'One per profession per week, from your trainer near the Silvermoon Forgegrounds. Still the steadiest Knowledge Point income in the game.',
         cadence: 'weekly', tags: ['tag-professions', 'tag-gold'] },
+      { id: 'pf_spark', name: 'Claim your weekly Spark of Tides',
+        desc: 'One Spark per week from the repeatable weekly quest in the expansion hub, and most content will hand you one at random if you have fallen behind the cap. Two Sparks make a crafted piece, four make a two-hander, so keeping up is what sets the pace of crafted gear. Add 80 Hero Mistcrests to reach 318, or 80 Myth to reach 331.',
+        cadence: 'weekly', tags: ['tag-professions', 'tag-gold', 'tag-121'] },
       { id: 'pf2', goal: {max:5, label:'orders'},
         name: 'Fill Crafting Orders at the Forgegrounds',
         desc: 'Public and guild orders. Tips, crafting experience, and Patron Order completions toward the special rewards.',
@@ -496,6 +520,12 @@ const SECTIONS = [
       { id: 'we_bonus', name: 'Check the active Bonus Event and claim its weekly',
         desc: 'The weekly bonus event rotates through world quests, dungeons, PvP, pet battles and Timewalking. Each has a one-quest weekly attached that most players walk past.',
         cadence: 'weekly', tags: ['tag-world', 'tag-gold'] },
+      { id: 'we_worldboss', name: 'Kill the rotating Midnight world boss',
+        desc: 'Lairs did not replace the launch world bosses. Lu\'ashal, Cragpine, Thorm\'belan and Predaxas stay on a fixed rotation with exactly one spawning each week, and each drops item level 246 Warbound-until-equipped gear worth sending to an alt. Look for the world quest marked with a skull to see which one is up.',
+        cadence: 'weekly', tags: ['tag-world', 'tag-121'] },
+      { id: 'we_trading_post', name: 'Fill the Traveler\'s Log before the month turns over',
+        desc: 'The Trading Post resets monthly and unclaimed Trader\'s Tender does not roll over. Filling the log is worth a month of Tender for activities you are doing anyway, and the month\'s stock disappears when it rotates.',
+        cadence: 'longterm', tags: ['tag-world', 'tag-gold'] },
     ]
   },
 
@@ -882,7 +912,7 @@ const BEGINNER_STAGES = [
     tasks: [
       'lt_unlock','lt_campaign',       // Unlock the isle: everything else is gated behind it
       'ci1','ci2','ci3',               // Coiled Isle dailies
-      'we0a','we0b',                   // World quests + rares
+      'we0a','we0b','we_worldboss',    // World quests, rares, weekly world boss
       'we2','we4',                     // Abundance + Soiree
       'pr_quest','pr_norm',            // Start Prey, run Normal hunts
       'd_bountiful','d3',              // Bountiful Delves + weekly cache
@@ -898,12 +928,12 @@ const BEGINNER_STAGES = [
     tasks: [
       'lt_campaign','ci8',             // Finish campaign, open the Altar of Corrosion
       'ci1','ci2','ci3','ci4','ci5','ci6','ci9',
-      'we0a','we0b','we_wt','we2','we4','we5',
+      'we0a','we0b','we_wt','we2','we4','we5','we_worldboss',
       'pr_norm','pr_hard','pr_souls',
       'rs1',                           // Ritual Sites
       'd1','d_bountiful','d3','d_souls',
       'lr1','lr2',                     // Lairs: raid-level loot without a raid group
-      'pf1','pf2','pf_reset','pf_gather',
+      'pf1','pf2','pf_spark','pf_reset','pf_gather',
       'v1','v2','v4','v5',
       'mc1','mc2','mc4','mc5',
       'lt_zuljarra',
@@ -916,15 +946,15 @@ const BEGINNER_STAGES = [
     color: 'var(--void-glow)',
     tasks: [
       'ci1','ci2','ci3','ci4','ci5','ci6','ci7','ci9',
-      'we0a','we0b','we_wt','we2','we4','we5','we6','we_bonus',
+      'we0a','we0b','we_wt','we2','we4','we5','we6','we_bonus','we_worldboss',
       'pr_norm','pr_hard','pr_nm','pr_souls','pr_afflicted','pr_ralkala',
       'rs1','rs2',
       'd1','d_bountiful','d3','d_souls','d_journey',
       'm1','m2','m4','m6',
       'lr1','lr2','lr3',
-      'vab_n','vab_curio','vab_venomcursed',
-      'pf1','pf2','pf_recipes','pf_embellish','pf4',
-      'v1','v2','v3','v4','v5',
+      'vab_n','vab_curio','vab_venomcursed','vab_tier',
+      'pf1','pf2','pf_spark','pf_recipes','pf_embellish','pf4',
+      'v1','v2','v3','v4','v5','v6','v7',
       'mc1','mc2','mc4','mc5','mc7',
       'lt_zuljarra','lt_tokka',
     ]
@@ -942,11 +972,11 @@ const BEGINNER_STAGES = [
       'd1','d_bountiful','d_souls','d_nemesis','d_journey',
       'm1','m4','m5','m6',
       'lr1','lr2','lr3',
-      'vab_h','vab_m','vab_curio','vab_venomcursed','vab_veryrare',
-      'pf1','pf2','pf_embellish','pf4',
+      'vab_h','vab_m','vab_curio','vab_venomcursed','vab_veryrare','vab_tier',
+      'pf1','pf2','pf_spark','pf_embellish','pf4',
       'pv1','pv4','pv5','pv6','pv7','pv_gear',
-      'v1','v2','v3','v4','v5',
-      'mc1','mc2','mc3','mc4','mc5','mc6','mc7',
+      'v1','v2','v3','v4','v5','v6','v7',
+      'mc1','mc2','mc3','mc4','mc5','mc6','mc7','mc_scion',
       'lt_zuljarra','lt_hof',
     ]
   },

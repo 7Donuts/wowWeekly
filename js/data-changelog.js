@@ -9,6 +9,22 @@
 ------------------------------------------- */
 const VERSIONS = [
   {
+    version: 'v3.2.0',
+    date: 'September 3, 2026',
+    summary: 'Seven Season 2 tasks added after a pass over the live Icy Veins guides: bonus rolls, Vault tokens, tier set, Sparks, the extra Catalyst charge, the world boss rotation and the Trading Post',
+    entries: [
+      { type: 'new', text: 'Great Vault bonus rolls tracked for Season 2', detail: "Filling three Vault slots makes a Nebulous Voidcore available as a reward option the following week. That is one bonus roll per week, a raid boss now costs one roll instead of two, and rolling on a Heroic kill returns the item on the Myth 1/6 track. The site previously only carried bonus rolls under the retired Season 1 Voidforge section, which is hidden by default." },
+      { type: 'new', text: 'Thalassian Token of Merit added as the Vault fallback', detail: 'A Vault with no upgrade in it can be traded for currency at Vaultkeeper Elysa instead: 2, 4 or 6 tokens depending on slots filled. Six buys a Miasmic Jewelbinder to socket a helm, bracers or belt, or a Spark of Tides to push a crafted piece past the seasonal cap.' },
+      { type: 'new', text: 'Season 2 tier set added as a tracked four-piece goal', detail: "Token bosses are listed by slot: Vashnik the Malignant for Chest, Entombed Sentinels for Gloves, The Lost Explorers for Shoulders, Sszorak for Legs and The Twin Fangs for Helm, alongside the Slumbering Coil Curio, Great Vault picks and Catalyst conversions." },
+      { type: 'new', text: 'Weekly Spark of Tides quest added to Professions', detail: 'One Spark a week, two per crafted piece and four for a two-hander, which is the real pace limit on crafted gear. Adding 80 Hero Mistcrests reaches 318 and 80 Myth reaches 331.' },
+      { type: 'new', text: 'Midnight Season 2: Serpent Scion added as a long term goal', detail: 'The only way to earn a Catalyst charge ahead of the two-week timer, once per season, via 1,600 rated PvP, 2,000 Mythic+ rating, or a Heroic or Mythic Ula\'tek kill.' },
+      { type: 'new', text: 'Rotating Midnight world boss added to World Events', detail: "Lairs did not replace the launch world bosses. Lu'ashal, Cragpine, Thorm'belan and Predaxas stay on a fixed rotation, one per week, each dropping item level 246 Warbound-until-equipped gear. Look for the world quest marked with a skull." },
+      { type: 'new', text: "Trading Post Traveler's Log added as a monthly reminder", detail: 'Unclaimed Trader\'s Tender does not roll over and the month\'s stock rotates out.' },
+      { type: 'improve', text: 'Lair tasks now name Nymrissa Wavecaller and where to find her', detail: 'The Tidebound Grotto sits at 60.0, 66.0 on the Coiled Isle, underwater, with a summoning stone outside. The lockout is per difficulty, so a World clear does not block a Normal kill. World difficulty fills around you up to 40 players; every other difficulty needs a premade before you can zone in.' },
+      { type: 'improve', text: 'Beginner presets updated to include the new tasks at the right stage', detail: 'The world boss appears from Fresh, Sparks from Early gearing, the tier set and bonus rolls from Progressing, and the Serpent Scion charge at Endgame.' },
+    ]
+  },
+  {
     version: 'v3.1.0',
     date: 'September 3, 2026',
     summary: 'Season 2 Best in Slot lists populated: all 40 specs, both Raid BiS and Mythic+ & crafted, 80 lists in total',
