@@ -108,8 +108,13 @@ Rules:
 - Unknown keys are ignored, never dropped on a round trip.
 - Unknown task ids in `objectives` are ignored. The Agenda's task list moves
   every patch and the addon's copy will lag it.
-- Timestamps are unix seconds. The client clock is not trusted for anything
-  but display ordering.
+- Timestamps are unix seconds. `generated` is load-bearing: the Agenda decides
+  which reset week a payload belongs to from that, not from `week`.
+- `week` is **advisory**. The reset is not the same moment in every region and
+  an addon cannot know each region's reset hour, so the label the addon
+  computes may differ from the site's for the same moment. Matching labels
+  would reject a payload written twenty minutes ago; matching timestamps does
+  not. See "The reset week" below.
 - `collections` matches on name, not id. Both the addon (`C_MountJournal`) and
   the Blizzard profile API return localized names for the same collection, and
   the Agenda's task entries already carry the name. Ids are carried as an
@@ -148,6 +153,35 @@ the client, and the Agenda supports two of them:
    copy box. Works in every browser.
 
 There is no third path. The addon never sees the network.
+
+## The reset week
+
+US realms reset Tuesday and EU realms Wednesday, and the exact hour is a
+Blizzard fact rather than something any of these three programs should assert
+from memory. Guessing it moves every weekly storage key to a value that is
+also wrong, and then moves them again when the guess is corrected.
+
+So nothing is guessed:
+
+- The Agenda **learns** the anchor from Blizzard's own mythic keystone period,
+  which `/api/reset-time?region=` already returns, and caches it as
+  `wow_mn_reset_anchor` (`{day, hour}`, UTC). That key syncs, so the worker
+  reads the same anchor the browser used.
+- Until the first successful learn, **every region keeps Tuesday 15:00 UTC**,
+  which is what the site has always done. The default is "unchanged", never a
+  different guess.
+- A learned anchor is adopted at page load and never mid-session, and adopting
+  one migrates the current week's keys across rather than appearing to erase
+  them.
+- The **addon does not participate**. It keeps its own Tuesday-anchored label
+  for its internal pruning, and the Agenda buckets its payloads by `generated`.
+  This is why an EU member's addon needs no configuration.
+
+The site and the worker are two implementations of one rule and are tested
+against each other across a full year at half-hour resolution, under several
+anchors. They key every piece of weekly data, so a disagreement writes into a
+bucket the other does not read, and nothing errors: the week simply looks
+empty.
 
 ## Consent and scopes
 

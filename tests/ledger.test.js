@@ -216,9 +216,13 @@ test('the same boss reported twice is recorded once', () => {
 
 /* ── Weeks ──────────────────────────────────────────────────────────────── */
 
-test('an envelope from last week does not tick this week', () => {
+test('an envelope from before this reset does not tick this week', () => {
   const ctx = setup();
   const env = envelope({
+    // Stale by when it was written, not by its week label. The addon cannot
+    // know each region's reset hour, so its label is advisory; the timestamp
+    // is what decides.
+    generated: Math.floor(Date.now() / 1000) - 30 * 86400,
     week: '2020-01-07',
     characters: {
       'kaelthas-area52': {
@@ -243,6 +247,26 @@ test('an envelope from last week does not tick this week', () => {
 });
 
 /* ── Collections ────────────────────────────────────────────────────────── */
+
+test('an envelope whose label is wrong but whose timestamp is current still counts', () => {
+  // The case region-awareness created: an EU member's addon computes a
+  // Tuesday-anchored label while the site is on a Wednesday anchor. Matching
+  // labels would reject a payload written twenty minutes ago.
+  const ctx = setup();
+  const env = envelope({
+    week: 'a-label-from-a-different-rule',
+    generated: Math.floor(Date.now() / 1000) - 60,
+    characters: {
+      'kaelthas-area52': {
+        name: 'Kaelthas', realm: 'area-52',
+        objectives: { m1: { done: true } }, bosses: {},
+      },
+    },
+  });
+  const report = ctx.applyLedgerEnvelope(env);
+  assert.equal(report.staleWeek, false);
+  assert.equal(report.tasks, 1);
+});
 
 test('a collected mount ticks its task on every character', () => {
   const ctx = setup({ characters: ['Kaelthas@area-52', 'Alt@area-52'] });

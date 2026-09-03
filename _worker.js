@@ -182,18 +182,46 @@ async function handleApiUser(request, env) {
   );
 }
 
-// ── WoW week key (mirrors frontend getWeekKey) ───────────────────────────────
-function getWowWeekKey() {
-  const now = new Date();
-  const d   = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 15, 0, 0));
-  while (d.getUTCDay() !== 2) d.setUTCDate(d.getUTCDate() - 1);
-  if (now < d) d.setUTCDate(d.getUTCDate() - 7);
-  return d.toISOString().slice(0, 10);
+// ── WoW week key ─────────────────────────────────────────────────────────────
+//
+// Mirrors js/storage.js. The reset is not the same moment in every region, so
+// the anchor is a parameter rather than a constant, and the browser learns the
+// real one from Blizzard's mythic keystone period and syncs it in the member's
+// own blob under `wow_mn_reset_anchor`. Absent that, every region keeps the
+// Tuesday 15:00 UTC rule this site has always used: the default is
+// "unchanged", never a different guess.
+//
+// Both halves of the rule live in getWowWeekStartMs; the key is only its
+// label, so the two cannot drift apart.
+
+const DEFAULT_RESET_ANCHOR = { day: 2, hour: 15 };
+
+function readResetAnchor(blob) {
+  const stored = blob && blob['wow_mn_reset_anchor'];
+  if (stored && Number.isInteger(stored.day) && Number.isInteger(stored.hour)
+      && stored.day >= 0 && stored.day <= 6 && stored.hour >= 0 && stored.hour <= 23) {
+    return stored;
+  }
+  return DEFAULT_RESET_ANCHOR;
 }
 
-// Tuesday 15:00 UTC reset as a ms timestamp: used to filter this-week kills
-function getWowWeekResetMs() {
-  return new Date(getWowWeekKey() + 'T15:00:00Z').getTime();
+function getWowWeekStartMs(anchor, nowMs) {
+  anchor = anchor || DEFAULT_RESET_ANCHOR;
+  const now = new Date(nowMs == null ? Date.now() : nowMs);
+  const d   = new Date(Date.UTC(
+    now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), anchor.hour, 0, 0));
+  while (d.getUTCDay() !== anchor.day) d.setUTCDate(d.getUTCDate() - 1);
+  if (now < d) d.setUTCDate(d.getUTCDate() - 7);
+  return d.getTime();
+}
+
+function getWowWeekKey(anchor, nowMs) {
+  return new Date(getWowWeekStartMs(anchor, nowMs)).toISOString().slice(0, 10);
+}
+
+// The moment this reset week began, for filtering this-week kills.
+function getWowWeekResetMs(anchor) {
+  return getWowWeekStartMs(anchor);
 }
 
 // Maps Battle.net raid instance names → our task ID prefix.
@@ -257,6 +285,11 @@ async function handleGetArmory(request, env) {
   const realm = url.searchParams.get('realm');
   if (!char || !realm) return new Response('Missing char or realm', { status: 400 });
 
+  // This member's own reset anchor, so weeklyRuns and raidKills are filtered
+  // against the same week boundary their browser is using.
+  const storedBlob = await env.USER_DATA.get('user:' + payload.sub, { type: 'json' });
+  const anchor = readResetAnchor(storedBlob);
+
   const region  = payload.region || 'us';
   const apiBase = `https://${region}.api.blizzard.com`;
   const headers = {
@@ -293,7 +326,7 @@ async function handleGetArmory(request, env) {
     }
     if (ks.current_period?.best_runs) {
       weeklyRuns = {
-        week: getWowWeekKey(),
+        week: getWowWeekKey(anchor),
         runs: ks.current_period.best_runs.map(r => ({
           mythic_level: r.keystone_level,
           dungeon:      bnetStr(r.dungeon?.name),
@@ -338,7 +371,7 @@ async function handleGetArmory(request, env) {
   let raidKills = {};
   if (raidsRes.ok) {
     const raidsData  = await raidsRes.json();
-    const weekReset  = getWowWeekResetMs();
+    const weekReset  = getWowWeekResetMs(anchor);
     for (const exp of (raidsData.expansions || [])) {
       for (const inst of (exp.instances || [])) {
         const prefix = RAID_INSTANCE_MAP[bnetStr(inst.instance?.name)];
@@ -726,7 +759,7 @@ async function handleShareAgenda(request, env) {
 
   const raw = await env.USER_DATA.get('user:' + ctx.sub);
   const blob = raw ? JSON.parse(raw) : {};
-  const weekKey = getWowWeekKey();
+  const weekKey = getWowWeekKey(readResetAnchor(blob));
 
   const characters = (blob['wow_midnight_chars'] || []).map((charName) => {
     const done   = blob['wow_mn_' + charName + '_' + weekKey] || {};

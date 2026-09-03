@@ -4,12 +4,140 @@
    collisions. Change the schema here and it
    propagates to every page that loads this file.
 ------------------------------------------- */
-function getWeekKey() {
-  const now = new Date();
-  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 15, 0, 0));
-  while (d.getUTCDay() !== 2) d.setUTCDate(d.getUTCDate() - 1);
+/* ── THE WEEKLY RESET ANCHOR ──────────────────────────────────────────────
+   The reset is not the same moment everywhere. US realms reset Tuesday and
+   EU realms Wednesday, and the exact hour is a Blizzard fact rather than
+   something worth asserting from memory: guessing it wrong moves every
+   storage key to a value that is also wrong, and then moves them again when
+   the guess is corrected.
+
+   So nothing here is guessed. The anchor is learned from Blizzard's own
+   mythic keystone period, which /api/reset-time already returns per region,
+   and cached. Until that first successful call every region keeps the
+   Tuesday 15:00 UTC rule this site has always used, so the default is
+   "unchanged" rather than "a different guess".
+
+   A learned anchor is adopted at page load and never mid-session. A week key
+   that changed while somebody was ticking boxes would file half their week
+   under one key and half under another.
+------------------------------------------------------------------------- */
+
+const RESET_ANCHOR_KEY = 'wow_mn_reset_anchor';
+
+// Tuesday, 15:00 UTC. What the site has always done, and what every region
+// keeps until Blizzard says otherwise.
+const DEFAULT_RESET_ANCHOR = { day: 2, hour: 15, source: 'default' };
+
+function loadResetAnchor() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(RESET_ANCHOR_KEY) || 'null');
+    if (stored && Number.isInteger(stored.day) && Number.isInteger(stored.hour)
+        && stored.day >= 0 && stored.day <= 6 && stored.hour >= 0 && stored.hour <= 23) {
+      return stored;
+    }
+  } catch (_) {}
+  return DEFAULT_RESET_ANCHOR;
+}
+
+function saveResetAnchor(anchor) {
+  localStorage.setItem(RESET_ANCHOR_KEY, JSON.stringify(anchor));
+}
+
+/* The millisecond the current reset week began, under a given anchor.
+   Everything else here is derived from this, so there is one implementation
+   of the rule rather than one per caller. */
+function weekStartMs(anchor, nowMs) {
+  anchor = anchor || loadResetAnchor();
+  const now = new Date(nowMs == null ? Date.now() : nowMs);
+  const d = new Date(Date.UTC(
+    now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), anchor.hour, 0, 0));
+  while (d.getUTCDay() !== anchor.day) d.setUTCDate(d.getUTCDate() - 1);
   if (now < d) d.setUTCDate(d.getUTCDate() - 7);
-  return d.toISOString().slice(0, 10);
+  return d.getTime();
+}
+
+function getWeekKey(anchor, nowMs) {
+  return new Date(weekStartMs(anchor, nowMs)).toISOString().slice(0, 10);
+}
+
+/* Whether a moment falls inside the current reset week. Used instead of
+   comparing week labels, so a source that computes its own key from a
+   slightly different rule (the addon, which cannot know each region's reset
+   hour) still lands in the right week. */
+function isThisWeek(unixSeconds) {
+  if (!unixSeconds) return false;
+  const start = weekStartMs();
+  const ms = unixSeconds * 1000;
+  return ms >= start && ms < start + 7 * 86400 * 1000;
+}
+
+/* Every per-week storage key family, so a change of anchor can carry the
+   current week's work across instead of appearing to erase it. */
+const WEEKLY_KEY_PREFIXES = ['wow_mn_', 'wow_mn_goals_', 'wow_mn_bosses_',
+                             'wow_mn_autosrc_', 'wow_mn_untick_'];
+
+function migrateWeekKeys(oldAnchor, newAnchor) {
+  const oldKey = getWeekKey(oldAnchor);
+  const newKey = getWeekKey(newAnchor);
+  if (oldKey === newKey) return 0;
+
+  let chars = [];
+  try { chars = JSON.parse(localStorage.getItem('wow_midnight_chars') || '[]'); } catch (_) {}
+
+  let moved = 0;
+  for (const charName of chars) {
+    for (const prefix of WEEKLY_KEY_PREFIXES) {
+      const from = prefix + charName + '_' + oldKey;
+      const to   = prefix + charName + '_' + newKey;
+      const value = localStorage.getItem(from);
+      // Never overwrite: if the new key already holds something it is newer
+      // than whatever the old anchor left behind.
+      if (value !== null && localStorage.getItem(to) === null) {
+        localStorage.setItem(to, value);
+        moved++;
+      }
+    }
+  }
+  return moved;
+}
+
+/* Learn the anchor from Blizzard and adopt it. Returns true when it changed,
+   which is the caller's signal to re-render. Safe to call on every load: it
+   is a no-op once the stored anchor already matches. */
+async function syncResetAnchor() {
+  const region = localStorage.getItem('wow_mn_bnet_region') || 'us';
+  let data;
+  try {
+    const res = await fetch('/api/reset-time?region=' + encodeURIComponent(region));
+    if (!res.ok) return false;
+    data = await res.json();
+  } catch (_) { return false; }
+
+  if (!data || !data.start_timestamp) return false;
+
+  // The period start IS the reset moment, straight from Blizzard.
+  const start = new Date(data.start_timestamp);
+  const learned = {
+    day: start.getUTCDay(), hour: start.getUTCHours(),
+    region, source: 'blizzard', learnedAt: Date.now(),
+  };
+
+  const current = loadResetAnchor();
+  if (current.day === learned.day && current.hour === learned.hour) {
+    // Same rule, but record that it is now confirmed rather than assumed.
+    if (current.source !== 'blizzard') saveResetAnchor(learned);
+    return false;
+  }
+
+  const moved = migrateWeekKeys(current, learned);
+  saveResetAnchor(learned);
+  if (typeof showToast === 'function') {
+    showToast('Weekly reset for ' + region.toUpperCase() + ' is '
+      + ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][learned.day]
+      + ' ' + String(learned.hour).padStart(2, '0') + ':00 UTC. '
+      + (moved ? 'This week\'s progress was carried across.' : ''));
+  }
+  return true;
 }
 
 function storageKey() { return 'wow_mn_' + currentChar + '_' + getWeekKey(); }

@@ -196,7 +196,11 @@ function applyLedgerEnvelope(env) {
     week: env.week, generated: env.generated, addon: env.addon,
     characters: [], unmatched: [], tasks: 0, bosses: 0, progressed: 0,
     collections: 0, ratings: env.ratings ? env.ratings.authored : 0,
-    staleWeek: env.week !== getWeekKey(),
+    // By when the payload was generated, not by whether its week label
+    // matches ours. The addon cannot know each region's exact reset hour, so
+    // its label is advisory; the timestamp is the fact. This is also why an
+    // EU member's addon does not need to be taught the EU reset.
+    staleWeek: !isThisWeek(env.generated),
   };
 
   const knownTasks = new Set(SECTIONS.flatMap(s => s.tasks).map(t => t.id));
@@ -504,7 +508,10 @@ function reportLedgerImport(report) {
   if (!report) return;
 
   if (report.staleWeek) {
-    showToast('That payload is from the week of ' + report.week + ', not this one. '
+    const when = report.generated
+      ? new Date(report.generated * 1000).toLocaleString()
+      : 'an earlier week';
+    showToast('That payload was written ' + when + ', before this week\'s reset. '
       + 'Collections were applied; weekly objectives were not. Log in and /reload to refresh it.');
     return;
   }

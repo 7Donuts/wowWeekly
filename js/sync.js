@@ -236,6 +236,18 @@
         // triggers location.reload(), which would otherwise force-pull again.
         const isFreshTab = !sessionStorage.getItem(SYNC_SS_KEY);
         await pullFromCloud(isFreshTab);
+
+        // After the pull, so a learned anchor synced from another device is
+        // already in hand, and before the member touches anything, because
+        // adopting one moves this week's storage keys.
+        if (typeof syncResetAnchor === 'function') {
+          try {
+            if (await syncResetAnchor()) {
+              if (typeof renderChars === 'function') renderChars();
+              if (typeof render === 'function') render();
+            }
+          } catch (_) {}
+        }
         // Open standalone import modal only when the welcome is not open.
         // When welcome is open the bnet-import step handles character import inline.
         if (sessionStorage.getItem('azeroth_pending_import')) {

@@ -13,6 +13,14 @@
   "compatibility_flags": [
     "nodejs_compat"
   ],
+
+  // This file is the source of truth for bindings, and without this a deploy
+  // removes any it does not declare. Secrets are set in the dashboard and can
+  // never be committed here, so the default would mean every deploy wipes
+  // BNET_CLIENT_ID, BNET_CLIENT_SECRET, SESSION_SECRET and
+  // AGENDA_SERVICE_TOKEN. Tabard learned this the hard way and carries the
+  // same flag with the same comment.
+  "keep_vars": true,
   "kv_namespaces": [
     {
       "binding": "USER_DATA",
