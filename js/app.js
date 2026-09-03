@@ -293,6 +293,11 @@ function taskTitleHtml(task, query) {
 /* Keep the sidebar-free command deck and hero in lockstep with the same
    reducer that powers the task list. The tracker remains the source of truth;
    these elements are only clearer views of its current state. */
+const CLASS_DOSSIER_BANNERS = new Set([
+  'death-knight', 'demon-hunter', 'druid', 'evoker', 'hunter', 'mage', 'monk',
+  'paladin', 'priest', 'rogue', 'shaman', 'warlock', 'warrior'
+]);
+
 function updateDashboardSummary(done, total) {
   const safeDone  = Math.max(0, Number(done) || 0);
   const safeTotal = Math.max(0, Number(total) || 0);
@@ -335,7 +340,13 @@ function updateDashboardSummary(done, total) {
   }
 
   const dossier = document.getElementById('character-dossier');
-  if (dossier) dossier.style.setProperty('--class-color', def?.color || '#9b80e6');
+  if (dossier) {
+    dossier.style.setProperty('--class-color', def?.color || '#9b80e6');
+    const hasClassBanner = CLASS_DOSSIER_BANNERS.has(cls);
+    dossier.classList.toggle('has-class-banner', hasClassBanner);
+    if (hasClassBanner) dossier.dataset.classId = cls;
+    else delete dossier.dataset.classId;
+  }
 
   const classIcon = document.getElementById('hero-class-icon');
   const classEmblem = document.getElementById('hero-class-emblem');
@@ -3072,11 +3083,8 @@ function whatsNext() {
   const pick = candidates[Math.floor(Math.random() * candidates.length)];
   sessionStorage.setItem('wow_mn_golden_' + currentChar, pick.id);
 
-  // Switch to Everything so the selected row can be visibly lifted from its
-  // source section into the Golden Objective position.
-  if (!activeFilters.has('all')) {
-    activeFilters = new Set(['all']);
-  }
+  // Preserve the user's current route. The promoted card is rendered from the
+  // task data directly, so selecting an objective never changes categories.
   render();
   setTimeout(() => {
     document.getElementById('golden-objective')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -3151,7 +3159,10 @@ function renderGoldenObjective() {
     if (data.custom) return click.includes(`'${data.rawId}'`) || click.includes(`'${id}'`);
     return click.includes(`'${id}'`) || click.includes(`"${id}"`);
   });
-  sourceControl?.closest('.task')?.remove();
+  const sourceTask = sourceControl?.closest('.task');
+  const sourceGroup = sourceTask?.closest('.yl-section-group, .section');
+  sourceTask?.remove();
+  if (sourceGroup && !sourceGroup.querySelector('.task')) sourceGroup.remove();
 }
 
 function clearGoldenObjective() {
