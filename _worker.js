@@ -469,11 +469,11 @@ async function handleGetCharacters(request, env) {
 
 async function handleGetCollections(request, env) {
   const payload = await verifyJWT(getSessionCookie(request), env.SESSION_SECRET);
-  if (!payload) return new Response('Unauthorized', { status: 401 });
-  if (!env.USER_DATA) return Response.json({ unavailable: true });
+  if (!payload) return privateText('Unauthorized', 401);
+  if (!env.USER_DATA) return privateJson({ unavailable: true });
 
   const accessToken = await env.USER_DATA.get('token:' + payload.sub);
-  if (!accessToken) return new Response('Token expired', { status: 401 });
+  if (!accessToken) return privateText('Token expired', 401);
 
   const region  = payload.region || 'us';
   const apiBase = `https://${region}.api.blizzard.com`;
@@ -488,7 +488,7 @@ async function handleGetCollections(request, env) {
   const cacheKey = 'collections:' + payload.sub;
   const cached = await env.USER_DATA.get(cacheKey, { type: 'json' });
   if (cached && cached.lastSync && Date.now() - cached.lastSync < 3600 * 1000) {
-    return Response.json(cached);
+    return privateJson(cached);
   }
 
   const [mountsRes, toysRes] = await Promise.all([
@@ -498,7 +498,7 @@ async function handleGetCollections(request, env) {
 
   if (mountsRes.status === 401) {
     await env.USER_DATA.delete('token:' + payload.sub);
-    return new Response('Token expired', { status: 401 });
+    return privateText('Token expired', 401);
   }
 
   const bnetStr = v => (typeof v === 'string' ? v : v?.en_US ?? '');
@@ -545,7 +545,7 @@ async function handleGetCollections(request, env) {
 
   const result = { mounts, toys, achievements, lastSync: Date.now() };
   await env.USER_DATA.put(cacheKey, JSON.stringify(result), { expirationTtl: 86400 });
-  return Response.json(result);
+  return privateJson(result);
 }
 
 // ── Consent ──────────────────────────────────────────────────────────────────
@@ -555,6 +555,24 @@ async function handleGetCollections(request, env) {
 // is not sharing anything.
 
 const CONSENT_SCOPES = ['agenda.weekly', 'rating.self', 'rating.profile'];
+
+// Nothing behind /api/consent, /api/ledger or /api/share may be cached.
+//
+// The refusals are the reason. A 403 from a share endpoint says "this member
+// has not granted that scope", and a cached one keeps saying it after they
+// have, which surfaces in Discord as a bug in Tabard rather than as a stale
+// answer. Successful reads are per-member data and equally have no business
+// in a shared cache. Tabard does its own caching, deliberately and with a
+// TTL it controls.
+const NO_STORE = { 'Cache-Control': 'no-store, max-age=0' };
+
+function privateJson(body, init) {
+  return Response.json(body, { ...init, headers: { ...NO_STORE, ...(init?.headers || {}) } });
+}
+
+function privateText(body, status) {
+  return new Response(body, { status, headers: NO_STORE });
+}
 
 function emptyConsent() {
   return {
@@ -580,17 +598,17 @@ async function readConsent(env, sub) {
 
 async function handleGetConsent(request, env) {
   const payload = await verifyJWT(getSessionCookie(request), env.SESSION_SECRET);
-  if (!payload) return new Response('Unauthorized', { status: 401 });
-  return Response.json(await readConsent(env, payload.sub));
+  if (!payload) return privateText('Unauthorized', 401);
+  return privateJson(await readConsent(env, payload.sub));
 }
 
 async function handlePutConsent(request, env) {
   const payload = await verifyJWT(getSessionCookie(request), env.SESSION_SECRET);
-  if (!payload) return new Response('Unauthorized', { status: 401 });
-  if (!env.USER_DATA) return new Response('KV not configured', { status: 503 });
+  if (!payload) return privateText('Unauthorized', 401);
+  if (!env.USER_DATA) return privateText('KV not configured', 503);
 
   let body;
-  try { body = await request.json(); } catch (_) { return new Response('Bad JSON', { status: 400 }); }
+  try { body = await request.json(); } catch (_) { return privateText('Bad JSON', 400); }
 
   const consent = await readConsent(env, payload.sub);
   for (const scope of CONSENT_SCOPES) {
@@ -599,7 +617,7 @@ async function handlePutConsent(request, env) {
   consent.updated = Date.now();
 
   await env.USER_DATA.put('consent:' + payload.sub, JSON.stringify(consent));
-  return Response.json(consent);
+  return privateJson(consent);
 }
 
 // ── Ledger upload ────────────────────────────────────────────────────────────
@@ -611,40 +629,40 @@ async function handlePutConsent(request, env) {
 
 async function handlePutLedger(request, env) {
   const payload = await verifyJWT(getSessionCookie(request), env.SESSION_SECRET);
-  if (!payload) return new Response('Unauthorized', { status: 401 });
-  if (!env.USER_DATA) return new Response('KV not configured', { status: 503 });
+  if (!payload) return privateText('Unauthorized', 401);
+  if (!env.USER_DATA) return privateText('KV not configured', 503);
 
   let body;
-  try { body = await request.json(); } catch (_) { return new Response('Bad JSON', { status: 400 }); }
+  try { body = await request.json(); } catch (_) { return privateText('Bad JSON', 400); }
   if (!body || body.fmt !== 'PLW1' || body.v !== 1) {
-    return new Response('Not a PLW1 version 1 envelope', { status: 400 });
+    return privateText('Not a PLW1 version 1 envelope', 400);
   }
 
   // Bounded on the way in. A member with a very large ledger should get a
   // clear rejection rather than a KV write that fails opaquely later.
   const serialized = JSON.stringify({ ...body, storedAt: Date.now() });
   if (serialized.length > 900 * 1024) {
-    return new Response('Envelope too large; turn off grade sharing in the addon', { status: 413 });
+    return privateText('Envelope too large; turn off grade sharing in the addon', 413);
   }
 
   await env.USER_DATA.put('ledger:' + payload.sub, serialized);
-  return Response.json({ ok: true, storedAt: Date.now() });
+  return privateJson({ ok: true, storedAt: Date.now() });
 }
 
 async function handleGetLedger(request, env) {
   const payload = await verifyJWT(getSessionCookie(request), env.SESSION_SECRET);
-  if (!payload) return new Response('Unauthorized', { status: 401 });
-  if (!env.USER_DATA) return Response.json({ unavailable: true });
+  if (!payload) return privateText('Unauthorized', 401);
+  if (!env.USER_DATA) return privateJson({ unavailable: true });
   const raw = await env.USER_DATA.get('ledger:' + payload.sub);
-  return Response.json(raw ? JSON.parse(raw) : null);
+  return privateJson(raw ? JSON.parse(raw) : null);
 }
 
 async function handleDeleteLedger(request, env) {
   const payload = await verifyJWT(getSessionCookie(request), env.SESSION_SECRET);
-  if (!payload) return new Response('Unauthorized', { status: 401 });
-  if (!env.USER_DATA) return new Response('KV not configured', { status: 503 });
+  if (!payload) return privateText('Unauthorized', 401);
+  if (!env.USER_DATA) return privateText('KV not configured', 503);
   await env.USER_DATA.delete('ledger:' + payload.sub);
-  return Response.json({ ok: true });
+  return privateJson({ ok: true });
 }
 
 // ── Share API ────────────────────────────────────────────────────────────────
@@ -680,7 +698,7 @@ function timingSafeEqual(a, b) {
 }
 
 function scopeDenied(scope) {
-  return Response.json(
+  return privateJson(
     { error: 'scope_denied', scope,
       message: `The member has not shared ${scope}. They can turn it on under `
              + `Account, "Share with Discord", on The Azeroth Agenda.` },
@@ -689,13 +707,13 @@ function scopeDenied(scope) {
 
 async function shareContext(request, env) {
   if (!serviceAuthorized(request, env)) {
-    return { error: new Response('Unauthorized', { status: 401 }) };
+    return { error: privateText('Unauthorized', 401) };
   }
   if (!env.USER_DATA) {
-    return { error: new Response('KV not configured', { status: 503 }) };
+    return { error: privateText('KV not configured', 503) };
   }
   const sub = new URL(request.url).searchParams.get('sub');
-  if (!sub) return { error: new Response('Missing sub', { status: 400 }) };
+  if (!sub) return { error: privateText('Missing sub', 400) };
 
   return { sub, consent: await readConsent(env, sub) };
 }
@@ -741,7 +759,7 @@ async function handleShareAgenda(request, env) {
   const ledgerRaw = await env.USER_DATA.get('ledger:' + ctx.sub);
   const ledger = ledgerRaw ? JSON.parse(ledgerRaw) : null;
 
-  return Response.json({
+  return privateJson({
     week: weekKey,
     characters,
     ledger: ledger ? { generated: ledger.generated, addon: ledger.addon } : null,
@@ -757,10 +775,10 @@ async function handleShareRating(request, env) {
   if (!ctx.consent.scopes['rating.self']) return scopeDenied('rating.self');
 
   const player = (new URL(request.url).searchParams.get('player') || '').trim().toLowerCase();
-  if (!player) return new Response('Missing player', { status: 400 });
+  if (!player) return privateText('Missing player', 400);
 
   const raw = await env.USER_DATA.get('ledger:' + ctx.sub);
-  if (!raw) return Response.json({ found: false, reason: 'no_ledger' });
+  if (!raw) return privateJson({ found: false, reason: 'no_ledger' });
 
   const ledger = JSON.parse(raw);
   const recent = ledger?.ratings?.recent || [];
@@ -776,7 +794,7 @@ async function handleShareRating(request, env) {
     return !wantedRealm || norm(r.realm) === wantedRealm;
   });
 
-  return Response.json({
+  return privateJson({
     found: matches.length > 0,
     generated: ledger.generated,
     matches: matches.slice(0, 5),
@@ -792,13 +810,13 @@ async function handleShareProfile(request, env) {
   if (!ctx.consent.scopes['rating.profile']) return scopeDenied('rating.profile');
 
   const raw = await env.USER_DATA.get('ledger:' + ctx.sub);
-  if (!raw) return Response.json({ found: false, reason: 'no_ledger' });
+  if (!raw) return privateJson({ found: false, reason: 'no_ledger' });
 
   const ledger = JSON.parse(raw);
   const ratings = ledger?.ratings;
-  if (!ratings) return Response.json({ found: false, reason: 'ratings_not_shared' });
+  if (!ratings) return privateJson({ found: false, reason: 'ratings_not_shared' });
 
-  return Response.json({
+  return privateJson({
     found: true,
     generated: ledger.generated,
     authored: ratings.authored || 0,
@@ -811,17 +829,17 @@ async function handleShareProfile(request, env) {
 // member's own audit trail. Does not grant anything: consent is still the
 // only thing the share endpoints read.
 async function handleShareBind(request, env) {
-  if (!serviceAuthorized(request, env)) return new Response('Unauthorized', { status: 401 });
-  if (!env.USER_DATA) return new Response('KV not configured', { status: 503 });
+  if (!serviceAuthorized(request, env)) return privateText('Unauthorized', 401);
+  if (!env.USER_DATA) return privateText('KV not configured', 503);
 
   let body;
-  try { body = await request.json(); } catch (_) { return new Response('Bad JSON', { status: 400 }); }
-  if (!body?.sub || !body?.discord) return new Response('Missing sub or discord', { status: 400 });
+  try { body = await request.json(); } catch (_) { return privateText('Bad JSON', 400); }
+  if (!body?.sub || !body?.discord) return privateText('Missing sub or discord', 400);
 
   const consent = await readConsent(env, body.sub);
   consent.discord = String(body.discord);
   await env.USER_DATA.put('consent:' + body.sub, JSON.stringify(consent));
-  return Response.json({ ok: true, scopes: consent.scopes });
+  return privateJson({ ok: true, scopes: consent.scopes });
 }
 
 // ── Cloud data sync (KV) ─────────────────────────────────────────────────────
