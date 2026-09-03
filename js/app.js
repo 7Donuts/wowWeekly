@@ -154,7 +154,7 @@ let searchQuery     = '';
 let lastChanceMode  = false; // session-only urgency mode
 let hideSeason1     = localStorage.getItem('wow_mn_hide_s1') !== 'false'; // Season 2 is live
 
-const FUNCTIONAL_TAGS = new Set(['tag-vault', 'tag-gold', 'tag-121', 'tag-s1']);
+const FUNCTIONAL_TAGS = new Set(['tag-vault', 'tag-gold', 'tag-collectible', 'tag-121', 'tag-s1']);
 
 /* ═══════════════════════════════════════════
    SEASON + CADENCE VISIBILITY
@@ -258,7 +258,7 @@ function tagLabel(cls) {
   const m = {
     'tag-vault':'Vault','tag-raid':'Raid','tag-mythic':'Mythic+','tag-delve':'Delve',
     'tag-void':'Void','tag-world':'World','tag-gold':'Currency',
-    'tag-pvp':'PvP','tag-optional':'Optional','tag-housing':'Housing',
+    'tag-pvp':'PvP','tag-optional':'Optional','tag-housing':'Housing','tag-collectible':'Collectible',
     'tag-professions':'Professions','tag-121':'12.1','tag-s1':'Season 1'
   };
   return m[cls] || cls;
@@ -280,6 +280,89 @@ function updateSearchResultCount(matched, total) {
   if (matched === 0) { el.textContent = 'No results'; el.className = 'search-result-count no-results'; return; }
   el.textContent = `${matched} of ${total} tasks`;
   el.className = 'search-result-count has-results';
+}
+
+function taskTitleHtml(task, query) {
+  const title = _bisTaskNameHtml(task.name, query);
+  if (!task.url) return title;
+  return '<a class="task-guide-link" href="' + task.url + '" target="_blank" rel="noopener"'
+    + ' onclick="event.stopPropagation()" title="Open completion guide">'
+    + title + '<i class="ph ph-arrow-square-out"></i></a>';
+}
+
+/* Keep the sidebar-free command deck and hero in lockstep with the same
+   reducer that powers the task list. The tracker remains the source of truth;
+   these elements are only clearer views of its current state. */
+function updateDashboardSummary(done, total) {
+  const safeDone  = Math.max(0, Number(done) || 0);
+  const safeTotal = Math.max(0, Number(total) || 0);
+  const open      = Math.max(0, safeTotal - safeDone);
+  const pct       = safeTotal ? Math.round((safeDone / safeTotal) * 100) : 0;
+  const display   = charDisplayName(currentChar) || 'adventurer';
+  const armory    = typeof loadArmoryData === 'function' ? loadArmoryData(currentChar) : null;
+  const cls       = typeof loadCharClass === 'function' ? loadCharClass(currentChar) : '';
+  const def       = cls && typeof CLASSES !== 'undefined' ? CLASSES.find(c => c.id === cls) : null;
+
+  const setText = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  };
+
+  setText('hero-char-name', display);
+  setText('hero-spec', [armory?.spec, def?.name].filter(Boolean).join(' ') || 'Unsynced character profile');
+  setText('hero-guild', armory?.guild ? `<${armory.guild}>` : '');
+  setText('hero-ilvl', armory?.ilvl || '—');
+  setText('hero-mythic', armory?.mythicRating || '—');
+  setText('hero-pvp', armory?.pvpRating
+    ? armory.pvpRating + (armory.pvpBracket ? ' · ' + armory.pvpBracket : '')
+    : '—');
+
+  const raidProgress = armory?.raidKills
+    ? Math.max(0, ...Object.values(armory.raidKills).map(kills => Object.values(kills || {}).filter(Boolean).length))
+    : 0;
+  setText('hero-raid', raidProgress ? raidProgress + ' bosses' : '—');
+  setText('hero-open-count', open + ' objective' + (open === 1 ? '' : 's'));
+  setText('hero-progress-pct', pct + '%');
+  setText('hero-done-count', safeDone);
+  setText('hero-total-count', safeTotal);
+  setText('intel-done', safeDone);
+  setText('intel-open', open);
+
+  const ring = document.getElementById('hero-progress-ring');
+  if (ring) {
+    ring.style.setProperty('--progress', pct);
+    ring.setAttribute('aria-label', pct + '% complete: ' + safeDone + ' of ' + safeTotal + ' objectives');
+  }
+
+  const dossier = document.getElementById('character-dossier');
+  if (dossier) dossier.style.setProperty('--class-color', def?.color || '#9b80e6');
+
+  const classIcon = document.getElementById('hero-class-icon');
+  const classEmblem = document.getElementById('hero-class-emblem');
+  [classIcon, classEmblem].forEach(img => {
+    if (!img) return;
+    if (def?.icon) { img.src = def.icon; img.hidden = false; }
+    else { img.removeAttribute('src'); img.hidden = true; }
+  });
+
+  const renderImg = document.getElementById('hero-character-render');
+  const artFallback = document.querySelector('.dossier-art-fallback');
+  if (renderImg) {
+    if (armory?.renderUrl) {
+      renderImg.src = armory.renderUrl;
+      renderImg.alt = display + ' character render';
+      renderImg.hidden = false;
+      if (artFallback) artFallback.hidden = true;
+      renderImg.onerror = () => {
+        renderImg.hidden = true;
+        if (artFallback) artFallback.hidden = false;
+      };
+    } else {
+      renderImg.removeAttribute('src');
+      renderImg.hidden = true;
+      if (artFallback) artFallback.hidden = false;
+    }
+  }
 }
 
 /* Progress read-out inside a goal row: pips for goals of five steps or fewer,
@@ -394,7 +477,7 @@ function sectionTaskHtml(t, done, hidden, yourList, goals, bossKills, notes) {
   return '<div class="task' + (isDone ? ' done' : '') + (isHidden ? ' task-hidden' : '') + (inList ? ' in-yourlist' : '') + _editSelClass + '"' + _editCardAttrs + '>'
     + '<div class="task-check" onclick="event.stopPropagation();' + checkClick + '" style="cursor:pointer;"></div>'
     + '<div class="task-body">'
-    + '<div class="task-name">' + _bisTaskNameHtml(t.name, searchQuery) + '</div>'
+    + '<div class="task-name">' + taskTitleHtml(t, searchQuery) + '</div>'
     + (hd ? '<div class="task-desc">' + hd + '</div>' : '')
     + (milestoneNote ? '<div class="milestone-note"><i class="ph-fill ph-check"></i>' + milestoneNote + '</div>' : '')
     + goalMeterHtml(goalDef, goalVal)
@@ -651,7 +734,7 @@ function ylTaskHtml(t, done, goals, notes, bossKills) {
     + '<div class="yl-drag-handle" onclick="event.stopPropagation()" title="Drag to reorder"><i class="ph ph-dots-six-vertical"></i></div>'
     + '<div class="task-check" onclick="event.stopPropagation();toggle(\'' + id + '\',this)" style="cursor:pointer;"></div>'
     + '<div class="task-body">'
-    + '<div class="task-name">' + _bisTaskNameHtml(t.name, searchQuery) + '</div>'
+    + '<div class="task-name">' + taskTitleHtml(t, searchQuery) + '</div>'
     + (hd ? '<div class="task-desc">' + hd + '</div>' : '')
     + (milestoneNote ? '<div class="milestone-note"><i class="ph-fill ph-check"></i>' + milestoneNote + '</div>' : '')
     + goalMeterHtml(goalDef, goalVal)
@@ -947,6 +1030,7 @@ function render() {
     const pct = totalVisible ? Math.round((totalDone / totalVisible) * 100) : 0;
     document.getElementById('prog-fill').style.width = pct + '%';
     document.getElementById('prog-label').textContent = totalDone + ' / ' + totalVisible + ' done';
+    updateDashboardSummary(totalDone, totalVisible);
     document.getElementById('btn-reveal').style.display = 'none';
     updateSearchResultCount(filteredSelected.length, selected.length);
 
@@ -1094,6 +1178,7 @@ function buildEditBar() {
   const pct = totalVisible ? Math.round((totalDone / totalVisible) * 100) : 0;
   document.getElementById('prog-fill').style.width = pct + '%';
   document.getElementById('prog-label').textContent = totalDone + ' / ' + totalVisible + ' done';
+  updateDashboardSummary(totalDone, totalVisible);
 
   updateSearchResultCount(searchMatchTotal, searchTotal);
 
@@ -1318,6 +1403,7 @@ const NAV_CATEGORIES = [
   { filter: 'professions',   label: 'Professions',   icon: 'ph ph-hammer' },
   { filter: 'pvp',           label: 'PvP',           art:  'img/cat-pvp.png' },
   { filter: 'housing',       label: 'Housing',       art:  'img/cat-housing.png' },
+  { filter: 'collectibles',  label: 'Hunting',       icon: 'ph-fill ph-trophy' },
   { filter: 'optional',      label: 'Long term goals', art: 'img/cat-optional.png' },
   { filter: 'voidforge',     label: 'Voidforge',     art:  'img/cat-void.png', season1: true },
   { filter: 'void-assaults', label: 'Void assaults', art:  'img/cat-void.png', season1: true },
@@ -1587,7 +1673,7 @@ function deleteChar(name) {
   characters = characters.filter(c => c !== name);
   localStorage.setItem('wow_midnight_chars', JSON.stringify(characters));
   if (currentChar === name) currentChar = characters[0];
-  renderChars(); render();
+  renderChars(); renderClassLinksBar(); render();
 }
 function openAddChar() {
   document.getElementById('char-modal-title').textContent = 'Add Character';
@@ -2717,7 +2803,7 @@ function copyDiscordSummary() {
 
   const rows = [];
   let grandTotal = 0, grandDone = 0;
-  SECTIONS.forEach(sec => {
+  activeSections().forEach(sec => {
     const visible = isYLScope
       ? sec.tasks.filter(t => ylSet.has(t.id))
       : sec.tasks.filter(t => !hidden[t.id]);
@@ -2946,7 +3032,7 @@ function whatsNext() {
 
   // Gather all uncompleted tasks from Your List
   const candidates = [];
-  SECTIONS.forEach(sec => {
+  activeSections().forEach(sec => {
     sec.tasks.forEach(t => {
       if (yourList.has(t.id) && !done[t.id] && !hidden[t.id]) {
         candidates.push({ id: t.id, type: 'section' });
@@ -2962,7 +3048,7 @@ function whatsNext() {
 
   if (candidates.length === 0) {
     // Fall back to any uncompleted task if Your List is empty or all done
-    SECTIONS.forEach(sec => {
+    activeSections().forEach(sec => {
       sec.tasks.forEach(t => {
         if (!done[t.id] && !hidden[t.id]) candidates.push({ id: t.id, type: 'section' });
       });
@@ -2987,10 +3073,11 @@ function whatsNext() {
   // Find the task element and scroll + highlight it
   // Tasks render with onclick containing the id: find by that
   setTimeout(() => {
-    const taskEl = [...document.querySelectorAll('.task')].find(el => {
+    const taskControl = [...document.querySelectorAll('.task .task-check')].find(el => {
       const oc = el.getAttribute('onclick') || '';
       return oc.includes(`'${pick.id}'`) || oc.includes(`"${pick.id}"`);
     });
+    const taskEl = taskControl?.closest('.task');
     if (taskEl) {
       // Ensure section is expanded
       const body = taskEl.closest('.section-body');
@@ -2998,6 +3085,14 @@ function whatsNext() {
         const header = body.previousElementSibling;
         if (header) header.click();
       }
+      document.querySelectorAll('.whats-next-selected').forEach(el => el.classList.remove('whats-next-selected'));
+      document.querySelectorAll('.next-pick-badge').forEach(el => el.remove());
+      taskEl.classList.add('whats-next-selected');
+      const bodyEl = taskEl.querySelector('.task-body') || taskEl;
+      const badge = document.createElement('span');
+      badge.className = 'next-pick-badge';
+      badge.innerHTML = '<i class="ph-fill ph-map-pin"></i> Chosen next';
+      bodyEl.appendChild(badge);
       taskEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
       taskEl.classList.remove('whats-next-highlight');
       void taskEl.offsetWidth; // force reflow to restart animation
@@ -3400,6 +3495,19 @@ function renderInlineEvent() {
   }
 
   el.innerHTML = `<i class="ph-fill ph-warning-diamond"></i>${inner}<a href="events.html" class="inline-event-btn">All events<i class="ph ph-arrow-right"></i></a>`;
+  renderWorldRotations();
+}
+
+function renderWorldRotations() {
+  const el = document.getElementById('world-rotation-list');
+  if (!el || typeof WORLD_ROTATIONS === 'undefined') return;
+  el.innerHTML = WORLD_ROTATIONS.slice(0, 6).map(item =>
+    '<a class="world-rotation-row" href="' + item.url + '" target="_blank" rel="noopener">'
+      + '<span class="world-rotation-icon"><i class="' + item.icon + '"></i></span>'
+      + '<span><strong>' + item.name + '</strong><small>' + item.cadence + '</small></span>'
+      + '<i class="ph ph-arrow-square-out"></i>'
+    + '</a>'
+  ).join('');
 }
 
 /* ═══════════════════════════════════════════
@@ -3460,7 +3568,7 @@ const WELCOME_STEPS = [
     title: "You're All Set!",
     body: 'Your progress saves automatically every time you check something off. Come back after each reset and work through your list.'
       + '<ul class="welcome-feature-list" style="margin-top:0.75rem;">'
-      + '<li>Use <strong>Battle.net</strong> at the foot of the rail to connect your account at any time</li>'
+      + '<li>Use <strong>Battle.net</strong> at the top of the page to connect your account at any time</li>'
       + '<li>Once connected, hit <strong>Sync</strong> in the roster header to pull your latest data from Blizzard</li>'
       + '<li>Check <strong>Events</strong> and <strong>Changelog</strong> to stay up to date</li>'
       + '</ul>',

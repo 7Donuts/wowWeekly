@@ -18,119 +18,173 @@
 <link rel="preload" href="fonts/cinzel-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/Phosphor-Fill.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="midnight.css?v=1.13.0">
+<link rel="stylesheet" href="overhaul.css?v=2.1.0">
 
 </head>
 <body>
 <canvas id="confetti-canvas" style="position:fixed;inset:0;pointer-events:none;z-index:9999;width:100%;height:100%;"></canvas>
+<div class="world-backdrop" aria-hidden="true"></div>
 <div class="wrapper">
+  <header class="command-deck">
+    <div class="command-primary">
+      <a class="brand" href="/" aria-label="The Azeroth Agenda home">
+        <span class="brand-sigil"><i class="ph-fill ph-moon-stars"></i></span>
+        <span class="brand-text">
+          <strong>The Azeroth Agenda</strong>
+          <small>Patch 12.1 · Season 2</small>
+        </span>
+      </a>
 
-  <!-- ══ RAIL: brand, countdown, roster, categories, footer ══ -->
-  <aside class="rail">
-
-    <div class="brand">
-      <div class="brand-sigil"><i class="ph-fill ph-moon-stars"></i></div>
-      <div class="brand-text">
-        <h1>The Azeroth<br><span>Agenda</span></h1>
-        <div class="patch-badge">Patch 12.1 · Season 2</div>
-      </div>
-    </div>
-
-    <div class="reset-block">
-      <div class="rail-label">Reset in</div>
-      <span class="reset-countdown" id="countdown">calculating…</span>
-      <div class="progress-wrap">
-        <div class="progress-bar-track">
-          <div class="progress-bar-fill" id="prog-fill" style="width:0%"></div>
+      <div class="account-panel" aria-label="Battle.net account">
+        <span class="account-icon"><i class="ph-fill ph-shield-check"></i></span>
+        <div class="account-copy">
+          <span class="rail-label">Account sync</span>
+          <a href="/auth/login?region=us" id="auth-login" class="bnet-login" onclick="if(typeof loginWithBnet==='function'){loginWithBnet();return false;}"><i class="ph-fill ph-key"></i>Connect Battle.net</a>
+          <span id="auth-battletag" class="credit-name account-name" style="display:none;"></span>
+          <span class="byline-dot" id="auth-dot" style="display:none;">·</span>
+          <a href="/auth/logout" id="auth-logout" class="account-logout" style="display:none;"><i class="ph ph-sign-out"></i>Sign out</a>
+          <span id="sync-status" class="sync-status" style="display:none;"></span>
         </div>
-        <span id="prog-label">0 / 0</span>
       </div>
-      <div id="inline-history" class="inline-history"></div>
-    </div>
 
-    <div class="rail-roster">
-      <div class="rail-label-row">
-        <span class="rail-label">Roster</span>
-        <div class="btn-cluster">
-          <button class="armory-btn btn-ghost btn-xs" id="btn-sync-all" title="Sync all characters from Battle.net" onclick="syncAllCharsButton()" style="display:none;"><i class="ph ph-arrows-clockwise"></i></button>
-          <button class="armory-btn btn-ghost btn-xs" id="btn-import-chars" title="Import characters from Battle.net" onclick="openImportChars()" style="display:none;"><i class="ph ph-download-simple"></i></button>
-          <div class="char-manage-wrap" id="char-manage-wrap">
-            <button class="char-manage-btn btn-ghost btn-xs" id="char-manage-btn" title="Manage characters" onclick="toggleCharMenu(event)"><i class="ph ph-pencil-simple"></i></button>
-            <div class="char-manage-menu" id="char-manage-menu"></div>
+      <div class="rail-roster">
+        <div class="rail-label-row">
+          <span class="rail-label">Tracking character</span>
+          <div class="btn-cluster roster-actions">
+            <button class="armory-btn btn-ghost btn-xs" id="btn-sync-all" title="Sync all characters from Battle.net" onclick="syncAllCharsButton()" style="display:none;"><i class="ph ph-arrows-clockwise"></i></button>
+            <button class="armory-btn btn-ghost btn-xs" id="btn-import-chars" title="Import characters from Battle.net" onclick="openImportChars()" style="display:none;"><i class="ph ph-download-simple"></i></button>
+            <div class="char-manage-wrap" id="char-manage-wrap">
+              <button class="char-manage-btn btn-ghost btn-xs" id="char-manage-btn" title="Manage characters" onclick="toggleCharMenu(event)"><i class="ph ph-pencil-simple"></i></button>
+              <div class="char-manage-menu" id="char-manage-menu"></div>
+            </div>
+            <button class="btn btn-ghost btn-xs char-add" title="Add character" onclick="openAddChar()"><i class="ph ph-plus"></i></button>
           </div>
-          <button class="btn btn-ghost btn-xs char-add" title="Add character" onclick="openAddChar()"><i class="ph ph-plus"></i></button>
+        </div>
+        <div class="char-list-row" id="char-list"></div>
+      </div>
+
+      <div class="reset-block">
+        <span class="reset-icon"><i class="ph-fill ph-hourglass-high"></i></span>
+        <span class="reset-copy"><span class="rail-label">Weekly reset</span><span class="reset-countdown" id="countdown">calculating…</span></span>
+        <div class="progress-wrap" aria-label="Current view progress">
+          <div class="progress-bar-track"><div class="progress-bar-fill" id="prog-fill" style="width:0%"></div></div>
+          <span id="prog-label">0 / 0</span>
         </div>
       </div>
-      <div class="char-list-row" id="char-list"></div>
+
+      <div class="utility-bar">
+        <div class="search-bar-wrap">
+          <div class="search-bar-inner">
+            <i class="ph ph-magnifying-glass search-icon"></i>
+            <input type="text" id="task-search" class="task-search-input" placeholder="Find an objective…" aria-label="Search objectives" oninput="onSearchInput(this.value)" onkeydown="if(event.key==='Escape'){clearSearch();this.blur();}" />
+            <button class="search-clear" id="search-clear-btn" onclick="clearSearch()" style="display:none;" title="Clear search"><i class="ph ph-x"></i></button>
+          </div>
+        </div>
+        <div id="search-result-count" class="search-result-count"></div>
+        <div class="btn-cluster command-actions">
+          <button class="btn-reset-all btn-raised action-summary" onclick="openSummary()"><i class="ph ph-chart-bar"></i><span>Summary</span></button>
+          <button class="btn-last-chance" id="btn-last-chance" onclick="toggleLastChance()" title="Show only incomplete tasks, activates automatically under 6 hours to reset"><i class="ph-fill ph-lightning"></i><span>Last chance</span></button>
+          <button class="btn-primary" id="btn-bis" onclick="openBisModal()"><i class="ph-fill ph-sword"></i><span>View BiS</span></button>
+          <details class="overflow-actions">
+            <summary class="btn-reset-all btn-raised btn-icon" title="More controls"><i class="ph ph-dots-three"></i></summary>
+            <div class="overflow-menu">
+              <button id="btn-yourlist-view" onclick="toggleYourListView()"><i class="ph ph-squares-four"></i>Grouped / flat view</button>
+              <button id="btn-compact" onclick="toggleCompact()"><i class="ph ph-rows"></i>Compact view</button>
+              <button id="btn-season1" onclick="toggleSeason1()"><i class="ph ph-arrow-counter-clockwise"></i>Season 1</button>
+              <button onclick="resetAll()"><i class="ph ph-arrows-clockwise"></i>Reset week</button>
+              <button onclick="openExportImport()"><i class="ph ph-arrows-down-up"></i>Character data</button>
+              <button id="btn-theme" onclick="toggleTheme()"><i class="ph ph-sun"></i>Light / dark mode</button>
+              <button id="btn-reveal" onclick="toggleRevealHidden()" style="display:none;"><i class="ph ph-eye"></i>Hidden tasks</button>
+            </div>
+          </details>
+        </div>
+      </div>
     </div>
 
-    <div class="rail-nav">
-      <div class="rail-label" style="margin-bottom:9px;">The week</div>
+    <nav class="rail-nav" aria-label="Weekly categories">
       <div class="nav-list" id="nav-list"></div>
-    </div>
+    </nav>
+  </header>
 
-    <div class="rail-footer">
-      <div class="rail-footer-btns">
-        <a href="https://ko-fi.com/7donuts" target="_blank" rel="noopener" class="btn"><i class="ph ph-coffee"></i>Support</a>
-        <a href="changelog.html" class="btn"><i class="ph ph-scroll"></i>Changelog</a>
-      </div>
-      <div class="credit-row">
-        <a href="/auth/login?region=us" id="auth-login" class="byline-link" onclick="if(typeof loginWithBnet==='function'){loginWithBnet();return false;}"><i class="ph ph-key"></i>Battle.net</a>
-        <span id="auth-battletag" class="credit-name" style="display:none;"></span>
-        <span class="byline-dot" id="auth-dot" style="display:none;">·</span>
-        <a href="/auth/logout" id="auth-logout" class="byline-link" style="display:none;"><i class="ph ph-sign-out"></i>Sign out</a>
-        <span id="sync-status" class="sync-status" style="display:none;"></span>
-      </div>
-      <div class="rail-note">
-        Curated by <span class="credit-name">Seven</span><br>
-        Resets Tuesday 15:00 UTC · Sources: Icy Veins
-      </div>
-    </div>
-  </aside>
-
-  <!-- ══ MAIN: utility bar + the week's content ══ -->
   <main>
-
-    <div class="utility-bar">
-      <div class="search-bar-wrap">
-        <div class="search-bar-inner">
-          <i class="ph ph-magnifying-glass search-icon"></i>
-          <input type="text" id="task-search" class="task-search-input"
-                 placeholder="Search tasks…"
-                 oninput="onSearchInput(this.value)"
-                 onkeydown="if(event.key==='Escape'){clearSearch();this.blur();}" />
-          <button class="search-clear" id="search-clear-btn" onclick="clearSearch()" style="display:none;" title="Clear search"><i class="ph ph-x"></i></button>
-        </div>
-      </div>
-      <div id="search-result-count" class="search-result-count"></div>
-      <div class="utility-spacer"></div>
-      <div class="btn-cluster">
-        <button class="btn-reset-all btn-raised" id="btn-whats-next" onclick="whatsNext()" title="Randomly pick an uncompleted task from Your List"><i class="ph ph-dice-five"></i>What's next</button>
-        <button class="btn-reset-all btn-raised" onclick="openSummary()"><i class="ph ph-chart-bar"></i>Summary</button>
-        <button class="btn-reset-all btn-raised btn-icon" id="btn-yourlist-view" onclick="toggleYourListView()" title="Toggle grouped / flat list"><i class="ph ph-squares-four"></i></button>
-        <button class="btn-reset-all btn-raised btn-icon" id="btn-compact" onclick="toggleCompact()" title="Toggle compact view"><i class="ph ph-rows"></i></button>
-        <button class="btn-reset-all btn-raised" id="btn-season1" onclick="toggleSeason1()" title="Show retired Season 1 content"><i class="ph ph-arrow-counter-clockwise"></i>Season 1</button>
-        <button class="btn-reset-all btn-raised btn-icon" onclick="resetAll()" title="Reset week"><i class="ph ph-arrows-clockwise"></i></button>
-        <button class="btn-reset-all btn-raised btn-icon" onclick="openExportImport()" title="Character data"><i class="ph ph-arrows-down-up"></i></button>
-        <button class="btn-reset-all btn-raised btn-icon" id="btn-theme" onclick="toggleTheme()" title="Toggle dark / light mode"><i class="ph ph-sun"></i></button>
-        <div class="btn-conditional-group">
-          <button class="btn-reset-all btn-raised btn-icon" id="btn-reveal" onclick="toggleRevealHidden()" title="Show hidden tasks" style="display:none;"><i class="ph ph-eye"></i></button>
-        </div>
-        <span class="utility-divider"></span>
-        <button class="btn-last-chance" id="btn-last-chance" onclick="toggleLastChance()" title="Show only incomplete tasks, activates automatically under 6 hours to reset"><i class="ph-fill ph-lightning"></i>Last chance</button>
-        <button class="btn-primary" id="btn-bis" onclick="openBisModal()"><i class="ph-fill ph-sword"></i>BiS Gear</button>
-      </div>
-    </div>
-
     <div class="content">
+      <section class="week-hero character-dossier" id="character-dossier" aria-labelledby="week-hero-title">
+        <div class="dossier-art" aria-hidden="true">
+          <img id="hero-character-render" alt="" hidden>
+          <span class="dossier-art-fallback"><img id="hero-class-emblem" alt="" hidden><i class="ph-fill ph-shield-star"></i></span>
+        </div>
+        <div class="week-hero-copy dossier-copy">
+          <span class="hero-kicker">Active character</span>
+          <h1 id="week-hero-title"><span id="hero-char-name">Adventurer</span></h1>
+          <div class="dossier-identity">
+            <img id="hero-class-icon" alt="" hidden>
+            <strong id="hero-spec">Character profile</strong>
+            <span id="hero-guild"></span>
+          </div>
+          <div class="dossier-stats" aria-label="Character statistics">
+            <div><span>Item level</span><strong id="hero-ilvl">—</strong></div>
+            <div><span>Mythic+ rating</span><strong id="hero-mythic">—</strong></div>
+            <div><span>Raid progress</span><strong id="hero-raid">—</strong></div>
+            <div><span>PvP rating</span><strong id="hero-pvp">—</strong></div>
+          </div>
+          <div id="class-links-bar" class="class-links-bar dossier-links" style="display:none;"></div>
+        </div>
+        <div class="dossier-command">
+          <div class="hero-progress">
+            <div class="hero-progress-ring" id="hero-progress-ring" style="--progress:0"><span><strong id="hero-progress-pct">0%</strong><small>complete</small></span></div>
+            <div class="hero-progress-copy"><span><b id="hero-done-count">0</b> complete</span><span><b id="hero-total-count">0</b> tracked</span><span><b id="hero-open-count">0 objectives</b> remain</span></div>
+          </div>
+          <button class="next-quest-button" id="btn-whats-next" onclick="whatsNext()"><i class="ph-fill ph-dice-five"></i>Find my next quest</button>
+        </div>
+      </section>
+
       <div id="last-chance-slot"></div>
       <div id="event-alerts"></div>
-      <div class="event-strip">
-        <div id="inline-event" class="inline-event"></div>
-      </div>
-      <div id="class-links-bar" class="class-links-bar" style="display:none;"></div>
-      <div id="sections-container"></div>
-    </div>
 
+      <div class="content-grid">
+        <div class="quest-workspace">
+          <div class="workspace-heading"><div><span class="hero-kicker">Current route</span><h2>Your objectives</h2></div></div>
+          <div id="sections-container"></div>
+        </div>
+
+        <aside class="intel-column" aria-label="Weekly intelligence">
+          <section class="intel-card intel-progress">
+            <div class="intel-heading"><div><span class="hero-kicker">At a glance</span><h2>Weekly progress</h2></div><img src="img/cat-vault.png" alt=""></div>
+            <div class="intel-stat"><span>Completed objectives</span><strong id="intel-done">0</strong></div>
+            <div class="intel-stat"><span>Remaining objectives</span><strong id="intel-open">0</strong></div>
+            <button class="intel-link" onclick="openSummary()">Open full summary <i class="ph ph-arrow-right"></i></button>
+          </section>
+
+          <section class="intel-card intel-events">
+            <div class="intel-heading"><div><span class="hero-kicker">Live in Azeroth</span><h2>World schedule</h2></div><i class="ph-fill ph-broadcast"></i></div>
+            <div class="event-strip"><div id="inline-event" class="inline-event"></div></div>
+            <div id="world-rotation-list" class="world-rotation-list"></div>
+            <p class="schedule-note"><i class="ph ph-info"></i>Exact realm spawn times are shown in the in-game calendar and map.</p>
+            <a class="intel-link" href="events.html">View event calendar <i class="ph ph-arrow-right"></i></a>
+          </section>
+
+          <section class="intel-card quick-actions">
+            <span class="hero-kicker">Shortcuts</span>
+            <div class="quick-grid">
+              <button onclick="whatsNext()"><i class="ph-fill ph-dice-five"></i><span><strong>What’s next?</strong><small>Pick an objective</small></span></button>
+              <button onclick="openBisModal()"><i class="ph-fill ph-sword"></i><span><strong>BiS gear</strong><small>Plan upgrades</small></span></button>
+              <button onclick="openSummary()"><i class="ph-fill ph-chart-bar"></i><span><strong>Summary</strong><small>Share progress</small></span></button>
+              <button onclick="openCustomModal()"><i class="ph-fill ph-plus-circle"></i><span><strong>New task</strong><small>Add your own</small></span></button>
+            </div>
+          </section>
+
+          <div id="inline-history" class="inline-history"></div>
+        </aside>
+      </div>
+
+      <footer class="site-footer">
+        <div><span>Curated by <strong>Seven</strong></span><span>Resets Tuesday 15:00 UTC</span><span>Sources: Icy Veins</span></div>
+        <div>
+          <a href="https://ko-fi.com/7donuts" target="_blank" rel="noopener"><i class="ph ph-coffee"></i>Support</a>
+          <a href="changelog.html"><i class="ph ph-scroll"></i>Changelog</a>
+        </div>
+      </footer>
+    </div>
   </main>
 </div>
 
@@ -314,9 +368,9 @@
 
 
 <!-- ── JS: load order matters, each file depends on the ones above it ── -->
-<script src="js/data-tasks.js?v=1.13.0"></script>
-<script src="js/data-events.js?v=1.13.0"></script>
-<script src="js/data-classes.js?v=1.13.0"></script>
+<script src="js/data-tasks.js?v=2.1.0"></script>
+<script src="js/data-events.js?v=2.1.0"></script>
+<script src="js/data-classes.js?v=2.1.0"></script>
 <script src="js/data-changelog.js?v=1.13.0"></script>
 <script src="js/data-bis.js?v=1.13.0"></script>
 <script src="js/data-item-ids.js?v=1.13.0"></script>
@@ -324,8 +378,8 @@
 <script src="js/armory.js?v=1.13.0"></script>
 <script src="js/confetti.js?v=1.13.0"></script>
 <script src="js/theme.js?v=1.13.0"></script>
-<script src="js/app.js?v=1.13.0"></script>
-<script src="js/sync.js?v=1.13.0"></script>
+<script src="js/app.js?v=2.1.0"></script>
+<script src="js/sync.js?v=2.1.0"></script>
 
 
 </body>

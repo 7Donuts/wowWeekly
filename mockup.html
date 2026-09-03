@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#090d16">
+  <title>The Azeroth Agenda — Interface Overhaul Mockup</title>
+  <meta name="description" content="A sidebar-free interface overhaul mockup for The Azeroth Agenda weekly World of Warcraft tracker.">
+  <link rel="preload" href="fonts/cinzel-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/ebgaramond-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/Phosphor.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="img/agenda-mockup-bg.png" as="image">
+  <link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+  <div class="world-backdrop" aria-hidden="true"></div>
+  <div class="page-shell">
+    <header class="command-deck">
+      <div class="command-deck__primary">
+        <a class="brand" href="#overview" aria-label="The Azeroth Agenda home">
+          <span class="brand__sigil"><i class="ph-fill ph-moon-stars"></i></span>
+          <span class="brand__words">
+            <strong>The Azeroth Agenda</strong>
+            <small>Patch 12.1 · Season 2</small>
+          </span>
+        </a>
+
+        <button class="character-select" id="characterSelect" aria-expanded="false" aria-controls="characterMenu">
+          <span class="character-select__portrait"><span>K</span></span>
+          <span class="character-select__copy">
+            <span class="eyebrow">Tracking character</span>
+            <strong>Kaelira <em>310</em></strong>
+          </span>
+          <i class="ph ph-caret-down"></i>
+        </button>
+
+        <div class="reset-status" aria-label="Weekly reset in 2 days, 14 hours">
+          <span class="reset-status__icon"><i class="ph-fill ph-hourglass-high"></i></span>
+          <span>
+            <span class="eyebrow">Weekly reset</span>
+            <strong>2d 14h</strong>
+          </span>
+        </div>
+
+        <div class="deck-actions">
+          <label class="search" for="questSearch">
+            <i class="ph ph-magnifying-glass"></i>
+            <input id="questSearch" type="search" placeholder="Find a quest…" autocomplete="off">
+            <kbd>/</kbd>
+          </label>
+          <button class="icon-button" id="focusToggle" aria-pressed="false" title="Show only unfinished tasks">
+            <i class="ph ph-crosshair"></i><span class="sr-only">Focus mode</span>
+          </button>
+          <button class="icon-button" title="Settings"><i class="ph ph-gear-six"></i><span class="sr-only">Settings</span></button>
+        </div>
+      </div>
+
+      <div class="character-menu" id="characterMenu" hidden>
+        <button class="character-option is-current">
+          <span class="mini-portrait mage">K</span><span><strong>Kaelira</strong><small>Arcane Mage · 310</small></span><i class="ph-fill ph-check-circle"></i>
+        </button>
+        <button class="character-option">
+          <span class="mini-portrait druid">T</span><span><strong>Thornpaw</strong><small>Guardian Druid · 302</small></span>
+        </button>
+        <button class="character-option">
+          <span class="mini-portrait priest">L</span><span><strong>Liora</strong><small>Holy Priest · 298</small></span>
+        </button>
+        <button class="character-option add-character"><i class="ph ph-plus"></i> Add character</button>
+      </div>
+
+      <nav class="realm-nav" aria-label="Weekly categories">
+        <a class="realm-nav__item is-active" href="#overview"><i class="ph-fill ph-compass"></i><span>Overview</span></a>
+        <a class="realm-nav__item" href="#vault"><img src="img/cat-vault.png" alt=""><span>Great Vault</span><b>5/9</b></a>
+        <a class="realm-nav__item" href="#world"><img src="img/cat-world.png" alt=""><span>World</span><b>3</b></a>
+        <a class="realm-nav__item" href="#delves"><img src="img/cat-delve.png" alt=""><span>Delves</span><b>4/8</b></a>
+        <a class="realm-nav__item" href="#mythic"><img src="img/cat-mythic.png" alt=""><span>Mythic+</span><b>2/8</b></a>
+        <a class="realm-nav__item" href="#raid"><img src="img/cat-raid.png" alt=""><span>Raid</span><b>3/6</b></a>
+        <button class="realm-nav__item"><i class="ph ph-dots-three"></i><span>More</span></button>
+      </nav>
+    </header>
+
+    <main id="overview" class="workspace">
+      <section class="welcome-panel">
+        <div class="welcome-panel__copy">
+          <span class="eyebrow eyebrow--gold">Your weekly campaign</span>
+          <h1>Good evening, <span>Kaelira.</span></h1>
+          <p>You have <strong><span id="openTaskCount">11</span> objectives remaining</strong>. Finish the priority route below to secure all three Great Vault rows.</p>
+        </div>
+        <div class="week-progress" aria-label="Weekly progress">
+          <div class="progress-ring" id="progressRing" style="--progress: 58">
+            <span><strong id="progressPercent">58%</strong><small>complete</small></span>
+          </div>
+          <div class="week-progress__legend">
+            <span><i class="legend-dot legend-dot--complete"></i><b id="completeCount">15</b> complete</span>
+            <span><i class="legend-dot legend-dot--open"></i><b id="legendOpenCount">11</b> remaining</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="priority-quest" aria-labelledby="priorityTitle">
+        <div class="priority-quest__crest"><i class="ph-fill ph-lightning"></i></div>
+        <div class="priority-quest__copy">
+          <span class="eyebrow">Recommended next · ~35 min</span>
+          <h2 id="priorityTitle">Complete a +9 Mythic Keystone</h2>
+          <p>Earn Myth Mistcrests and advance your Dungeon Vault row in one run.</p>
+          <div class="quest-rewards"><span><i class="ph-fill ph-diamond"></i> Myth crests</span><span><i class="ph-fill ph-treasure-chest"></i> Vault progress</span></div>
+        </div>
+        <div class="priority-quest__meter">
+          <span>Dungeon row</span>
+          <strong>2 <small>/ 8</small></strong>
+          <div class="segmented-progress" aria-label="2 of 8 dungeons complete">
+            <i class="is-filled"></i><i class="is-filled"></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+        </div>
+        <button class="gold-button" id="beginQuest"><i class="ph-fill ph-play"></i> Begin quest</button>
+      </section>
+
+      <div class="content-grid">
+        <div class="quest-board">
+          <div class="section-heading">
+            <div>
+              <span class="eyebrow">Today’s route</span>
+              <h2>Priority objectives</h2>
+            </div>
+            <div class="view-controls" role="group" aria-label="Task display">
+              <button class="is-active" aria-label="Comfortable view"><i class="ph ph-rows"></i></button>
+              <button aria-label="Compact view"><i class="ph ph-list-bullets"></i></button>
+            </div>
+          </div>
+
+          <section class="quest-group" id="vault" data-category="vault">
+            <header class="quest-group__header">
+              <span class="quest-group__art"><img src="img/cat-vault.png" alt=""></span>
+              <div><span class="eyebrow">High priority</span><h3>Great Vault</h3></div>
+              <span class="group-count"><b>2</b> of 3</span>
+              <button class="collapse-button" aria-expanded="true" aria-label="Collapse Great Vault"><i class="ph ph-caret-up"></i></button>
+            </header>
+            <div class="quest-list">
+              <label class="quest-row is-complete" data-title="Open your Great Vault before doing anything else">
+                <input type="checkbox" checked><span class="quest-check"><i class="ph-bold ph-check"></i></span>
+                <span class="quest-row__body"><strong>Open your Great Vault before doing anything else</strong><small>Choose your highest-impact upgrade before earning new slots.</small></span>
+                <span class="tag tag--done">Claimed</span>
+              </label>
+              <label class="quest-row is-complete" data-title="Fill the World row">
+                <input type="checkbox" checked><span class="quest-check"><i class="ph-bold ph-check"></i></span>
+                <span class="quest-row__body"><strong>Fill the World row</strong><small>Complete Bountiful Delves, Prey Hunts, or Ritual Sites.</small></span>
+                <span class="row-progress">8 / 8</span>
+              </label>
+              <label class="quest-row" data-title="Fill the Dungeon row">
+                <input type="checkbox"><span class="quest-check"><i class="ph-bold ph-check"></i></span>
+                <span class="quest-row__body"><strong>Fill the Dungeon row</strong><small>Complete 8 Mythic+ keys for all three reward choices.</small></span>
+                <span class="row-progress row-progress--active">2 / 8</span>
+              </label>
+            </div>
+          </section>
+
+          <section class="quest-group" id="world" data-category="world">
+            <header class="quest-group__header">
+              <span class="quest-group__art"><img src="img/cat-world.png" alt=""></span>
+              <div><span class="eyebrow">Open world</span><h3>The Coiled Isle</h3></div>
+              <span class="group-count"><b>1</b> of 4</span>
+              <button class="collapse-button" aria-expanded="true" aria-label="Collapse The Coiled Isle"><i class="ph ph-caret-up"></i></button>
+            </header>
+            <div class="quest-list">
+              <label class="quest-row is-complete" data-title="Complete Turn Back the Surge weekly">
+                <input type="checkbox" checked><span class="quest-check"><i class="ph-bold ph-check"></i></span>
+                <span class="quest-row__body"><strong>Complete “Turn Back the Surge” weekly</strong><small>Coiled Isle · Weekly campaign</small></span>
+                <span class="tag tag--done">Done</span>
+              </label>
+              <label class="quest-row" data-title="Clear Cursed Surges as they rotate">
+                <input type="checkbox"><span class="quest-check"><i class="ph-bold ph-check"></i></span>
+                <span class="quest-row__body"><strong>Clear Cursed Surges as they rotate</strong><small>Two locations remain active today.</small></span>
+                <span class="row-progress row-progress--active">3 / 5</span>
+              </label>
+              <label class="quest-row" data-title="Run the Vaults of Atal'Utek public event">
+                <input type="checkbox"><span class="quest-check"><i class="ph-bold ph-check"></i></span>
+                <span class="quest-row__body"><strong>Run the Vaults of Atal’Utek public event</strong><small>Next event begins in 42 minutes.</small></span>
+                <span class="tag tag--timed"><i class="ph-fill ph-clock"></i> 42m</span>
+              </label>
+              <label class="quest-row" data-title="Apply a Contract Zul'jarra's Forces">
+                <input type="checkbox"><span class="quest-check"><i class="ph-bold ph-check"></i></span>
+                <span class="quest-row__body"><strong>Apply a Contract: Zul’jarra’s Forces</strong><small>Use before farming World Quests.</small></span>
+                <span class="tag">Optional</span>
+              </label>
+            </div>
+          </section>
+
+          <section class="quest-group" id="delves" data-category="delves">
+            <header class="quest-group__header">
+              <span class="quest-group__art"><img src="img/cat-delve.png" alt=""></span>
+              <div><span class="eyebrow">Solo progression</span><h3>Delves</h3></div>
+              <span class="group-count"><b>4</b> of 8</span>
+              <button class="collapse-button" aria-expanded="true" aria-label="Collapse Delves"><i class="ph ph-caret-up"></i></button>
+            </header>
+            <div class="quest-list">
+              <label class="quest-row" data-title="Use Trovehunter's Bounty">
+                <input type="checkbox"><span class="quest-check"><i class="ph-bold ph-check"></i></span>
+                <span class="quest-row__body"><strong>Use Trovehunter’s Bounty at your highest tier</strong><small>Reveals the Hidden Trove inside a Delve.</small></span>
+                <span class="tag tag--reward"><i class="ph-fill ph-sparkle"></i> Reward</span>
+              </label>
+              <label class="quest-row" data-title="Complete Bountiful Delves">
+                <input type="checkbox"><span class="quest-check"><i class="ph-bold ph-check"></i></span>
+                <span class="quest-row__body"><strong>Complete Bountiful Delves</strong><small>Four more completions fill the World row.</small></span>
+                <span class="row-progress row-progress--active">4 / 8</span>
+              </label>
+            </div>
+          </section>
+
+          <section class="quest-group" id="mythic" data-category="mythic">
+            <header class="quest-group__header">
+              <span class="quest-group__art"><img src="img/cat-mythic.png" alt=""></span>
+              <div><span class="eyebrow">Group progression</span><h3>Mythic+ Dungeons</h3></div>
+              <span class="group-count"><b>2</b> of 8</span>
+              <button class="collapse-button" aria-expanded="false" aria-label="Expand Mythic+ Dungeons"><i class="ph ph-caret-down"></i></button>
+            </header>
+            <div class="quest-list" hidden>
+              <label class="quest-row" data-title="Complete eight Mythic plus keys">
+                <input type="checkbox"><span class="quest-check"><i class="ph-bold ph-check"></i></span>
+                <span class="quest-row__body"><strong>Complete 8 Mythic+ keys</strong><small>Unlock all three Dungeon Vault choices.</small></span>
+                <span class="row-progress row-progress--active">2 / 8</span>
+              </label>
+            </div>
+          </section>
+
+          <section class="quest-group" id="raid" data-category="raid">
+            <header class="quest-group__header">
+              <span class="quest-group__art"><img src="img/cat-raid.png" alt=""></span>
+              <div><span class="eyebrow">Raid progression</span><h3>The Venomous Abyss</h3></div>
+              <span class="group-count"><b>3</b> of 6</span>
+              <button class="collapse-button" aria-expanded="false" aria-label="Expand The Venomous Abyss"><i class="ph ph-caret-down"></i></button>
+            </header>
+            <div class="quest-list" hidden>
+              <label class="quest-row" data-title="Defeat six raid bosses">
+                <input type="checkbox"><span class="quest-check"><i class="ph-bold ph-check"></i></span>
+                <span class="quest-row__body"><strong>Defeat 6 raid bosses</strong><small>Three bosses remain for the final Vault slot.</small></span>
+                <span class="row-progress row-progress--active">3 / 6</span>
+              </label>
+            </div>
+          </section>
+
+          <div class="no-results" id="noResults" hidden>
+            <i class="ph ph-magnifying-glass"></i><strong>No quests found</strong><span>Try another search phrase.</span>
+          </div>
+        </div>
+
+        <aside class="intel-column" aria-label="Weekly intelligence">
+          <section class="intel-card vault-card">
+            <div class="intel-card__heading"><div><span class="eyebrow">Reward forecast</span><h2>Great Vault</h2></div><img src="img/cat-vault.png" alt=""></div>
+            <div class="vault-track">
+              <div class="vault-track__row"><span><i class="ph-fill ph-sword"></i> Raid</span><div><b>3 / 6</b><small>1 reward ready</small></div></div>
+              <div class="mini-track"><i style="width:50%"></i></div>
+              <div class="vault-track__row"><span><i class="ph-fill ph-castle-turret"></i> Dungeon</span><div><b>2 / 8</b><small>1 reward ready</small></div></div>
+              <div class="mini-track"><i style="width:25%"></i></div>
+              <div class="vault-track__row"><span><i class="ph-fill ph-globe-hemisphere-west"></i> World</span><div><b>8 / 8</b><small>3 rewards ready</small></div></div>
+              <div class="mini-track is-complete"><i style="width:100%"></i></div>
+            </div>
+            <div class="reward-total"><span><i class="ph-fill ph-treasure-chest"></i></span><div><strong>5 reward choices</strong><small>Waiting next reset</small></div></div>
+          </section>
+
+          <section class="intel-card">
+            <div class="intel-card__heading"><div><span class="eyebrow">Live in Azeroth</span><h2>World schedule</h2></div><i class="ph-fill ph-broadcast live-icon"></i></div>
+            <div class="event-list">
+              <div class="event-item is-live"><span class="event-icon"><i class="ph-fill ph-flame"></i></span><div><strong>Cursed Surge</strong><small>Shimmering Flats · active now</small></div><b>LIVE</b></div>
+              <div class="event-item"><span class="event-icon"><i class="ph-fill ph-castle-turret"></i></span><div><strong>Vaults of Atal’Utek</strong><small>Begins in 42 minutes</small></div><b>18:30</b></div>
+              <div class="event-item"><span class="event-icon"><i class="ph-fill ph-fish"></i></span><div><strong>Cursed Fishing</strong><small>Follows the next Surge</small></div><b>19:15</b></div>
+            </div>
+            <a class="text-link" href="events.html">View full event calendar <i class="ph ph-arrow-right"></i></a>
+          </section>
+
+          <section class="intel-card quick-card">
+            <span class="eyebrow">Shortcuts</span>
+            <div class="quick-grid">
+              <button><i class="ph-fill ph-dice-five"></i><span><strong>What’s next?</strong><small>Pick a quest</small></span></button>
+              <button><i class="ph-fill ph-sword"></i><span><strong>BiS gear</strong><small>Plan upgrades</small></span></button>
+              <button><i class="ph-fill ph-chart-bar"></i><span><strong>Summary</strong><small>Share progress</small></span></button>
+              <button><i class="ph-fill ph-plus-circle"></i><span><strong>New task</strong><small>Add your own</small></span></button>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </main>
+
+    <nav class="mobile-dock" aria-label="Mobile navigation">
+      <a class="is-active" href="#overview"><i class="ph-fill ph-compass"></i><span>Overview</span></a>
+      <a href="#vault"><i class="ph-fill ph-treasure-chest"></i><span>Vault</span></a>
+      <button id="mobileNext"><i class="ph-fill ph-lightning"></i><span>Next</span></button>
+      <a href="#world"><i class="ph-fill ph-globe-hemisphere-west"></i><span>World</span></a>
+      <button><i class="ph-fill ph-dots-three"></i><span>More</span></button>
+    </nav>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="mockup.js"></script>
+</body>
+</html>

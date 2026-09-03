@@ -123,20 +123,7 @@ function renderClassLinksBar() {
     });
   }
 
-  const spec  = [armory?.spec, def.name].filter(Boolean).join(' ');
-  const guild = armory?.guild ? `<span class="cl-guild">(${armory.guild})</span>` : '';
-  const stats = [
-    armory?.ilvl        ? `<span class="cl-stat"><i class="ph-fill ph-sword"></i>ilvl ${armory.ilvl}</span>` : '',
-    armory?.mythicRating ? `<span class="cl-stat"><i class="ph ph-key"></i>${armory.mythicRating}</span>`    : '',
-  ].join('');
-
   bar.innerHTML = `
-    <span class="cl-identity">
-      <img src="${def.icon}" alt="">
-      <span class="cl-spec">${spec}</span>${guild}
-    </span>
-    <span class="rail-label">Resources</span>
-    ${links.map(l => `<a class="cl-link" href="${l.href}" target="_blank" rel="noopener"><i class="${l.icon}"></i>${l.label}</a>`).join('')}
-    <span class="yl-rule"></span>
-    ${stats}`;
+    <span class="rail-label">Guides &amp; profiles</span>
+    ${links.map(l => `<a class="cl-link" href="${l.href}" target="_blank" rel="noopener"><i class="${l.icon}"></i>${l.label}</a>`).join('')}`;
 }

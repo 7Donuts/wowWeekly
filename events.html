@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Azeroth Agenda: World Events Calendar</title>
 <link rel="stylesheet" href="midnight.css?v=1.10.0">
+<link rel="stylesheet" href="overhaul.css?v=2.1.0">
 </head>
 <body>
 <div class="page">
@@ -35,13 +36,21 @@
     <button class="ev-filter-btn" data-cat="tag-delve" onclick="setEvFilter('tag-delve',this)">Delves</button>
   </div>
 
+  <section class="rotation-directory" aria-labelledby="rotation-title">
+    <div class="rotation-directory-head">
+      <div><div class="page-eyebrow">Recurring activities</div><h2 id="rotation-title">World activity directory</h2></div>
+      <p>Use the guide links below, then check your in-game map and calendar for the exact realm rotation.</p>
+    </div>
+    <div id="rotations-container" class="rotation-directory-grid"></div>
+  </section>
+
   <!-- EVENT LIST -->
   <div id="events-container"></div>
 
 </div>
 
 <!-- ── External JS modules ── -->
-<script src="js/data-events.js?v=1.10.0"></script>
+<script src="js/data-events.js?v=2.1.0"></script>
 <script src="js/theme.js?v=1.10.0"></script>
 <script>updateThemeBtn();</script>
 
@@ -172,9 +181,21 @@ function renderEvents() {
   }).join('');
 }
 
+function renderRotations() {
+  const container = document.getElementById('rotations-container');
+  if (!container || typeof WORLD_ROTATIONS === 'undefined') return;
+  container.innerHTML = WORLD_ROTATIONS.map(item => `
+    <a class="rotation-directory-card" href="${item.url}" target="_blank" rel="noopener">
+      <span><i class="${item.icon}"></i></span>
+      <div><strong>${item.name}</strong><small>${item.cadence}</small></div>
+      <i class="ph ph-arrow-square-out"></i>
+    </a>`).join('');
+}
+
 /* ── INIT ── */
 updateThemeBtn();
 renderNowBanner();
+renderRotations();
 renderEvents();
 </script>
 </body>

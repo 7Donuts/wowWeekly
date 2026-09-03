@@ -1,6 +1,17 @@
-_worker.js
-wrangler.jsonc
-cloudflare
+# Repository and deployment internals must never be public static assets.
+.git
+.github
+.wrangler
 .gitignore
+.assetsignore
+wrangler.jsonc
+_worker.js
+cloudflare
 node_modules
 tools
+README.md
+
+# The approved concept remains local; production serves index.html.
+mockup.html
+mockup.css
+mockup.js

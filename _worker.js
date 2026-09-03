@@ -241,12 +241,15 @@ async function handleGetArmory(request, env) {
   };
   const charPath = `${apiBase}/profile/wow/character/${encodeURIComponent(realm)}/${encodeURIComponent(char)}`;
 
-  const [profileRes, keystoneRes, equipmentRes, raidsRes, mediaRes] = await Promise.all([
+  const [profileRes, keystoneRes, equipmentRes, raidsRes, mediaRes, pvp2v2Res, pvp3v3Res, pvpRbgRes] = await Promise.all([
     fetch(`${charPath}?locale=en_US`,                              { headers }),
     fetch(`${charPath}/mythic-keystone-profile?locale=en_US`,      { headers }),
     fetch(`${charPath}/equipment?locale=en_US`,                    { headers }),
     fetch(`${charPath}/encounters/raids?locale=en_US`,             { headers }),
     fetch(`${charPath}/character-media?locale=en_US`,              { headers }),
+    fetch(`${charPath}/pvp-bracket/2v2?locale=en_US`,               { headers }),
+    fetch(`${charPath}/pvp-bracket/3v3?locale=en_US`,               { headers }),
+    fetch(`${charPath}/pvp-bracket/rbg?locale=en_US`,               { headers }),
   ]);
 
   if (profileRes.status === 404) return new Response('Character not found', { status: 404 });
@@ -341,12 +344,31 @@ async function handleGetArmory(request, env) {
     renderUrl = media.assets?.find(a => a.key === 'main-raw')?.value  || null;
   }
 
+  let pvpRating = null;
+  let pvpBracket = null;
+  for (const [label, response] of [['2v2', pvp2v2Res], ['3v3', pvp3v3Res], ['RBG', pvpRbgRes]]) {
+    if (!response.ok) continue;
+    try {
+      const bracket = await response.json();
+      const rating = Number(bracket.rating) || 0;
+      if (rating > (pvpRating || 0)) {
+        pvpRating = rating;
+        pvpBracket = label;
+      }
+    } catch (_) {}
+  }
+
   return Response.json({
     ilvl:         profile.equipped_item_level || profile.average_item_level || 0,
     spec:         bnetStr(profile.active_spec?.name),
     className:    bnetStr(profile.character_class?.name),
+    guild:        bnetStr(profile.guild?.name),
+    faction:      profile.faction?.type || '',
+    level:        profile.level || 0,
     mythicRating,
     mythicColor,
+    pvpRating,
+    pvpBracket,
     weeklyRuns,
     gearItems,
     raidKills,

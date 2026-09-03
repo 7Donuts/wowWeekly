@@ -12,6 +12,20 @@
    The index page uses only name/url/start/end.
    events.html uses name/url/start/end/desc/tags.
 ----------------------------------------------------------- */
+/* Blizzard's public profile API does not expose the live in-game calendar.
+   These are evergreen activity types with guide links; the exact active zone,
+   boss, and spawn timer remains authoritative in the game client. */
+const WORLD_ROTATIONS = [
+  { name: 'Stormarion Assault', cadence: 'Rotating world assault', icon: 'ph-fill ph-lightning', url: 'https://www.icy-veins.com/wow/midnight-world-events-guide' },
+  { name: 'Abundance', cadence: 'Recurring world event', icon: 'ph-fill ph-leaf', url: 'https://www.icy-veins.com/wow/midnight-world-events-guide' },
+  { name: "Saltheril's Soiree", cadence: 'Recurring world event', icon: 'ph-fill ph-confetti', url: 'https://www.icy-veins.com/wow/midnight-world-events-guide' },
+  { name: 'Legends of the Haranir', cadence: 'Recurring world event', icon: 'ph-fill ph-scroll', url: 'https://www.icy-veins.com/wow/midnight-world-events-guide' },
+  { name: 'Prey Hunts', cadence: 'Repeatable hunt activity', icon: 'ph-fill ph-crosshair', url: 'https://www.icy-veins.com/wow/midnight-world-events-guide' },
+  { name: 'World Bosses', cadence: 'Weekly rotation', icon: 'ph-fill ph-skull', url: 'https://www.icy-veins.com/wow/midnight-world-events-guide' },
+  { name: 'Delves', cadence: 'Daily bounty rotation', icon: 'ph-fill ph-cave', url: 'https://www.icy-veins.com/wow/midnight-world-events-guide' },
+  { name: 'Surges & map events', cadence: 'Check realm map timer', icon: 'ph-fill ph-broadcast', url: 'https://www.wowhead.com/guides/world-events' },
+];
+
 const EVENTS = [
   { name: 'Pet Battle Bonus Event',       url: 'https://www.wowhead.com/event=565/pet-battle-bonus-event',
     start: '2026-05-19', end: '2026-05-26',
@@ -133,6 +147,14 @@ const EVENTS = [
     start: '2026-08-25', end: '2026-09-01',
     desc: 'Timewalking through Burning Crusade dungeons. Weekly quest cache. Good for TBC-era mounts.',
     tags: ['tag-optional','tag-mythic','tag-world'] },
+  { name: 'Delves Bonus Event',           url: 'https://www.icy-veins.com/wow/weekly-to-do-list',
+    start: '2026-09-01', end: '2026-09-08',
+    desc: 'Bonus Delve rewards and the weekly Delves quest. A strong week to combine bountiful runs with World-row progress.',
+    tags: ['tag-optional','tag-delve','tag-world'] },
+  { name: 'BlizzCon 2026 WoW Watch Rewards', url: 'https://news.blizzard.com/en-us/article/24249777/get-the-blizzcon-2026-in-game-goodies',
+    start: '2026-09-12', end: '2026-09-14',
+    desc: 'BlizzCon weekend. Watch eligible broadcasts while connected to Battle.net for the announced World of Warcraft viewing rewards.',
+    tags: ['tag-optional','tag-world'] },
   { name: 'Northrend Timewalking',        url: 'https://www.wowhead.com/event=562/northrend-timewalking-dungeon-event',
     start: '2026-09-15', end: '2026-09-22',
     desc: "Timewalking through Wrath of the Lich King dungeons. Badge vendor sells Reins of the Ironbound Proto-Drake.",

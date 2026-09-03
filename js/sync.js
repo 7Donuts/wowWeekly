@@ -157,8 +157,10 @@
     const dotEl    = document.getElementById('auth-dot');
     const importEl = document.getElementById('btn-import-chars');
     const syncEl   = document.getElementById('btn-sync-all');
+    const panelEl  = document.querySelector('.account-panel');
     if (!loginEl) return;
     if (user) {
+      if (panelEl) panelEl.classList.add('is-connected');
       localStorage.setItem('wow_mn_last_battletag', user.battletag);
       loginEl.style.display = 'none';
       if (logoutEl)  logoutEl.style.display  = '';
@@ -172,6 +174,7 @@
       if (importEl)  importEl.style.display = '';
       if (syncEl)    syncEl.style.display   = '';
     } else {
+      if (panelEl) panelEl.classList.remove('is-connected');
       const hadSession = !!localStorage.getItem('wow_mn_last_battletag');
       localStorage.removeItem('wow_mn_last_battletag');
       loginEl.style.display = '';
@@ -183,7 +186,7 @@
       const statusEl = document.getElementById('sync-status');
       if (statusEl) statusEl.style.display = 'none';
       if (hadSession && typeof showToast === 'function') {
-        showToast('Session expired: use Battle.net at the foot of the rail to sign in again.');
+        showToast('Session expired: use Battle.net at the top of the page to sign in again.');
       }
     }
   }
