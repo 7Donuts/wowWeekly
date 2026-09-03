@@ -9,8 +9,11 @@ change it in one and copy it to the other two in the same change.
 | Repo | What it is | Runs where |
 |---|---|---|
 | `rateaplayer` (Party Ledger) | WoW addon, Lua 5.1 | The game client |
-| `wowWeekly` (The Azeroth Agenda) | Static site + Worker, KV | Cloudflare |
-| `tabard` (Guild Identity) | Discord bot, Worker, D1 | Cloudflare |
+| `wowWeekly` (The Azeroth Agenda) | Static site + Worker, KV | `agenda.7donuts.dev` |
+| `tabard` (Guild Identity) | Discord bot, Worker, D1 | `tabard.7donuts.dev` |
+
+Tabard reads the Agenda; the Agenda never calls Tabard. One direction, so
+there is only one shared secret and only one side that has to be reachable.
 
 ## The join key
 
@@ -209,8 +212,12 @@ cookie) and Tabard (service token).
 | GET  | `/api/share/profile?sub=` | service | Rater profile, if published |
 | POST | `/api/share/bind` | service | Record the Discord id against a sub |
 
-Service auth is `Authorization: Bearer <AGENDA_SERVICE_TOKEN>`, a shared
-secret held as a Worker secret on both sides. It authenticates Tabard, it does
+Served from `https://agenda.7donuts.dev`, and called only by
+`tabard.7donuts.dev`. Service auth is `Authorization: Bearer
+<AGENDA_SERVICE_TOKEN>`, a shared secret held as a Worker secret on both sides
+(`wrangler secret put AGENDA_SERVICE_TOKEN`, the same value in each repo).
+Tabard reaches it through `AGENDA_BASE_URL`, a var rather than a secret since
+the hostname is not sensitive. It authenticates Tabard, it does
 not authorize the read: every `/api/share/*` response is additionally gated on
 the member's consent record, and returns 403 with a machine-readable reason
 when a scope is off, so Tabard can tell the member which switch to flip.

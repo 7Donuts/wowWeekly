@@ -66,6 +66,14 @@ people who never agreed to be in it. See `INTEGRATION.md`.
 
 ## Configuration
 
+Served from `agenda.7donuts.dev`.
+
 Worker secrets: `BNET_CLIENT_ID`, `BNET_CLIENT_SECRET`, `SESSION_SECRET`, and
-`AGENDA_SERVICE_TOKEN` (shared with Tabard; unset means the share API is off,
-not open). KV namespace `USER_DATA`.
+`AGENDA_SERVICE_TOKEN`. KV namespace `USER_DATA`.
+
+`AGENDA_SERVICE_TOKEN` is shared with Tabard at `tabard.7donuts.dev`, which
+must hold the identical value in its own `AGENDA_SERVICE_TOKEN` secret and
+point `AGENDA_BASE_URL` here. Unset on either side means the share API is off,
+not open. The token authenticates Tabard and authorizes nothing: every
+`/api/share/*` response is gated separately on the member's own consent
+record.
