@@ -1369,6 +1369,7 @@ function renderNav() {
       ? '<img src="' + c.art + '" alt="">'
       : '<i class="' + (active ? c.icon.replace('ph ph-', 'ph-fill ph-') : c.icon) + '"></i>';
     return '<button class="nav-row' + (active ? ' active' : '') + '" data-filter="' + c.filter + '"'
+      + ' title="' + c.label.replace(/"/g, '&quot;') + '" aria-label="' + c.label.replace(/"/g, '&quot;') + '"'
       + ' onclick="setFilter(\'' + c.filter + '\',this)">'
       + mark
       + '<span class="nav-row-label">' + c.label + '</span>'
