@@ -403,6 +403,23 @@ function updateViewToggleBtn() {
 }
 
 /* ── SECTION TASK HTML (main list + edit mode): pure string concat, no nested backticks ── */
+/* Which automatic source ticked a box, if any. A tick the member did not make
+   is otherwise unexplainable, and "why is this already checked" is the first
+   question automatic completion produces. */
+function autoSrcBadge(id, isDone) {
+  if (!isDone || typeof loadAutoSrc !== 'function') return '';
+  const src = loadAutoSrc()[id];
+  if (!src) return '';
+
+  const isAddon = src === 'addon';
+  const title = isAddon
+    ? 'Ticked from Party Ledger in game. Uncheck it and it stays unchecked.'
+    : 'Ticked from your Battle.net profile. Uncheck it and it stays unchecked.';
+  return '<span class="auto-src auto-src-' + src + '" title="' + title + '">'
+    + '<i class="ph-fill ' + (isAddon ? 'ph-plug' : 'ph-cloud-check') + '"></i>'
+    + (isAddon ? 'Ledger' : 'Armory') + '</span>';
+}
+
 function sectionTaskHtml(t, done, hidden, yourList, goals, bossKills, notes) {
   const id = t.id;
   const goalDef = t.goal;
@@ -488,7 +505,7 @@ function sectionTaskHtml(t, done, hidden, yourList, goals, bossKills, notes) {
   return '<div class="task' + (isDone ? ' done' : '') + (isHidden ? ' task-hidden' : '') + (inList ? ' in-yourlist' : '') + _editSelClass + '"' + _editCardAttrs + '>'
     + '<div class="task-check" onclick="event.stopPropagation();' + checkClick + '" style="cursor:pointer;"></div>'
     + '<div class="task-body">'
-    + '<div class="task-name">' + taskTitleHtml(t, searchQuery) + '</div>'
+    + '<div class="task-name">' + taskTitleHtml(t, searchQuery) + autoSrcBadge(id, !!done[id]) + '</div>'
     + (hd ? '<div class="task-desc">' + hd + '</div>' : '')
     + (milestoneNote ? '<div class="milestone-note"><i class="ph-fill ph-check"></i>' + milestoneNote + '</div>' : '')
     + goalMeterHtml(goalDef, goalVal)
@@ -745,7 +762,7 @@ function ylTaskHtml(t, done, goals, notes, bossKills) {
     + '<div class="yl-drag-handle" onclick="event.stopPropagation()" title="Drag to reorder"><i class="ph ph-dots-six-vertical"></i></div>'
     + '<div class="task-check" onclick="event.stopPropagation();toggle(\'' + id + '\',this)" style="cursor:pointer;"></div>'
     + '<div class="task-body">'
-    + '<div class="task-name">' + taskTitleHtml(t, searchQuery) + '</div>'
+    + '<div class="task-name">' + taskTitleHtml(t, searchQuery) + autoSrcBadge(id, !!done[id]) + '</div>'
     + (hd ? '<div class="task-desc">' + hd + '</div>' : '')
     + (milestoneNote ? '<div class="milestone-note"><i class="ph-fill ph-check"></i>' + milestoneNote + '</div>' : '')
     + goalMeterHtml(goalDef, goalVal)
@@ -1219,6 +1236,10 @@ function toggle(id, taskEl) {
   const wasDown = !!done[id];
   done[id] ? delete done[id] : (done[id] = true);
   saveDone(done);
+  // Record the intent, not just the state. An automatic source reads this and
+  // stands down, so un-ticking a box the addon or the armory ticked actually
+  // gets rid of it instead of being undone on the next sync.
+  markManualToggle(id, !wasDown);
   if (!wasDown) {
     // Task just checked: burst from task position
     const pos = _getTaskPos(taskEl);
