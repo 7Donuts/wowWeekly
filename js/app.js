@@ -863,6 +863,12 @@ function _ylBannerCharLine() {
 }
 
 function render() {
+  // The golden objective is mounted after the active list finishes rendering,
+  // so its original row can be lifted out without duplicating controls or IDs.
+  requestAnimationFrame(() => {
+    renderGoldenObjective();
+    requestAnimationFrame(alignIntelCards);
+  });
   const done      = loadDone();
   const hidden    = loadHidden();
   const yourList  = new Set(loadYourList());
@@ -3061,48 +3067,133 @@ function whatsNext() {
     return;
   }
 
-  // Pick a random candidate
+  // Pick a random candidate and keep it pinned for this character for the
+  // remainder of the browser session, including across list re-renders.
   const pick = candidates[Math.floor(Math.random() * candidates.length)];
+  sessionStorage.setItem('wow_mn_golden_' + currentChar, pick.id);
 
-  // Switch to the right view to reveal it
+  // Switch to Everything so the selected row can be visibly lifted from its
+  // source section into the Golden Objective position.
   if (!activeFilters.has('all')) {
     activeFilters = new Set(['all']);
-    render();
+  }
+  render();
+  setTimeout(() => {
+    document.getElementById('golden-objective')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 120);
+}
+
+function _goldenObjectiveData(id) {
+  for (const sec of activeSections()) {
+    const task = sec.tasks.find(t => t.id === id);
+    if (task) return { task, section: sec, custom: false };
+  }
+  if (id.startsWith('custom_')) {
+    const rawId = id.slice(7);
+    const task = loadCustomTasks().find(t => t.id === rawId);
+    if (task) return {
+      task: { ...task, id },
+      section: { title: task.id.startsWith('bis_') ? 'Best in Slot' : 'Custom objectives', icon: task.id.startsWith('bis_') ? 'ph-fill ph-sword' : 'ph ph-plus-circle' },
+      custom: true,
+      rawId,
+    };
+  }
+  return null;
+}
+
+function _goldenCustomTaskHtml(data, done, notes) {
+  const t = data.task;
+  const id = t.id;
+  const isDone = !!done[id];
+  return '<div class="task' + (isDone ? ' done' : '') + '">'
+    + '<div class="task-check" onclick="event.stopPropagation();toggleCustom(\'' + data.rawId + '\',this)" style="cursor:pointer;"></div>'
+    + '<div class="task-body">'
+    + '<div class="task-name">' + _bisTaskNameHtml(t.name, null) + '</div>'
+    + (t.desc ? '<div class="task-desc">' + escHtml(t.desc) + '</div>' : '')
+    + noteHtml(id, notes)
+    + '</div>'
+    + '<div class="task-side">' + noteBtnHtml(id, notes) + '</div>'
+    + '</div>';
+}
+
+function renderGoldenObjective() {
+  const panel = document.getElementById('golden-objective');
+  const target = document.getElementById('golden-objective-task');
+  if (!panel || !target) return;
+
+  const id = sessionStorage.getItem('wow_mn_golden_' + currentChar) || '';
+  const data = id ? _goldenObjectiveData(id) : null;
+  if (!data || editingYourList) {
+    panel.hidden = true;
+    target.innerHTML = '';
+    if (id && !data) sessionStorage.removeItem('wow_mn_golden_' + currentChar);
+    return;
   }
 
-  // Find the task element and scroll + highlight it
-  // Tasks render with onclick containing the id: find by that
-  setTimeout(() => {
-    const taskControl = [...document.querySelectorAll('.task .task-check')].find(el => {
-      const oc = el.getAttribute('onclick') || '';
-      return oc.includes(`'${pick.id}'`) || oc.includes(`"${pick.id}"`);
-    });
-    const taskEl = taskControl?.closest('.task');
-    if (taskEl) {
-      // Ensure section is expanded
-      const body = taskEl.closest('.section-body');
-      if (body && body.classList.contains('hidden')) {
-        const header = body.previousElementSibling;
-        if (header) header.click();
-      }
-      document.querySelectorAll('.whats-next-selected').forEach(el => el.classList.remove('whats-next-selected'));
-      document.querySelectorAll('.next-pick-badge').forEach(el => el.remove());
-      taskEl.classList.add('whats-next-selected');
-      const bodyEl = taskEl.querySelector('.task-body') || taskEl;
-      const badge = document.createElement('span');
-      badge.className = 'next-pick-badge';
-      badge.innerHTML = '<i class="ph-fill ph-map-pin"></i> Chosen next';
-      bodyEl.appendChild(badge);
-      taskEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      taskEl.classList.remove('whats-next-highlight');
-      void taskEl.offsetWidth; // force reflow to restart animation
-      taskEl.classList.add('whats-next-highlight');
-      taskEl.addEventListener('animationend', () => {
-        taskEl.classList.remove('whats-next-highlight');
-      }, { once: true });
-    }
-  }, 100);
+  const done = loadDone();
+  const notes = loadNotes();
+  const html = data.custom
+    ? _goldenCustomTaskHtml(data, done, notes)
+    : sectionTaskHtml(data.task, done, loadHidden(), new Set(loadYourList()), loadGoals(), loadBossKills(), notes);
+
+  target.innerHTML = html;
+  const card = target.querySelector('.task');
+  if (card) {
+    card.classList.add('whats-next-selected');
+    card.insertAdjacentHTML('afterbegin', '<span class="golden-ribbon"><i class="ph-fill ph-map-pin"></i> Chosen next</span>');
+  }
+  document.getElementById('golden-objective-context').textContent = 'Selected for ' + charDisplayName(currentChar) + ' · ' + data.section.title;
+  panel.hidden = false;
+
+  // Remove the ordinary copy from the current list while it is promoted.
+  const sourceControl = [...document.querySelectorAll('#sections-container .task .task-check')].find(el => {
+    const click = el.getAttribute('onclick') || '';
+    if (data.custom) return click.includes(`'${data.rawId}'`) || click.includes(`'${id}'`);
+    return click.includes(`'${id}'`) || click.includes(`"${id}"`);
+  });
+  sourceControl?.closest('.task')?.remove();
 }
+
+function clearGoldenObjective() {
+  sessionStorage.removeItem('wow_mn_golden_' + currentChar);
+  render();
+}
+
+/* Align each intelligence card with the corresponding objective panel. The
+   cards stay in normal document flow, so short cards create intentional air
+   rather than floating halfway up the neighboring objective. */
+function alignIntelCards() {
+  const column = document.querySelector('.intel-column');
+  const workspace = document.querySelector('.quest-workspace');
+  if (!column || !workspace) return;
+
+  const cards = [...column.querySelectorAll(':scope > .intel-card')];
+  cards.forEach(card => { card.style.marginTop = '0px'; });
+  if (window.innerWidth <= 900) return;
+
+  const golden = document.getElementById('golden-objective');
+  const list = document.getElementById('sections-container');
+  const anchors = [];
+  if (golden && !golden.hidden) anchors.push(golden);
+  if (list) {
+    [...list.children].forEach(child => {
+      if (child.classList.contains('section') || child.classList.contains('yl-section-group')) anchors.push(child);
+    });
+  }
+
+  cards.forEach((card, index) => {
+    const anchor = anchors[index];
+    if (!anchor) return;
+    const gap = Math.max(0, Math.round(anchor.getBoundingClientRect().top - card.getBoundingClientRect().top));
+    card.style.marginTop = gap + 'px';
+  });
+}
+
+let _intelResizeFrame = 0;
+window.addEventListener('resize', () => {
+  cancelAnimationFrame(_intelResizeFrame);
+  _intelResizeFrame = requestAnimationFrame(alignIntelCards);
+});
 
 /* ═══════════════════════════════════════════
    TASK NOTES
