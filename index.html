@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Azeroth Agenda: WoW Midnight Weekly Tracker</title>
-<meta name="description" content="Never miss a WoW Midnight reset. Track Mythic+, raids, Voidforge, Prey, Delves, professions, and more for Patch 12.0.x Season 1.">
+<meta name="description" content="Never miss a WoW Midnight reset. Track the Coiled Isle, The Venomous Abyss, Mythic+, Lairs, Delves, Prey, Mistcrests and more for Patch 12.1 Season 2.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://agenda.7donuts.dev">
 <meta property="og:title" content="The Azeroth Agenda">
-<meta property="og:description" content="WoW Midnight weekly task tracker. Never miss a reset. Track Mythic+, raids, Voidforge, Prey, Delves, professions, PvP, and more.">
+<meta property="og:description" content="WoW Midnight weekly task tracker. Never miss a reset. Track the Coiled Isle, raids, Mythic+, Lairs, Delves, Prey, professions, PvP, and more.">
 <meta property="og:image" content="https://agenda.7donuts.dev/img/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="The Azeroth Agenda">
@@ -17,7 +17,7 @@
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
 <link rel="preload" href="fonts/cinzel-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/Phosphor-Fill.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="midnight.css?v=1.10.0">
+<link rel="stylesheet" href="midnight.css?v=1.11.0">
 
 </head>
 <body>
@@ -31,7 +31,7 @@
       <div class="brand-sigil"><i class="ph-fill ph-moon-stars"></i></div>
       <div class="brand-text">
         <h1>The Azeroth<br><span>Agenda</span></h1>
-        <div class="patch-badge">Patch 12.0.5 · Season 1</div>
+        <div class="patch-badge">Patch 12.1 · Season 2</div>
       </div>
     </div>
 
@@ -108,6 +108,7 @@
         <button class="btn-reset-all btn-raised" onclick="openSummary()"><i class="ph ph-chart-bar"></i>Summary</button>
         <button class="btn-reset-all btn-raised btn-icon" id="btn-yourlist-view" onclick="toggleYourListView()" title="Toggle grouped / flat list"><i class="ph ph-squares-four"></i></button>
         <button class="btn-reset-all btn-raised btn-icon" id="btn-compact" onclick="toggleCompact()" title="Toggle compact view"><i class="ph ph-rows"></i></button>
+        <button class="btn-reset-all btn-raised" id="btn-season1" onclick="toggleSeason1()" title="Show retired Season 1 content"><i class="ph ph-arrow-counter-clockwise"></i>Season 1</button>
         <button class="btn-reset-all btn-raised btn-icon" onclick="resetAll()" title="Reset week"><i class="ph ph-arrows-clockwise"></i></button>
         <button class="btn-reset-all btn-raised btn-icon" onclick="openExportImport()" title="Character data"><i class="ph ph-arrows-down-up"></i></button>
         <button class="btn-reset-all btn-raised btn-icon" id="btn-theme" onclick="toggleTheme()" title="Toggle dark / light mode"><i class="ph ph-sun"></i></button>
@@ -313,18 +314,18 @@
 
 
 <!-- ── JS: load order matters, each file depends on the ones above it ── -->
-<script src="js/data-tasks.js?v=1.10.0"></script>
-<script src="js/data-events.js?v=1.10.0"></script>
-<script src="js/data-classes.js?v=1.10.0"></script>
-<script src="js/data-changelog.js?v=1.10.0"></script>
-<script src="js/data-bis.js?v=1.10.0"></script>
-<script src="js/data-item-ids.js?v=1.10.0"></script>
-<script src="js/storage.js?v=1.10.0"></script>
-<script src="js/armory.js?v=1.10.0"></script>
-<script src="js/confetti.js?v=1.10.0"></script>
-<script src="js/theme.js?v=1.10.0"></script>
-<script src="js/app.js?v=1.10.0"></script>
-<script src="js/sync.js?v=1.10.0"></script>
+<script src="js/data-tasks.js?v=1.11.0"></script>
+<script src="js/data-events.js?v=1.11.0"></script>
+<script src="js/data-classes.js?v=1.11.0"></script>
+<script src="js/data-changelog.js?v=1.11.0"></script>
+<script src="js/data-bis.js?v=1.11.0"></script>
+<script src="js/data-item-ids.js?v=1.11.0"></script>
+<script src="js/storage.js?v=1.11.0"></script>
+<script src="js/armory.js?v=1.11.0"></script>
+<script src="js/confetti.js?v=1.11.0"></script>
+<script src="js/theme.js?v=1.11.0"></script>
+<script src="js/app.js?v=1.11.0"></script>
+<script src="js/sync.js?v=1.11.0"></script>
 
 
 </body>

@@ -1,5 +1,7 @@
 /* -----------------------------------------------------------
-   WORLD EVENT DATA :  Patch 12.0.5 · May 2026 – May 2027
+   WORLD EVENT DATA :  Midnight, May 2026 to May 2027
+   Spans Season 1 (12.0.x) and Season 2 (12.1). Bonus events and
+   holidays are patch-agnostic, so entries carry over across seasons.
    Single source of truth for both the inline event display
    (index.html) and the full Event Calendar (events.html).
 

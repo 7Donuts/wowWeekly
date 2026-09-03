@@ -340,7 +340,7 @@
     <div class="page-head-text">
       <div class="page-eyebrow">The Azeroth Agenda</div>
       <div class="page-title">Patch notes <span>and hotfixes</span></div>
-      <div class="page-sub">Curated changes for Patch 12.0.x, Lingering Shadows, Season 1. Last updated May 14, 2026.</div>
+      <div class="page-sub">Curated changes for Patch 12.1, Curse of Ula'tek, Season 2. Season 1 notes are kept below. Last updated September 3, 2026.</div>
     </div>
     <div class="page-nav">
       <a href="index.html" class="btn"><i class="ph ph-arrow-left"></i>The agenda</a>
@@ -376,18 +376,59 @@
   <div id="patchnotes-container"></div>
 
   <div class="page-foot">
-    The Azeroth Agenda · Curated by Seven · Patch 12.0.5 · May 2026
+    The Azeroth Agenda · Curated by Seven · Patch 12.1 · September 2026
   </div>
 </div>
 
 <script>
 /* ═══════════════════════════════════════════════════════════
-   PATCH NOTES DATA: Patch 12.0.x, Lingering Shadows
+   PATCH NOTES DATA: Patch 12.1 Curse of Ula'tek, and the 12.0.x Season 1 archive
    Sources: Blizzard Hotfix Blog, Wowhead
    Types: fix | buff | nerf | class | content | system
    Tags: used for filtering (e.g. class name, 'dungeons', 'pvp', 'world')
 ═══════════════════════════════════════════════════════════ */
 const PATCHES = [
+  {
+    version: '12.1',
+    date: 'August 11, 2026',
+    summary: "Curse of Ula'tek: the Coiled Isle, Lairs, Mistcrests, and a combat pass on every class",
+    entries: [
+      { type: 'content', text: "The Coiled Isle added, a new outdoor zone off the Zul'Aman coast with separate surface and underground loops.", detail: "Unlocked through the first two chapters of the Curse of Ula'tek campaign. Hosts Cursed Surges, Cursed Fishing, and the Vaults of Atal'Utek.", tag: 'world' },
+      { type: 'content', text: 'Lairs replace open-world world bosses. Each boss now lives in its own instance with a summoning stone outside and selectable difficulty.', detail: 'World, Normal, Heroic, and a flexible Mythic for 15 to 25 players. The Tidebound Grotto is the first Lair; its loot is raid-level and the kill feeds the Great Vault Raid row.', tag: 'world' },
+      { type: 'content', text: 'Altar of Fangs added at Heroic and Mythic 0, joining ranked Mythic+ when Season 2 opened on August 18.', detail: '', tag: 'dungeons' },
+      { type: 'content', text: "Cursed Surges added: rare elite encounters rotating between five Coiled Isle locations, each enabling Cursed Fishing at that spot for 30 minutes afterward.", detail: 'Rewards Adventurer-level gear and Season 2 crests.', tag: 'world' },
+      { type: 'content', text: "Vaults of Atal'Utek added, scaling public group events in the isle's mountain region.", detail: 'Difficulty and rewards both scale with the number of participants. Rewards land in the blue and purple gear band.', tag: 'world' },
+      { type: 'content', text: "Two new reputations added: Zul'jarra's Forces (20 renown ranks, account-wide, 2,500 rep per rank) and Captain Tokka (fishing-focused, 8,400 cumulative rep to Bloodsworn Crew).", detail: "Zul'jarra's Forces pays mounts, pets, housing decor and gear upgrades. Captain Tokka pays the Sea-Dwelling Isle Serpent mount and the Coiled Huntress fishing rod.", tag: 'world' },
+      { type: 'content', text: 'Altar of Corrosion added, a zone-wide talent tree granting exploration, combat, mobility and reward bonuses across the Coiled Isle.', detail: 'Unlocked during the campaign.', tag: 'systems' },
+      { type: 'system', text: 'Crests replaced with Mistcrests. Five tiers (Adventurer, Veteran, Champion, Hero, Myth) matching the five upgrade tracks exactly, with no crossover.', detail: 'Every upgrade rank costs a flat 20 crests, 100 for a full 1/6 to 6/6 track. Weekly cap is 100 per tier, tracked separately. Three crests of one tier convert into one of the tier above.', tag: 'systems' },
+      { type: 'system', text: 'Catalyst charges renamed to Venomblight Manaflux, and charge accrual reworked.', detail: 'Fragments drop from day one of the season. Once the 4-piece is unlocked, charges also come from Delves and raid boss kills.', tag: 'systems' },
+      { type: 'buff', text: 'Base item levels raised 46 above Season 1. Standard upgrade tracks now run 266 to 334.', detail: 'Confirmed by Kaivax on July 8, 2026. Selected Mythic Venomous Abyss items reach 344 via Ascendant Venomstones.', tag: 'systems' },
+      { type: 'buff', text: 'Great Vault Raid row now pays one difficulty tier above the content cleared. A Normal clear returns Hero 1/6, a Heroic clear returns Myth 1/6.', detail: 'Raid thresholds remain 2, 4 and 6 bosses.', tag: 'systems' },
+      { type: 'buff', text: 'Ritual Site Tier 1 to 6 Great Vault rewards updated to match Season 2 Delve rewards at the same tier.', detail: 'Ritual Sites now also pay Season 2 Mistcrests equivalent to a Delve at the same tier.', tag: 'systems' },
+      { type: 'class', text: 'Combat overhaul touching every class, with full reworks for several specs alongside broad tuning.', detail: 'See the Icy Veins Season 2 class change summary for per-spec detail before rebuilding a build.', tag: 'class' },
+      { type: 'system', text: 'One-time Knowledge Point reset granted per Midnight profession, from Theremis in the Silvermoon Bazaar.', detail: 'Refunds all spent points and unlearns the recipes they bought. One use per profession, so plan the respend first.', tag: 'systems' },
+      { type: 'content', text: 'New profession recipes, embellishments, gathering materials, fishing gear and housing decor added.', detail: "Most new recipes come from renown 5 with a 12.1 faction, fishing the Coiled Isle, or Preyhunter's Journey rank 2.", tag: 'systems' },
+      { type: 'content', text: 'Housing: Blueprints system added, along with pet placement, Level 12 upgrades, new decoration categories and four new Neighborhood Endeavors.', detail: 'Blueprints save and share interiors, exteriors, whole builds or single rooms. Codes work cross-region (China excluded) and can be pasted in chat; importing lists every required room, decor item and the total decor budget.', tag: 'systems' },
+    ]
+  },
+  {
+    version: '12.1 Season 2',
+    date: 'August 18, 2026',
+    summary: 'Season 2 opens: The Venomous Abyss, ranked Mythic+, Bountiful Delves, Prey Season 2, PvP Season 2',
+    entries: [
+      { type: 'content', text: "The Venomous Abyss opened, an 8-boss raid ending at Ula'tek.", detail: "Boss order: Nek'zali, Entombed Sentinels, Lost Explorers, Vashnik, Sszorak, Twin Fangs, Coiled Altar, Ula'tek.", tag: 'raids' },
+      { type: 'content', text: "Ula'tek drops the Slumbering Coil Curio, a universal token traded to Kirana in Silvermoon for any class set piece.", detail: 'Only one can be held at a time, so exchange it before the next kill.', tag: 'raids' },
+      { type: 'content', text: 'Venomcursed armour added to the raid pool: four pieces with unique visual effects and stat profiles, heavily over-budget for their item level.', detail: 'Class set armour inherits the secondary stat spread of the converted item plus any cantrip effects.', tag: 'raids' },
+      { type: 'content', text: "Mythic+ Season 2 pool set to eight dungeons: Altar of Fangs, Murder Row, Den of Nalorakk, The Blinding Vale, Voidscar Arena, King's Rest, Temple of Sethraliss, Ruby Life Pools.", detail: '', tag: 'dungeons' },
+      { type: 'system', text: 'Great Vault thresholds: Raid 2/4/6 bosses, Dungeon 1/4/8 keys, World 2/4/8 completions.', detail: 'The Dungeon row caps at Myth 1/6 (318) from +10 upward. The World row caps at Hero 1/6 (305) and cannot produce Myth-track gear.', tag: 'systems' },
+      { type: 'content', text: 'Prey Season 2: new affixes, four new Nightmare targets, and four snake-themed hunts on the Coiled Isle.', detail: "Season 1 affixes removed. Pack Ambush is active on Normal; Hard and Nightmare run all three, including Exploding Corpse Snakes. Ral'kala, Terror of the Isle is a new Nightmare-only encounter.", tag: 'world' },
+      { type: 'content', text: 'Prey now awards Corrosive Souls, spent on special bracer and belt powers.', detail: "Afflicted Souls unlock at Preyhunter's Journey Rank 4 and Tormented Souls at Rank 9. Both drop from Tier 6+ Bountiful Delves, reveal your next Nightmare Prey, and award an extra Champion or Hero piece respectively.", tag: 'world' },
+      { type: 'content', text: "Bountiful Delves and the Season 2 Nemesis unlocked. Azta'rec waits in Venomfall Deeps on the Coiled Isle.", detail: "Rewards a toy, cosmetics, a title and a mount. \"Let Me Solo Him: Azta'rec\" requires a solo kill at the higher difficulty.", tag: 'world' },
+      { type: 'content', text: "Delver's Journey reset with new Season 2 rewards: Corroded Soul Crusher, a Delve-O-Bot upgrade, new decor, the Snake Eater title, and late-track gear benefits.", detail: 'Glory of the Midnight Delver awards the Giganto Manis mount.', tag: 'world' },
+      { type: 'content', text: 'PvP Season 2 opened August 18 (NA) and August 19 (EU). Conquest gear scales to 337 PvP item level; Honor and War Mode gear to 324.', detail: 'Elite appearance milestones at 1,800, Venomcoil at 1,950, prestige cloak at 2,100, Elite at 2,300. 2,500 season Conquest awards two Venomous Gladiator\'s Weapon Tokens.', tag: 'pvp' },
+      { type: 'content', text: "Season 2 PvP mounts: Vicious Lightbloom Boar from rated wins at 1,000+ rating, Venomous Gladiator's Goredrake from 50 3v3 wins at Elite.", detail: '', tag: 'pvp' },
+    ]
+  },
   {
     version: '12.0.5',
     date: 'May 6, 2026',

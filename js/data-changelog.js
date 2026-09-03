@@ -9,6 +9,23 @@
 ------------------------------------------- */
 const VERSIONS = [
   {
+    version: 'v3.0.0',
+    date: 'September 3, 2026',
+    summary: "Season 2 content overhaul: Coiled Isle, Venomous Abyss, Lairs, Mistcrests, cadence views, and a rebuilt BiS picker with two lists per spec",
+    entries: [
+      { type: 'content', text: "Every task rebuilt for Midnight Season 2, Patch 12.1 Curse of Ula'tek", detail: "132 tasks across 21 sections. New sections: The Coiled Isle, Mistcrests & Upgrades, The Venomous Abyss, Lairs, and Long Term Goals. Carried-over systems (Delves, Ritual Sites, Prey, Great Vault, Mythic+, Professions, PvP, Housing, World Events) were rewritten with Season 2 content rather than duplicated per season." },
+      { type: 'new', text: 'Season 1 toggle in the utility bar hides or shows all retired Season 1 content, hidden by default', detail: "Voidforge, Omnium Folio, Void Assaults, the Val and Naigtal invasion zones, the Season 1 raids and the Season 1 Bazaar weeklies are all still in the data and still trackable, but they stay out of the way now that Season 2 is live. Hiding them affects panels, rail counts, the progress bar, Your List and the weekly summary at once." },
+      { type: 'new', text: 'Daily, Weekly and Long term views added to the rail', detail: 'Every task now carries a cadence, so you can look at just what resets tomorrow, just what resets Tuesday, or just the season-long projects, cutting across category boundaries.' },
+      { type: 'new', text: 'BiS picker now carries two lists per spec: Raid BiS and Mythic+ & crafted', detail: 'Raid BiS mixes The Venomous Abyss, crafted pieces and Mythic+ drops. Mythic+ & crafted is the strongest setup reachable without setting foot in the raid. The mode switch sits at the top of the gear list and your choice is remembered.' },
+      { type: 'remove', text: 'All Season 1 BiS item data erased', detail: 'Every item level, source instance and tier set changed in Season 2, so nothing from the old lists was salvageable. The Season 1 item ID map was cleared for the same reason.' },
+      { type: 'new', text: 'Each spec now deep links to its own Icy Veins gear page when a list has no data yet', detail: 'The picker builds the exact URL for that spec and role rather than guessing, and the gear board still lets you add any slot by hand.' },
+      { type: 'content', text: 'Mythic+ Great Vault preview updated to Season 2 item levels', detail: 'Base item levels rose 46 above Season 1. The table now runs Hero 1/6 at 305 for +2 through Myth 1/6 at 318 for +10 and above.' },
+      { type: 'content', text: "Patch notes page rebuilt around Patch 12.1 and 12.1 Season 2, with the 12.0.x Season 1 notes kept below", detail: '' },
+      { type: 'content', text: 'Beginner presets rebuilt for Season 2 progression', detail: 'The four stages now walk you from unlocking the Coiled Isle through Bountiful Delves and Lairs into the raid and Myth-track farming.' },
+      { type: 'improve', text: 'Rail reorganised around how Season 2 actually plays', detail: 'Vault & crests, Coiled Isle, Raids & lairs, Mythic+, Delves and Prey lead; retired Season 1 rows only appear while Season 1 is showing.' },
+    ]
+  },
+  {
     version: 'v2.5.0',
     date: 'June 1, 2026',
     summary: 'Best in Slot gear tracker: character sheet layout, armory render, and per-card editing',

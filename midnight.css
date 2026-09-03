@@ -946,9 +946,9 @@ a.btn, a.btn:hover, a.btn-primary, a.btn-primary:hover { text-decoration: none; 
   color: var(--text-400);
   white-space: nowrap;
 }
-.tag-vault, .tag-gold, .tag-new, .tag-127 { cursor: pointer; transition: background 0.12s, border-color 0.12s; }
-.tag-vault:hover, .tag-gold:hover, .tag-new:hover, .tag-127:hover { border-color: var(--arc-600); color: var(--arc-300); }
-.tag-accent, .tag-new, .tag-127 {
+.tag-vault, .tag-gold, .tag-121, .tag-s1 { cursor: pointer; transition: background 0.12s, border-color 0.12s; }
+.tag-vault:hover, .tag-gold:hover, .tag-121:hover { border-color: var(--arc-600); color: var(--arc-300); }
+.tag-accent, .tag-121 {
   border-color: var(--arc-400);
   color: var(--arc-300);
   background: rgba(145,132,217,0.18);
@@ -956,8 +956,24 @@ a.btn, a.btn:hover, a.btn-primary, a.btn-primary:hover { text-decoration: none; 
 .tag-vault, .tag-gold { border-color: var(--arc-700); color: var(--arc-400); }
 .tag-outline { border-color: var(--arc-600); color: var(--arc-400); background: transparent; }
 .tag-filter-active { box-shadow: 0 0 0 1px var(--arc-400); }
-.tag-raid, .tag-mythic, .tag-delve, .tag-void, .tag-world, .tag-pvp, .tag-optional, .tag-housing {
+/* Season 1 is retired content: muted and warm, so it reads as archival rather
+   than as another thing to do this week. */
+.tag-s1 {
+  border-color: rgba(198,155,58,0.45);
+  color: #c6a45a;
+  background: rgba(198,155,58,0.1);
+}
+.tag-s1:hover { border-color: rgba(198,155,58,0.7); color: #d9bb78; }
+.tag-raid, .tag-mythic, .tag-delve, .tag-void, .tag-world, .tag-pvp,
+.tag-optional, .tag-housing, .tag-professions {
   border-color: var(--line-600); color: var(--text-400); background: transparent;
+}
+
+/* Season 1 toggle in the utility bar: lit while retired content is showing. */
+#btn-season1.season1-on {
+  border-color: rgba(198,155,58,0.6);
+  color: #d9bb78;
+  background: rgba(198,155,58,0.14);
 }
 
 /* ═══════════════════════════════════════════
@@ -3418,6 +3434,54 @@ body.light-mode .hm-char { color: var(--text-primary); }
 }
 
 /* ── Gear list ── */
+/* ── BiS list mode switch: Raid BiS vs Mythic+ & crafted ── */
+.bis-mode-switch {
+  display: flex; gap: 6px;
+  margin-bottom: 12px;
+}
+.bis-mode-btn {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  padding: 8px 12px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line-600);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+.bis-mode-btn:hover { border-color: var(--arc-600); background: rgba(145,132,217,0.08); }
+.bis-mode-btn.active {
+  border-color: var(--arc-400);
+  background: rgba(145,132,217,0.18);
+}
+.bis-mode-label {
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-400);
+}
+.bis-mode-btn.active .bis-mode-label { color: var(--arc-300); }
+.bis-mode-count {
+  font-family: var(--font-display);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-600);
+}
+.bis-source-link { text-decoration: none; }
+.bis-source-inline {
+  font-family: var(--font-display);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-600);
+  text-decoration: none;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.bis-source-inline:hover { color: var(--arc-300); }
+
 .bis-select-all-bar {
   display: flex; align-items: center; gap: 8px;
   margin-bottom: 10px;

@@ -102,7 +102,7 @@ function snapshotWeekForChar(charName, weekKey) {
   const custom  = JSON.parse(localStorage.getItem('wow_mn_custom_' + charName) || '[]');
   let total = 0, completed = 0;
   const sections = {};
-  SECTIONS.forEach(sec => {
+  activeSections().forEach(sec => {
     let secTotal = 0, secDone = 0;
     sec.tasks.filter(t => !hidden[t.id]).forEach(t => {
       total++; secTotal++;
@@ -145,15 +145,80 @@ function saveCustomTasks(t) { localStorage.setItem(customStorageKey(), JSON.stri
 let characters      = JSON.parse(localStorage.getItem('wow_midnight_chars') || '["Main"]');
 let currentChar     = characters[0] || 'Main';
 let activeFilters   = new Set(['yourlist']);
-let activeTagFilter = '';               // 'tag-vault' | 'tag-gold' | 'tag-new' | ''
+let activeTagFilter = '';               // 'tag-vault' | 'tag-gold' | 'tag-121' | 'tag-s1' | ''
 let collapsed       = {};
 let revealHidden    = false;
 let editingYourList = false;
 let yourListGrouped = localStorage.getItem('wow_mn_yl_grouped') !== 'false'; // default grouped
 let searchQuery     = '';
 let lastChanceMode  = false; // session-only urgency mode
+let hideSeason1     = localStorage.getItem('wow_mn_hide_s1') !== 'false'; // Season 2 is live
 
-const FUNCTIONAL_TAGS = new Set(['tag-vault', 'tag-gold', 'tag-new', 'tag-127']);
+const FUNCTIONAL_TAGS = new Set(['tag-vault', 'tag-gold', 'tag-121', 'tag-s1']);
+
+/* ═══════════════════════════════════════════
+   SEASON + CADENCE VISIBILITY
+
+   Season 1 sections stay in data-tasks.js for
+   players still finishing Voidforge, the Omnium
+   Folio chain, Void Assaults or the S1 raids,
+   but they are hidden until someone asks for
+   them. Cadence filters (daily / weekly / long
+   term) cut across categories, so they filter
+   tasks rather than sections.
+═══════════════════════════════════════════ */
+const CADENCE_FILTERS = new Set(['daily', 'weekly', 'longterm']);
+
+function sectionInSeason(sec) {
+  return !(hideSeason1 && (sec.season || 2) === 1);
+}
+
+/* Every read path that renders or counts tasks goes through this, so hiding
+   Season 1 hides it everywhere at once: panels, rail counts, progress bar,
+   Your List and the weekly summary. */
+function activeSections() {
+  return SECTIONS.filter(sectionInSeason);
+}
+
+function activeCadence() {
+  for (const f of activeFilters) if (CADENCE_FILTERS.has(f)) return f;
+  return '';
+}
+
+/* Does this task belong in the current view? Cadence views ignore the
+   section's categories entirely; category views ignore cadence. */
+function taskInActiveView(sec, t) {
+  if (activeFilters.has('all')) return true;
+  const cad = activeCadence();
+  if (cad) return t.cadence === cad;
+  return sec.categories.some(c => activeFilters.has(c));
+}
+
+function toggleSeason1() {
+  hideSeason1 = !hideSeason1;
+  localStorage.setItem('wow_mn_hide_s1', hideSeason1);
+  // A Season 1 only view (Voidforge, Void assaults) empties out when S1 goes
+  // away, so fall back to Everything rather than leaving a blank page.
+  if (!activeFilters.has('all') && !activeFilters.has('yourlist') && !activeFilters.has('custom')) {
+    const stillPopulated = activeSections()
+      .some(sec => sec.tasks.some(t => taskInActiveView(sec, t)));
+    if (!stillPopulated) activeFilters = new Set(['all']);
+  }
+  updateSeason1Btn();
+  renderNav();
+  render();
+}
+
+function updateSeason1Btn() {
+  const btn = document.getElementById('btn-season1');
+  if (!btn) return;
+  btn.classList.toggle('season1-on', !hideSeason1);
+  btn.innerHTML = '<i class="ph' + (hideSeason1 ? '' : '-fill')
+    + ' ph-arrow-counter-clockwise"></i>Season 1';
+  btn.title = hideSeason1
+    ? 'Show retired Season 1 content: Voidforge, Omnium Folio, Void Assaults, Invasion Zones, S1 raids'
+    : 'Hide retired Season 1 content';
+}
 
 function onSearchInput(val) {
   searchQuery = val.trim().toLowerCase();
@@ -193,7 +258,8 @@ function tagLabel(cls) {
   const m = {
     'tag-vault':'Vault','tag-raid':'Raid','tag-mythic':'Mythic+','tag-delve':'Delve',
     'tag-void':'Void','tag-world':'World','tag-gold':'Currency',
-    'tag-pvp':'PvP','tag-optional':'Optional','tag-housing':'Housing','tag-new':'12.0.5','tag-127':'12.0.7'
+    'tag-pvp':'PvP','tag-optional':'Optional','tag-housing':'Housing',
+    'tag-professions':'Professions','tag-121':'12.1','tag-s1':'Season 1'
   };
   return m[cls] || cls;
 }
@@ -607,13 +673,17 @@ function ylTaskHtml(t, done, goals, notes, bossKills) {
 /* ── MYTHIC+ VAULT PREVIEW ── */
 
 // Key level → [minKey, track label, upgrade #, upgrade max, ilvl, color]
-// Source: Midnight Season 1 Great Vault reward table
+// Source: Midnight Season 2 (12.1) Great Vault reward table.
+// Season 2 shifted every base item level up by 46 from Season 1, keeping the
+// same ladder shape. The +10 row (Myth 1/6 at 318) is the published anchor and
+// the table caps there: keys above +10 raise your score and crest income, not
+// your Vault ceiling.
 const _M_VAULT_TABLE = [
-  [2,  'Hero', 1, 6, 259, '#a335ee'],  // keys 2–3
-  [4,  'Hero', 2, 6, 263, '#a335ee'],  // keys 4–5
-  [6,  'Hero', 3, 6, 266, '#a335ee'],  // key 6
-  [7,  'Hero', 4, 6, 269, '#a335ee'],  // keys 7–9
-  [10, 'Myth', 1, 6, 272, '#ff8000'],  // keys 10+
+  [2,  'Hero', 1, 6, 305, '#a335ee'],  // keys 2-3
+  [4,  'Hero', 2, 6, 309, '#a335ee'],  // keys 4-5
+  [6,  'Hero', 3, 6, 312, '#a335ee'],  // key 6
+  [7,  'Hero', 4, 6, 315, '#a335ee'],  // keys 7-9
+  [10, 'Myth', 1, 6, 318, '#ff8000'],  // keys 10+
 ];
 
 function _vaultRewardForKey(keyLevel) {
@@ -750,7 +820,7 @@ function render() {
 
     // Gather all tasks from SECTIONS that are in the list
     const selected = [];
-    SECTIONS.forEach(sec => {
+    activeSections().forEach(sec => {
       sec.tasks.forEach(t => {
         if (yourList.has(t.id)) selected.push({ ...t, sectionTitle: sec.title, sectionIcon: sec.icon });
       });
@@ -794,7 +864,7 @@ function render() {
       const order = loadYourListOrder();
 
       const sectionGroups = [];
-      SECTIONS.forEach(sec => {
+      activeSections().forEach(sec => {
         const secTasks = sec.tasks
           .filter(t => yourList.has(t.id) && matchesSearch({ ...t, sectionTitle: sec.title }))
           .map(t => ({ ...t, sectionTitle: sec.title, sectionIcon: sec.icon, sectionId: sec.id }));
@@ -918,12 +988,8 @@ function buildEditBar() {
   // Collect all section data first so flat mode can render one unified list
   const allSectionData = [];
 
-  SECTIONS.forEach(sec => {
-    const isAll = activeFilters.has('all');
-    const tasks = sec.tasks.filter(t => {
-      if (isAll) return true;
-      return sec.categories.some(c => activeFilters.has(c));
-    });
+  activeSections().forEach(sec => {
+    const tasks = sec.tasks.filter(t => taskInActiveView(sec, t));
     if (!tasks.length) return;
 
     const matchesSearch = t => {
@@ -1082,7 +1148,8 @@ function secTitleHtml(sec) {
     : sec.title;
   let tags = '';
   if (sec.priority === 1) tags += '<span class="tag tag-accent">Do first</span>';
-  if ((sec.tasks || []).some(t => (t.tags || []).includes('tag-127'))) tags += '<span class="tag tag-outline">New</span>';
+  if ((sec.season || 2) === 1) tags += '<span class="tag tag-s1">Season 1</span>';
+  if (sec.isNew) tags += '<span class="tag tag-outline">New</span>';
   return '<div class="section-title-row"><span class="section-title">' + title + '</span>' + tags + '</div>';
 }
 
@@ -1232,22 +1299,28 @@ function resetAll() {
    the same reducer that feeds the progress bar,
    so the rail and the panels always agree.
 ═══════════════════════════════════════════ */
+/* `season1: true` marks a row whose sections are all retired: the rail drops
+   it while Season 1 is hidden rather than showing a permanent 0/0. */
 const NAV_CATEGORIES = [
   { filter: 'yourlist',      label: 'Your list',     art:  'img/cat-yourlist.png' },
   { filter: 'all',           label: 'Everything',    icon: 'ph ph-list' },
-  { filter: 'voidforge',     label: 'Voidforge',     art:  'img/cat-void.png' },
-  { filter: 'prey',          label: 'Prey',          art:  'img/cat-prey.png' },
-  { filter: 'delve',         label: 'Delves',        art:  'img/cat-delve.png' },
+  { filter: 'daily',         label: 'Daily',         icon: 'ph ph-clock' },
+  { filter: 'weekly',        label: 'Weekly',        icon: 'ph ph-calendar-dots' },
+  { filter: 'longterm',      label: 'Long term',     icon: 'ph ph-mountains' },
+  { filter: 'currency',      label: 'Vault & crests', art: 'img/cat-currency.png' },
+  { filter: 'coiled-isle',   label: 'Coiled Isle',   art:  'img/cat-world.png' },
+  { filter: 'raid',          label: 'Raids & lairs', art:  'img/cat-raid.png' },
   { filter: 'mythic',        label: 'Mythic+',       art:  'img/cat-mythic.png' },
-  { filter: 'raid',          label: 'Raids',         art:  'img/cat-raid.png' },
-  { filter: 'void-assaults', label: 'Void assaults', art:  'img/cat-void.png' },
+  { filter: 'delve',         label: 'Delves',        art:  'img/cat-delve.png' },
+  { filter: 'prey',          label: 'Prey',          art:  'img/cat-prey.png' },
   { filter: 'ritual-sites',  label: 'Ritual sites',  art:  'img/cat-void.png' },
-  { filter: 'currency',      label: 'Upgrades',      art:  'img/cat-currency.png' },
   { filter: 'world',         label: 'World events',  art:  'img/cat-world.png' },
   { filter: 'professions',   label: 'Professions',   icon: 'ph ph-hammer' },
   { filter: 'pvp',           label: 'PvP',           art:  'img/cat-pvp.png' },
   { filter: 'housing',       label: 'Housing',       art:  'img/cat-housing.png' },
-  { filter: 'optional',      label: 'Optional',      art:  'img/cat-optional.png' },
+  { filter: 'optional',      label: 'Long term goals', art: 'img/cat-optional.png' },
+  { filter: 'voidforge',     label: 'Voidforge',     art:  'img/cat-void.png', season1: true },
+  { filter: 'void-assaults', label: 'Void assaults', art:  'img/cat-void.png', season1: true },
   { filter: 'custom',        label: 'Custom',        icon: 'ph ph-plus-circle' },
 ];
 
@@ -1257,7 +1330,7 @@ function _navCount(filter, done, hidden, yourList, customTasks) {
   const tally = id => { total++; if (done[id]) complete++; };
 
   if (filter === 'yourlist') {
-    SECTIONS.forEach(sec => sec.tasks.forEach(t => { if (yourList.has(t.id)) tally(t.id); }));
+    activeSections().forEach(sec => sec.tasks.forEach(t => { if (yourList.has(t.id)) tally(t.id); }));
     customTasks.forEach(t => {
       const id = 'custom_' + t.id;
       if (yourList.has(id) && !t.id.startsWith('bis_')) tally(id);
@@ -1268,10 +1341,15 @@ function _navCount(filter, done, hidden, yourList, customTasks) {
     customTasks.filter(t => !t.id.startsWith('bis_')).forEach(t => tally('custom_' + t.id));
     return { done: complete, total };
   }
-  SECTIONS.forEach(sec => {
-    if (filter !== 'all' && !sec.categories.includes(filter)) return;
+  const isCadence = CADENCE_FILTERS.has(filter);
+  activeSections().forEach(sec => {
+    if (filter !== 'all' && !isCadence && !sec.categories.includes(filter)) return;
     if (hidden['section_' + sec.id] && !revealHidden) return;
-    sec.tasks.forEach(t => { if (!hidden[t.id]) tally(t.id); });
+    sec.tasks.forEach(t => {
+      if (hidden[t.id]) return;
+      if (isCadence && t.cadence !== filter) return;
+      tally(t.id);
+    });
   });
   return { done: complete, total };
 }
@@ -1284,7 +1362,7 @@ function renderNav() {
   const yourList    = new Set(loadYourList());
   const customTasks = loadCustomTasks();
 
-  el.innerHTML = NAV_CATEGORIES.map(c => {
+  el.innerHTML = NAV_CATEGORIES.filter(c => !(c.season1 && hideSeason1)).map(c => {
     const n      = _navCount(c.filter, done, hidden, yourList, customTasks);
     const active = activeFilters.has(c.filter);
     const mark   = c.art
@@ -1920,6 +1998,40 @@ function saveCustomTask() {
 let _bisClass = null;
 let _bisSpec  = null;
 
+/* Which of the two published lists the picker is showing.
+     'raid'   true BiS: raid + crafted + Mythic+ mixed
+     'mplus'  Mythic+ and crafted only, for players who skip the raid
+   Persisted, because it is a statement about how you play rather than a
+   per-visit choice. */
+let _bisMode = (localStorage.getItem('wow_mn_bis_mode') === 'mplus') ? 'mplus' : 'raid';
+
+const BIS_MODES = {
+  raid:  { label: 'Raid BiS',          hint: 'Raid, crafted and Mythic+ combined' },
+  mplus: { label: 'Mythic+ & crafted', hint: 'No raid items, keys and crafting only' },
+};
+
+/* Items for one spec in one mode. Tolerates the pre-Season 2 shape
+   ({ items: [] }) so a stale cached data-bis.js cannot blank the picker. */
+function _bisItems(classKey, specKey, mode) {
+  const spec = BIS_DATA[classKey] && BIS_DATA[classKey][specKey];
+  if (!spec) return [];
+  if (Array.isArray(spec.items)) return spec.items;
+  return spec[mode || _bisMode] || [];
+}
+
+/* Does this spec have data in either list? Drives the dimmed spec buttons. */
+function _bisSpecHasData(classKey, specKey) {
+  return _bisItems(classKey, specKey, 'raid').length > 0
+      || _bisItems(classKey, specKey, 'mplus').length > 0;
+}
+
+function _bisSetMode(mode) {
+  if (mode !== 'raid' && mode !== 'mplus') return;
+  _bisMode = mode;
+  localStorage.setItem('wow_mn_bis_mode', mode);
+  _renderBisPhase('gear');
+}
+
 const _BIS_SLOT_ORDER = ['Head','Neck','Shoulders','Back','Chest','Wrists','Hands','Waist','Legs','Feet','Ring 1','Ring 2','Trinket 1','Trinket 2','Main Hand','Off Hand','Shield','Ranged'];
 function _bisSlotRank(name) {
   const m = (name || '').match(/^\[([^\]]+)\]/);
@@ -2185,7 +2297,7 @@ function _renderBisPhase(phase) {
       dps:  '<img src="img/dpsrole.webp" style="width:14px;height:14px;vertical-align:middle;margin-left:4px;opacity:0.9;">',
     };
     const specs = cls.specs.map(sp => {
-      const hasData = BIS_DATA[_bisClass] && BIS_DATA[_bisClass][sp.key] && BIS_DATA[_bisClass][sp.key].items.length > 0;
+      const hasData = _bisSpecHasData(_bisClass, sp.key);
       const newTag  = sp.tag === 'new' ? '<span class="bis-spec-tag">New</span>' : '';
       const role    = roleBadge[sp.role] || '';
       const dimmed  = !hasData ? 'opacity:0.5;' : '';
@@ -2197,20 +2309,37 @@ function _renderBisPhase(phase) {
   } else if (phase === 'gear') {
     const cls  = WOW_CLASSES.find(c => c.key === _bisClass);
     const sp   = cls.specs.find(s => s.key === _bisSpec);
-    const data = (BIS_DATA[_bisClass] && BIS_DATA[_bisClass][_bisSpec]) ? BIS_DATA[_bisClass][_bisSpec].items : [];
+    const data = _bisItems(_bisClass, _bisSpec, _bisMode);
+    const other = _bisMode === 'raid' ? 'mplus' : 'raid';
 
     titleEl.textContent = `${cls.label}: ${sp.label}`;
-    subEl.textContent   = `Select items to add to Your List as tasks. Each imports as a completable gear-tracking task.`;
+    subEl.textContent   = `${BIS_MODES[_bisMode].label} · ${BIS_MODES[_bisMode].hint}. Each item imports as a completable gear-tracking task.`;
     breadEl.innerHTML   = `<button class="bis-crumb-btn" onclick="_renderBisPhase('class')"><i class="ph ph-arrow-left"></i>Classes</button>
       <i class="ph ph-caret-right" style="opacity:0.5;margin:0 0.2rem;"></i>
       <button class="bis-crumb-btn" onclick="_renderBisPhase('spec')">${cls.label}</button>`;
 
-    if (!data.length) {
-      content.innerHTML = `<div class="bis-empty">
-        BiS list for <strong>${cls.label} · ${sp.label}</strong> is coming soon.<br>
-        Check <a href="https://www.icy-veins.com/wow/${_bisClass.replace('deathknight','death-knight').replace('demonhunter','demon-hunter')}-${_bisSpec}-pve-dps-gear-best-in-slot" target="_blank" rel="noopener">Icy Veins</a> for up-to-date gear recommendations.
+    const modeSwitch = `<div class="bis-mode-switch" role="group" aria-label="BiS list">
+        ${['raid','mplus'].map(m => `<button class="bis-mode-btn${m === _bisMode ? ' active' : ''}"
+            onclick="_bisSetMode('${m}')" title="${BIS_MODES[m].hint}">
+            <span class="bis-mode-label">${BIS_MODES[m].label}</span>
+            <span class="bis-mode-count">${_bisItems(_bisClass, _bisSpec, m).length || 0} slots</span>
+          </button>`).join('')}
       </div>`;
-      footer.innerHTML = '<button class="btn-cancel" onclick="_renderBisPhase(\'spec\')"><i class="ph ph-arrow-left"></i>Back</button>';
+
+    if (!data.length) {
+      const url       = icyVeinsBisUrl(_bisClass, _bisSpec);
+      const otherHas  = _bisItems(_bisClass, _bisSpec, other).length > 0;
+      content.innerHTML = modeSwitch + `<div class="bis-empty">
+        The <strong>${BIS_MODES[_bisMode].label}</strong> list for
+        <strong>${cls.label} · ${sp.label}</strong> has not been transcribed for
+        Midnight Season 2 yet.<br>
+        ${otherHas ? 'The <strong>' + BIS_MODES[other].label + '</strong> list above does have data.<br>' : ''}
+        Read it on <a href="${url}" target="_blank" rel="noopener">Icy Veins</a>, then add
+        the slots you want with <strong>+ Choose an item</strong> on the gear board.
+      </div>`;
+      footer.innerHTML = '<button class="btn-cancel" onclick="_renderBisPhase(\'spec\')"><i class="ph ph-arrow-left"></i>Back</button>'
+        + '<a class="btn-primary bis-source-link" href="' + url + '" target="_blank" rel="noopener">'
+        + '<i class="ph ph-arrow-square-out"></i>Open on Icy Veins</a>';
       return;
     }
 
@@ -2233,11 +2362,13 @@ function _renderBisPhase(phase) {
       </label>`;
     }).join('');
 
-    content.innerHTML = `
+    content.innerHTML = modeSwitch + `
       <div class="bis-select-all-bar">
         <button onclick="_bisSelectAll(true)">Select All</button>
         <button onclick="_bisSelectAll(false)">Deselect All</button>
         <span>${data.length} slots</span>
+        <a class="bis-source-inline" href="${icyVeinsBisUrl(_bisClass, _bisSpec)}" target="_blank" rel="noopener"
+           title="Source: Icy Veins gear page for this spec">Source <i class="ph ph-arrow-square-out"></i></a>
       </div>
       <div class="bis-gear-list">${rows}</div>`;
 
@@ -2344,7 +2475,7 @@ function _bisRowToggle(i) {
 }
 
 function _bisSelectAll(checked) {
-  const data = (BIS_DATA[_bisClass] && BIS_DATA[_bisClass][_bisSpec]) ? BIS_DATA[_bisClass][_bisSpec].items : [];
+  const data = _bisItems(_bisClass, _bisSpec, _bisMode);
   data.forEach((_, i) => {
     const chk = document.getElementById('bis-chk-' + i);
     const row = document.getElementById('bis-row-' + i);
@@ -2356,7 +2487,7 @@ function _bisSelectAll(checked) {
 function _bisImportSelected() {
   const cls  = WOW_CLASSES.find(c => c.key === _bisClass);
   const sp   = cls ? cls.specs.find(s => s.key === _bisSpec) : null;
-  const data = (BIS_DATA[_bisClass] && BIS_DATA[_bisClass][_bisSpec]) ? BIS_DATA[_bisClass][_bisSpec].items : [];
+  const data = _bisItems(_bisClass, _bisSpec, _bisMode);
 
   const existing    = loadCustomTasks();
   const existByName = new Map(existing.map(t => [t.name, t.id]));
@@ -3757,6 +3888,7 @@ if (shouldShowWelcome()) {
 updateThemeBtn();
 updateCompactBtn();
 updateViewToggleBtn();
+updateSeason1Btn();
 
 
 /* ---- Modal overlay close listeners ---- */
