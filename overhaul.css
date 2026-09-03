@@ -715,14 +715,14 @@ body.light-mode .hero-progress-ring::before { background: var(--ink-700); }
 }
 .character-dossier.is-death-knight {
   background:
-    linear-gradient(90deg, rgba(3, 7, 12, .84) 0%, rgba(3, 7, 12, .76) 43%, rgba(3, 7, 12, .42) 72%, rgba(3, 7, 12, .64) 100%),
+    linear-gradient(90deg, rgba(116, 5, 26, .82) 0%, rgba(73, 3, 18, .72) 25%, rgba(13, 7, 14, .67) 48%, rgba(3, 7, 12, .40) 72%, rgba(3, 7, 12, .62) 100%),
     linear-gradient(0deg, rgba(1, 5, 9, .42), transparent 60%),
     url('img/death-knight-draenei-background.png') center 45% / cover no-repeat;
   border-color: color-mix(in srgb, #56d7c8 35%, var(--agenda-line));
   box-shadow: inset 0 0 90px rgba(0,0,0,.36), 0 14px 38px rgba(0,0,0,.28);
 }
 .character-dossier.is-death-knight .dossier-art {
-  background: linear-gradient(90deg, rgba(3, 7, 12, .28), rgba(3, 7, 12, .08));
+  background: linear-gradient(90deg, rgba(128, 4, 29, .24), rgba(48, 3, 14, .10));
 }
 .character-dossier.is-death-knight .dossier-command {
   background: rgba(2, 7, 12, .46);
@@ -882,7 +882,7 @@ body.light-mode .rotation-directory { background: rgba(255,255,255,.84); }
 body.light-mode .character-dossier { background: linear-gradient(112deg, color-mix(in srgb, var(--class-color) 12%, white), rgba(255,255,255,.97)); }
 body.light-mode .character-dossier.is-death-knight {
   background:
-    linear-gradient(90deg, rgba(246,249,250,.92) 0%, rgba(239,246,247,.82) 48%, rgba(226,239,239,.58) 76%, rgba(232,242,242,.78) 100%),
+    linear-gradient(90deg, rgba(145,22,45,.58) 0%, rgba(203,116,130,.48) 28%, rgba(239,232,235,.72) 52%, rgba(226,239,239,.58) 76%, rgba(232,242,242,.78) 100%),
     url('img/death-knight-draenei-background.png') center 45% / cover no-repeat;
 }
 
@@ -965,12 +965,12 @@ body.light-mode .character-dossier.is-death-knight {
   .character-dossier.is-death-knight {
     background-position: 70% center;
     background-image:
-      linear-gradient(90deg, rgba(3,7,12,.91), rgba(3,7,12,.72) 60%, rgba(3,7,12,.62)),
+      linear-gradient(90deg, rgba(108,4,25,.89), rgba(61,3,17,.76) 42%, rgba(3,7,12,.62) 76%),
       url('img/death-knight-draenei-background.png');
   }
   body.light-mode .character-dossier.is-death-knight {
     background-image:
-      linear-gradient(90deg, rgba(246,249,250,.95), rgba(239,246,247,.78) 62%, rgba(232,242,242,.66)),
+      linear-gradient(90deg, rgba(151,26,48,.62), rgba(220,159,169,.58) 48%, rgba(232,242,242,.66) 78%),
       url('img/death-knight-draenei-background.png');
   }
   .dossier-art { position: absolute; inset: 0 auto 0 58%; width: 42%; min-height: 0; border: 0; opacity: .24; pointer-events: none; }
