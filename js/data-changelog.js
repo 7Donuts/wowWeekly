@@ -9,6 +9,17 @@
 ------------------------------------------- */
 const VERSIONS = [
   {
+    version: 'v3.1.0',
+    date: 'September 3, 2026',
+    summary: 'Season 2 Best in Slot lists populated: all 40 specs, both Raid BiS and Mythic+ & crafted, 80 lists in total',
+    entries: [
+      { type: 'content', text: 'Every Season 2 BiS list filled in, 40 specs across both modes', detail: "Transcribed from the Icy Veins 12.1 gear pages, one page per spec. Raid BiS mixes The Venomous Abyss, crafted pieces and Mythic+ drops; Mythic+ & crafted is the strongest setup reachable without entering the raid. The picker no longer falls back to a deep link on any spec, though the Source link is still there on every list." },
+      { type: 'content', text: 'Item ID map rebuilt for Season 2, covering all 223 items named across the lists', detail: 'Every BiS item now resolves its icon by ID instead of a name search, so icons load faster and cannot land on a same-named item from an older expansion. Catalyst pieces carry the ID of the converted item, not the piece it was made from.' },
+      { type: 'improve', text: 'Source note on each item now names the drop and the place it comes from', detail: "Importing an item writes a description like \"Ula'tek · The Venomous Abyss\" or \"Crafted by Tailoring · Crafting\", so a list you import tells you where to farm without opening the source page." },
+      { type: 'fix', text: 'Specs that wield a two-hander or a ranged weapon no longer show a filled Off Hand slot', detail: 'Blood and Unholy Death Knight, Feral and Guardian Druid, all three Hunter specs, Brewmaster and Windwalker Monk, Retribution Paladin and Arms Warrior leave the Off Hand socket empty on the gear board rather than padding it.' },
+    ]
+  },
+  {
     version: 'v3.0.0',
     date: 'September 3, 2026',
     summary: "Season 2 content overhaul: Coiled Isle, Venomous Abyss, Lairs, Mistcrests, cadence views, and a rebuilt BiS picker with two lists per spec",
