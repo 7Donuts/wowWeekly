@@ -3072,11 +3072,8 @@ function whatsNext() {
   const pick = candidates[Math.floor(Math.random() * candidates.length)];
   sessionStorage.setItem('wow_mn_golden_' + currentChar, pick.id);
 
-  // Switch to Everything so the selected row can be visibly lifted from its
-  // source section into the Golden Objective position.
-  if (!activeFilters.has('all')) {
-    activeFilters = new Set(['all']);
-  }
+  // Preserve the user's current route. The promoted card is rendered from the
+  // task data directly, so selecting an objective never changes categories.
   render();
   setTimeout(() => {
     document.getElementById('golden-objective')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -3151,7 +3148,10 @@ function renderGoldenObjective() {
     if (data.custom) return click.includes(`'${data.rawId}'`) || click.includes(`'${id}'`);
     return click.includes(`'${id}'`) || click.includes(`"${id}"`);
   });
-  sourceControl?.closest('.task')?.remove();
+  const sourceTask = sourceControl?.closest('.task');
+  const sourceGroup = sourceTask?.closest('.yl-section-group, .section');
+  sourceTask?.remove();
+  if (sourceGroup && !sourceGroup.querySelector('.task')) sourceGroup.remove();
 }
 
 function clearGoldenObjective() {

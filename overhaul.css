@@ -421,7 +421,7 @@ body.light-mode .world-backdrop {
 .workspace-heading h2 { margin-top: 4px; color: var(--text-100); font-family: var(--font-display); font-size: 19px; font-weight: 500; }
 
 .quest-workspace #sections-container { gap: 12px; }
-.quest-workspace #sections-container.is-board { gap: 13px; }
+.quest-workspace #sections-container.is-board { grid-template-columns: 1fr; gap: 13px; }
 .quest-workspace .section,
 .quest-workspace .yl-section-group,
 .intel-card {
