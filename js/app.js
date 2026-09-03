@@ -293,6 +293,11 @@ function taskTitleHtml(task, query) {
 /* Keep the sidebar-free command deck and hero in lockstep with the same
    reducer that powers the task list. The tracker remains the source of truth;
    these elements are only clearer views of its current state. */
+const CLASS_DOSSIER_BANNERS = new Set([
+  'death-knight', 'demon-hunter', 'druid', 'evoker', 'hunter', 'mage', 'monk',
+  'paladin', 'priest', 'rogue', 'shaman', 'warlock', 'warrior'
+]);
+
 function updateDashboardSummary(done, total) {
   const safeDone  = Math.max(0, Number(done) || 0);
   const safeTotal = Math.max(0, Number(total) || 0);
@@ -337,7 +342,10 @@ function updateDashboardSummary(done, total) {
   const dossier = document.getElementById('character-dossier');
   if (dossier) {
     dossier.style.setProperty('--class-color', def?.color || '#9b80e6');
-    dossier.classList.toggle('is-death-knight', cls === 'death-knight');
+    const hasClassBanner = CLASS_DOSSIER_BANNERS.has(cls);
+    dossier.classList.toggle('has-class-banner', hasClassBanner);
+    if (hasClassBanner) dossier.dataset.classId = cls;
+    else delete dossier.dataset.classId;
   }
 
   const classIcon = document.getElementById('hero-class-icon');
