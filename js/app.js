@@ -2490,50 +2490,59 @@ function _bisImportSelected() {
   const data = _bisItems(_bisClass, _bisSpec, _bisMode);
 
   const existing    = loadCustomTasks();
-  const existByName = new Map(existing.map(t => [t.name, t.id]));
-  const yourList    = loadYourList();
-  const yourListSet = new Set(yourList);
-  let   imported    = 0;
+  const existingByName = new Map(existing.map(t => [t.name, t]));
+  const selectedTasks = [];
+  let selectedCount = 0;
 
   data.forEach((item, i) => {
     const chk = document.getElementById('bis-chk-' + i);
     if (!chk || !chk.checked) return;
+    selectedCount++;
     const taskName = `[${item.slot}] ${item.item}`;
-    const existId  = existByName.get(taskName);
-    if (existId) {
-      // Task exists in storage: re-add to list if it was removed
-      const customId = 'custom_' + existId;
-      if (!yourListSet.has(customId)) {
-        yourList.push(customId);
-        yourListSet.add(customId);
-        imported++;
-      }
+    const existingTask = existingByName.get(taskName);
+    if (existingTask) {
+      // Reuse matching tasks so their checked state and notes survive a re-import.
+      selectedTasks.push(existingTask);
       return;
     }
-    // New item: add to customTasks and yourList
+
     const desc = `${item.source} · ${item.location}`;
     const id   = 'bis_' + Date.now().toString(36) + '_' + i;
-    existing.push({ id, name: taskName, desc });
-    yourList.push('custom_' + id);
-    imported++;
+    selectedTasks.push({ id, name: taskName, desc });
   });
 
-  if (imported === 0) {
-    // All selected items were already imported: just close
+  if (selectedCount === 0) {
+    // Do not erase the current list when the user imports with nothing selected.
     closeBisModal();
     render();
     return;
   }
 
-  saveCustomTasks(existing);
-  saveYourList(yourList);
+  // A BiS import is a replacement for this character's previous BiS target
+  // list. Keep regular custom tasks, but discard old imported/manual BiS tasks
+  // from both storage and Your List before adding the selected targets.
+  const nonBisTasks = existing.filter(t => !t.id.startsWith('bis_'));
+  const nextCustomTasks = nonBisTasks.concat(selectedTasks);
+  const nonBisList = loadYourList().filter(id => !id.startsWith('custom_bis_'));
+  const nextYourList = nonBisList.concat(selectedTasks.map(t => 'custom_' + t.id));
+
+  saveCustomTasks(nextCustomTasks);
+  saveYourList(nextYourList);
+
+  // Keep the user's ordinary task ordering, while removing stale BiS IDs.
+  const selectedIds = new Set(selectedTasks.map(t => 'custom_' + t.id));
+  const nextOrder = loadYourListOrder()
+    .filter(id => !id.startsWith('custom_bis_'))
+    .filter(id => !selectedIds.has(id));
+  saveYourListOrder(nextOrder);
+
   closeBisModal();
   render();
 
   // Show a brief toast
   const toast = document.getElementById('share-toast');
   if (toast) {
-    toast.textContent = `${imported} BiS item${imported === 1 ? '' : 's'} added to Your List`;
+    toast.textContent = `${selectedCount} BiS item${selectedCount === 1 ? '' : 's'} imported to Your List`;
     toast.classList.add('show');
     setTimeout(() => toast.classList.remove('show'), 2500);
   }
