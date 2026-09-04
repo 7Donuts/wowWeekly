@@ -60,6 +60,12 @@ function load(files, opts = {}) {
     },
     btoa: (s) => Buffer.from(String(s), 'binary').toString('base64'),
 
+    // A vm context gets the language built-ins but none of the platform, and
+    // the PLW2 transport inflates through the streams API. These are the real
+    // Node implementations of the same web interfaces, so what the tests
+    // exercise is the code path the browser takes rather than a stand-in.
+    Blob, Response, DecompressionStream, CompressionStream, TextDecoder, TextEncoder,
+
     renders: 0,
     render() { sandbox.renders++; },
     renderChars() {},

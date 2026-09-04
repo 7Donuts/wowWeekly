@@ -10,6 +10,8 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
+const fs = require('node:fs');
+const path = require('node:path');
 const { load } = require('./harness');
 
 const FILES = ['js/data-tasks.js', 'js/storage.js', 'js/ledger.js'];
@@ -39,32 +41,111 @@ function envelope(over = {}) {
   };
 }
 
+/* PLW1: base64 of the JSON, no prefix. */
 function encode(env) {
   return Buffer.from(JSON.stringify(env), 'utf8').toString('base64');
 }
 
+/* PLW2: the same JSON, deflated, with the transport named on the string.
+   Built with CompressionStream so the test compresses the way a real client
+   would rather than through a fixture nobody can regenerate. */
+async function encodeDeflated(env) {
+  const bytes = new TextEncoder().encode(JSON.stringify(env));
+  const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate'));
+  const buf = Buffer.from(await new Response(stream).arrayBuffer());
+  return 'PLW2:' + buf.toString('base64');
+}
+
 /* ── The envelope ───────────────────────────────────────────────────────── */
 
-test('a well formed envelope round trips through base64', () => {
+test('a well formed PLW1 envelope round trips through base64', async () => {
   const ctx = setup();
   const env = envelope({ week: ctx.getWeekKey() });
-  assert.deepEqual(ctx.parseLedgerEnvelope(encode(env)).fmt, 'PLW1');
+  assert.equal((await ctx.parseLedgerEnvelope(encode(env))).fmt, 'PLW1');
 });
 
-test('a payload that is not ours is refused by name', () => {
+/* The regression this pair exists for: the addon started deflating its
+   payload and naming the transport on the string, and the site read neither.
+   Every sync failed, and it failed by telling the member their string was
+   malformed, which sent them looking in the wrong place. */
+test('a deflated PLW2 envelope is read, prefix and all', async () => {
   const ctx = setup();
-  assert.throws(() => ctx.parseLedgerEnvelope(encode({ fmt: 'NOPE', v: 1 })),
+  const env = envelope({ fmt: 'PLW2', v: 2, week: ctx.getWeekKey() });
+  const parsed = await ctx.parseLedgerEnvelope(await encodeDeflated(env));
+  assert.equal(parsed.fmt, 'PLW2');
+  assert.equal(parsed.week, ctx.getWeekKey());
+});
+
+test('a PLW2 string whose body is truncated says the paste lost something', async () => {
+  const ctx = setup();
+  const env = envelope({ fmt: 'PLW2', v: 2, week: ctx.getWeekKey() });
+  const full = await encodeDeflated(env);
+  // Cut to a length that is still valid base64, so what fails is the
+  // inflation rather than the decode in front of it.
+  const cut = full.slice(0, 5 + 4 * Math.floor((full.length - 5) / 8));
+  await assert.rejects(() => ctx.parseLedgerEnvelope(cut), /un-compress|readable/i);
+});
+
+/* The contract test. Everything above builds its own compressed payload, so
+   everything above would still pass if the two repositories disagreed about
+   which deflate variant they meant. This one is a string a real Party Ledger
+   actually produced, so it fails if the addon changes what it writes.
+
+   Regenerate from a checkout of the addon repo:
+     lua5.1 -e 'local H=require("tests.harness") local PL=H.Load()
+                PL.Objectives:MarkDone("v1") PL.Objectives:Increment("v3")
+                H.Stub.rawPrint(PL.Bridge:Write().b64)'
+   Produced under the addon's own test harness, which is why the character is
+   testchar-testrealm, the week is a fixed date, and the envelope's `addon`
+   field reads 0.1.0: the harness has no .toc metadata to read a version from
+   and falls back. None of that is what this test is checking. */
+test('a payload a real addon produced is read by the real site code', async () => {
+  const ctx = setup();
+  const real = fs.readFileSync(
+    path.join(__dirname, 'fixtures', 'plw2-from-addon.txt'), 'utf8').trim();
+
+  const env = await ctx.parseLedgerEnvelope(real);
+  assert.equal(env.fmt, 'PLW2');
+  assert.equal(env.v, 2);
+
+  const char = env.characters['testchar-testrealm'];
+  assert.ok(char, 'the envelope names its character by the addon\'s own key');
+  assert.equal(char.objectives.v1.done, true);
+  assert.equal(char.objectives.v3.value, 1);
+  assert.equal(char.objectives.v3.max, 8);
+});
+
+test('the payload survives being pulled out of the Lua and then parsed', async () => {
+  const ctx = setup();
+  const real = fs.readFileSync(
+    path.join(__dirname, 'fixtures', 'plw2-from-addon.txt'), 'utf8').trim();
+  // The transport prefix contains a colon, which is exactly what the
+  // extraction pattern used to reject.
+  const lua = 'PartyLedgerBridgeDB = {\n\t["fmt"] = "PLW2",\n\t["b64"] = "' + real + '",\n}';
+  assert.equal(ctx.extractLedgerPayload(lua), real);
+  assert.equal((await ctx.parseLedgerEnvelope(ctx.extractLedgerPayload(lua))).fmt, 'PLW2');
+});
+
+test('a payload that is not ours is refused by name', async () => {
+  const ctx = setup();
+  await assert.rejects(() => ctx.parseLedgerEnvelope(encode({ fmt: 'NOPE', v: 1 })),
     /not a Party Ledger sync payload/i);
-  assert.throws(() => ctx.parseLedgerEnvelope('this is not base64 at all!!'),
+  await assert.rejects(() => ctx.parseLedgerEnvelope('this is not base64 at all!!'),
     /does not look like|not a Party Ledger/i);
 });
 
-test('an envelope from a newer addon is refused rather than guessed at', () => {
+test('a transport the site does not know is named in the refusal', async () => {
   const ctx = setup();
-  // An addon ahead of the site is a normal state. Reading it as version 1
-  // would tick boxes from a shape we do not know.
-  assert.throws(() => ctx.parseLedgerEnvelope(encode(envelope({ v: 2 }))),
-    /version 2 and the site reads version 1/);
+  await assert.rejects(() => ctx.parseLedgerEnvelope('PLW9:' + encode(envelope())),
+    /says it is PLW9/);
+});
+
+test('an envelope whose format and version disagree is refused', async () => {
+  const ctx = setup();
+  // Not a shape the addon produces: PLW1 is version 1 and PLW2 is version 2.
+  // Reading it anyway would tick boxes from a document of unknown shape.
+  await assert.rejects(() => ctx.parseLedgerEnvelope(encode(envelope({ v: 2 }))),
+    /PLW1 at version 2/);
 });
 
 test('the payload is pulled out of the Lua the game wrote', () => {

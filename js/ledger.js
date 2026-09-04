@@ -124,8 +124,16 @@ function applyAutoBoss(charName, taskId, bossId, source) {
    The envelope
 ------------------------------------------------------------------------- */
 
-const LEDGER_FORMAT  = 'PLW1';
-const LEDGER_VERSION = 1;
+/* Every envelope shape the site reads, and the version that goes with each.
+   `fmt` and `v` are checked as a pair: an envelope claiming PLW2 at version 1
+   is not a thing the addon produces, so it is a corrupted or hand-edited
+   payload and refusing it is the honest answer.
+
+   PLW1 is base64 of the JSON. PLW2 is the same JSON deflated first, and says
+   so with a `PLW2:` prefix on the string itself. Both stay readable: an addon
+   older than the site is a normal state, and the member is not the person who
+   should have to work out which half is behind. */
+const LEDGER_FORMATS = { PLW1: 1, PLW2: 2 };
 const LEDGER_STATE_KEY = 'wow_mn_ledger_state';   // synced: last import, per device
 
 function loadLedgerState()  { return JSON.parse(localStorage.getItem(LEDGER_STATE_KEY) || '{}'); }
@@ -163,29 +171,88 @@ function ledgerMatchCharacter(envKey, envChar) {
   return null;
 }
 
-function parseLedgerEnvelope(text) {
-  let json;
+/* Split "PLW2:<base64>" into the transport it names and the payload itself.
+
+   The prefix is on the string rather than only in a neighbouring field so
+   that the paste box and the file read follow one rule, and so a member who
+   pastes a bare string still gets the right answer. No prefix means PLW1,
+   which is what the addon wrote before it started deflating. */
+function ledgerSplitPayload(text) {
+  const s = String(text || '').trim().replace(/\s+/g, '');
+  const m = s.match(/^([A-Za-z][A-Za-z0-9]{0,7}):(.*)$/);
+  return m ? { transport: m[1].toUpperCase(), body: m[2] } : { transport: 'PLW1', body: s };
+}
+
+/* atob hands back a string of char codes 0-255. The streams API wants bytes. */
+function binaryToBytes(binary) {
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+/* zlib, not raw deflate: the addon uses LibDeflate's CompressZlib, whose
+   wrapper carries an Adler-32 checksum. That checksum is worth having on a
+   path where the payload gets copied and pasted by hand, and it costs nothing
+   here because DecompressionStream('deflate') is the zlib one. ('deflate-raw'
+   is the unwrapped variant, and would fail on this input.)
+
+   Async because that stream is the only inflater a page has without shipping
+   one, which is why everything downstream of it is async too. */
+async function ledgerInflate(bytes) {
+  if (typeof DecompressionStream !== 'function') {
+    throw new Error('This browser cannot un-compress the sync string. Chrome, Edge, '
+      + 'Firefox and Safari all can; a very old version of any of them cannot.');
+  }
+  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate'));
   try {
-    json = atob(String(text || '').trim().replace(/\s+/g, ''));
+    return await new Response(stream).text();
   } catch (_) {
-    throw new Error('That does not look like a Party Ledger sync string.');
+    throw new Error('The sync string is a compressed payload that would not un-compress. '
+      + 'Copy it again from /ledger sync: part of it was probably lost in the paste.');
+  }
+}
+
+/* The transport half: string in, JSON text out. */
+async function ledgerPayloadToJson(text) {
+  const { transport, body } = ledgerSplitPayload(text);
+
+  if (!Object.prototype.hasOwnProperty.call(LEDGER_FORMATS, transport)) {
+    throw new Error('This sync string says it is ' + transport + ', which this site does '
+      + 'not read. Update the site, or the addon, so they match.');
   }
 
+  let binary;
+  try { binary = atob(body); }
+  catch (_) { throw new Error('That does not look like a Party Ledger sync string.'); }
+
+  if (transport === 'PLW1') return binary;
+  return await ledgerInflate(binaryToBytes(binary));
+}
+
+/* The envelope half: JSON text in, checked envelope out. Kept separate from
+   the transport so the worker and the tests can check an envelope they
+   already hold without going through base64 again. */
+function parseLedgerJson(json) {
   let env;
   try { env = JSON.parse(json); }
   catch (_) { throw new Error('The sync string decoded, but not into anything readable.'); }
 
-  if (!env || env.fmt !== LEDGER_FORMAT) {
+  if (!env || !Object.prototype.hasOwnProperty.call(LEDGER_FORMATS, env.fmt || '')) {
     throw new Error('That is not a Party Ledger sync payload.');
   }
   // Refuse a version we do not know rather than guessing at its shape. An
   // addon newer than the site is a normal state, and a wrong guess would
   // silently tick the wrong boxes.
-  if (env.v !== LEDGER_VERSION) {
-    throw new Error('This payload is version ' + env.v + ' and the site reads version '
-      + LEDGER_VERSION + '. Update the site, or the addon, so they match.');
+  if (env.v !== LEDGER_FORMATS[env.fmt]) {
+    throw new Error('This payload says it is ' + env.fmt + ' at version ' + env.v
+      + ', and ' + env.fmt + ' is version ' + LEDGER_FORMATS[env.fmt]
+      + '. Copy it again from /ledger sync.');
   }
   return env;
+}
+
+async function parseLedgerEnvelope(text) {
+  return parseLedgerJson(await ledgerPayloadToJson(text));
 }
 
 /* Merge a decoded envelope into local storage. Returns a report the UI can
@@ -221,7 +288,12 @@ function applyLedgerEnvelope(env) {
         // The addon's task map lags the site's checklist by design. An id the
         // site no longer has is ignored, not an error.
         if (!knownTasks.has(taskId)) continue;
-        const result = applyAutoTask(charName, taskId, task, 'addon');
+        // A tick the member made on the in-game display is a different
+        // claim from one the game reported, so it is labelled differently:
+        // "I did this" and "the game saw this" fail in different ways and
+        // the badge on the task is where that gets explained.
+        const source = task.src === 'manual' ? 'addon-manual' : 'addon';
+        const result = applyAutoTask(charName, taskId, task, source);
         if (result.ticked) ticked++;
         if (result.progressed) progressed++;
       }
@@ -240,6 +312,14 @@ function applyLedgerEnvelope(env) {
   }
 
   report.collections = applyLedgerCollections(env.collections);
+
+  // Which of the member's lists is on screen in game. Recorded even when the
+  // addon reports none, so a member who has cleared it in game stops being
+  // told their in-game list is out of date.
+  if (typeof noteAgendaListInGame === 'function') {
+    noteAgendaListInGame(env.agenda || {});
+    report.agenda = agendaListStatus();
+  }
 
   if (env.ratings) saveLedgerRatings(env.ratings);
 
@@ -407,8 +487,12 @@ async function ledgerFindSavedVariables(root) {
    have to understand Lua string escaping, which is a client implementation
    detail. One capture, no parser. */
 function extractLedgerPayload(luaText) {
-  const match = luaText.match(/\["b64"\]\s*=\s*"([A-Za-z0-9+/=]*)"/)
-             || luaText.match(/\bb64\s*=\s*"([A-Za-z0-9+/=]*)"/);
+  // The colon is in the class because the payload names its own transport
+  // ("PLW2:..."). Leaving it out is not a graceful degradation: the pattern
+  // simply stops matching, and the member is told the file has no payload in
+  // it when the payload is right there.
+  const match = luaText.match(/\["b64"\]\s*=\s*"([A-Za-z0-9+/=:]*)"/)
+             || luaText.match(/\bb64\s*=\s*"([A-Za-z0-9+/=:]*)"/);
   if (!match || !match[1]) {
     throw new Error('Found PartyLedger.lua, but no sync payload in it. The bridge may be '
       + 'switched off in /ledger config, or the game has not written the file since '
@@ -467,7 +551,7 @@ async function readLedgerFromDisk(opts) {
   try {
     const found = await ledgerFindSavedVariables(root);
     const file  = await found.file.getFile();
-    const env   = parseLedgerEnvelope(extractLedgerPayload(await file.text()));
+    const env   = await parseLedgerEnvelope(extractLedgerPayload(await file.text()));
 
     const report = applyLedgerEnvelope(env);
     report.fileModified = file.lastModified;
@@ -489,9 +573,9 @@ async function readLedgerFromDisk(opts) {
   }
 }
 
-function importLedgerFromPaste(text) {
+async function importLedgerFromPaste(text) {
   try {
-    const env = parseLedgerEnvelope(text);
+    const env = await parseLedgerEnvelope(text);
     const report = applyLedgerEnvelope(env);
     uploadLedgerEnvelope(env);
     if (typeof render === 'function') render();
@@ -701,6 +785,38 @@ function renderLedgerModal() {
   html += '</details>';
   html += '</div>';
 
+  /* ── The list, going the other way ──────────────────────────────────────
+     The half that was missing. The addon reports what the game saw; without
+     this it had no idea what the member was actually trying to do, so there
+     was no to-do list in game to report against. */
+  html += '<div class="ledger-block">';
+  html += '<h4>Your list, in game</h4>';
+  html += '<p class="ledger-note">Party Ledger can show the tasks you have starred '
+        + 'on a heads-up display in game, grouped by activity, and tick off the ones '
+        + 'the game can confirm. Paste this into <code>/ledger list import</code>.</p>';
+
+  const listStatus = (typeof agendaListStatus === 'function') ? agendaListStatus() : null;
+  if (listStatus) {
+    const icon = { current: 'ph-fill ph-check-circle', stale: 'ph-fill ph-warning',
+                   never: 'ph ph-arrow-square-out', empty: 'ph ph-star' }[listStatus.state];
+    html += '<p class="ledger-listout-status ledger-listout-' + listStatus.state + '">'
+          + '<i class="' + icon + '"></i><span>' + escHtml(listStatus.text) + '</span></p>';
+  }
+
+  if (!listStatus || listStatus.state !== 'empty') {
+    html += '<div class="ledger-btns">'
+          + '<button class="btn-primary" onclick="_agendaListCopy()">'
+          + '<i class="ph-fill ph-copy"></i>Copy list for the addon</button>'
+          + '<button class="btn-cancel" onclick="_agendaListShow()">Show it</button>'
+          + '</div>';
+    // Rendered empty and filled on demand: the payload is a few kilobytes of
+    // base64 and putting it on screen every time the modal opens is noise in
+    // front of the button that actually does the job.
+    html += '<textarea id="agenda-list-box" class="ledger-listout-box" rows="3" '
+          + 'readonly hidden></textarea>';
+  }
+  html += '</div>';
+
   /* ── Discord ── */
   html += '<div class="ledger-block">';
   html += '<h4>Share with Discord</h4>';
@@ -732,10 +848,47 @@ function renderLedgerModal() {
   el.innerHTML = html;
 }
 
+/* Copy straight to the clipboard where the browser allows it, and fall back
+   to showing the string with it selected. The clipboard API needs a user
+   gesture and a permission, and both can be absent for reasons that have
+   nothing to do with this site. */
+async function _agendaListCopy() {
+  const built = await encodeAgendaList();
+  if (!built.tasks) { showToast('Star a few tasks first.'); return; }
+
+  let copied = false;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(built.payload);
+      copied = true;
+    }
+  } catch (_) { /* fall through to showing it */ }
+
+  const box = document.getElementById('agenda-list-box');
+  if (box) {
+    box.value = built.payload;
+    box.hidden = false;
+    if (!copied) { box.focus(); box.select(); }
+  }
+  showToast(copied
+    ? built.tasks + ' task' + (built.tasks === 1 ? '' : 's') + ' copied. Paste it into /ledger list import.'
+    : 'Select the string below and copy it, then paste it into /ledger list import.');
+}
+
+async function _agendaListShow() {
+  const built = await encodeAgendaList();
+  const box = document.getElementById('agenda-list-box');
+  if (!box) return;
+  box.value = built.payload;
+  box.hidden = false;
+  box.focus();
+  box.select();
+}
+
 async function _ledgerPasteSubmit() {
   const box = document.getElementById('ledger-paste-box');
   if (!box || !box.value.trim()) { showToast('Paste the string from /ledger sync first.'); return; }
-  const report = importLedgerFromPaste(box.value);
+  const report = await importLedgerFromPaste(box.value);
   if (report) {
     box.value = '';
     renderLedgerModal();

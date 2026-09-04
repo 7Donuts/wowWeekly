@@ -655,6 +655,13 @@ async function handlePutConsent(request, env) {
 
 // ── Ledger upload ────────────────────────────────────────────────────────────
 //
+// Envelope shapes this worker accepts, and the version that goes with each.
+// Mirrors LEDGER_FORMATS in js/ledger.js: the browser decodes and checks the
+// envelope before it gets here, but the worker is a public endpoint and does
+// not get to assume that.
+const LEDGER_FORMATS = { PLW1: 1, PLW2: 2 };
+
+//
 // The decoded envelope, so Tabard can read it without the member's browser
 // being open. Stored under its own key rather than inside the localStorage
 // blob: it has a different shape, a different lifetime, and revoking it
@@ -667,8 +674,12 @@ async function handlePutLedger(request, env) {
 
   let body;
   try { body = await request.json(); } catch (_) { return privateText('Bad JSON', 400); }
-  if (!body || body.fmt !== 'PLW1' || body.v !== 1) {
-    return privateText('Not a PLW1 version 1 envelope', 400);
+  // Checked as a pair, and against the same table the browser uses. The
+  // envelope arrives already decoded, so the transport prefix and the
+  // compression are the browser's business and never reach here; what has to
+  // agree is the document shape.
+  if (!body || LEDGER_FORMATS[body.fmt] !== body.v) {
+    return privateText('Not a Party Ledger envelope this site reads', 400);
   }
 
   // Bounded on the way in. A member with a very large ledger should get a

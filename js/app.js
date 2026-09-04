@@ -411,13 +411,21 @@ function autoSrcBadge(id, isDone) {
   const src = loadAutoSrc()[id];
   if (!src) return '';
 
-  const isAddon = src === 'addon';
-  const title = isAddon
-    ? 'Ticked from Party Ledger in game. Uncheck it and it stays unchecked.'
-    : 'Ticked from your Battle.net profile. Uncheck it and it stays unchecked.';
-  return '<span class="auto-src auto-src-' + src + '" title="' + title + '">'
-    + '<i class="ph-fill ' + (isAddon ? 'ph-plug' : 'ph-cloud-check') + '"></i>'
-    + (isAddon ? 'Ledger' : 'Armory') + '</span>';
+  // Three sources now, and the third is the member themselves: a tick they
+  // made on the in-game display is their own claim, not something the game
+  // confirmed, and conflating the two would make a hand-ticked box look like
+  // evidence.
+  const KINDS = {
+    'addon': { icon: 'ph-plug', label: 'Ledger',
+      title: 'Ticked from Party Ledger in game. Uncheck it and it stays unchecked.' },
+    'addon-manual': { icon: 'ph-hand-pointing', label: 'In game',
+      title: 'You ticked this on the in-game list. Uncheck it and it stays unchecked.' },
+    'armory': { icon: 'ph-cloud-check', label: 'Armory',
+      title: 'Ticked from your Battle.net profile. Uncheck it and it stays unchecked.' },
+  };
+  const kind = KINDS[src] || KINDS.armory;
+  return '<span class="auto-src auto-src-' + src + '" title="' + kind.title + '">'
+    + '<i class="ph-fill ' + kind.icon + '"></i>' + kind.label + '</span>';
 }
 
 function sectionTaskHtml(t, done, hidden, yourList, goals, bossKills, notes) {

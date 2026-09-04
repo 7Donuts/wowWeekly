@@ -20,13 +20,15 @@ storage and merge logic can be tested without a DOM.
 | `js/storage.js` | Namespaced localStorage, week keys, per-character state |
 | `js/app.js` | Rendering and interaction |
 | `js/armory.js` | Battle.net character sync, and the auto-checks it drives |
-| `js/ledger.js` | The Party Ledger addon bridge, and the merge rules every automatic source goes through |
+| `js/ledger.js` | The Party Ledger addon bridge inbound, and the merge rules every automatic source goes through |
+| `js/ledger-out.js` | The other half of that bridge: the member's list, handed to the addon |
 | `js/sync.js` | Cross-device sync against KV |
 
-## Three sources can tick a box
+## Four sources can tick a box
 
-The member, the Battle.net profile API, and the Party Ledger addon. They
-disagree often enough that the rules have to be written down:
+The member here, the member on the in-game display, the Battle.net profile API,
+and the Party Ledger addon's own observation. They disagree often enough that
+the rules have to be written down:
 
 - Anything a source reports done is done.
 - **A box the member un-ticks stays un-ticked for that week.** Without this an
@@ -37,6 +39,10 @@ disagree often enough that the rules have to be written down:
   site, and latest-wins would walk progress backwards.
 - Every automatic tick records which source made it, and the site shows a small
   badge saying so, because a tick nobody made is otherwise unexplainable.
+- A tick the member made on the in-game display gets its own badge (`In game`)
+  rather than sharing the addon's. The addon observing a boss kill and the
+  member saying they did something are different claims, and they fail in
+  different ways.
 
 All of it goes through `applyAutoTask` and `applyAutoBoss` in `js/ledger.js`.
 Nothing else may write to the done map on an automatic path.
@@ -52,6 +58,38 @@ string from `/ledger sync`.
 The file is only written by the game at logout or `/reload`, so the site
 reports how old the *game data* is rather than how recently it was imported.
 Those are different numbers and confusing them makes the feature look broken.
+
+The string names its own transport: `PLW2:` means the JSON was deflated
+(zlib, so `DecompressionStream("deflate")`), and no prefix means the
+uncompressed PLW1 an older addon writes. Both stay readable, because an addon
+older than the site is a normal state. `tests/fixtures/plw2-from-addon.txt` is
+a payload the real addon produced, so a test fails if the two repos drift; a
+suite that builds its own fixtures cannot catch that, and did not.
+
+## The list, going the other way
+
+The bridge above answers "what did I do". Your List answers "what am I trying
+to do", and only this side knows it, so the addon cannot show a to-do list in
+game unless it is handed one.
+
+`js/ledger-out.js` builds an AGL payload from Your List: the tasks, the section
+each belongs to, the goal on it and what is already ticked. The member copies
+it from the Addon & Discord panel and runs `/ledger list import`. The addon
+draws it grouped by activity, in the order arranged here, and ticks the rows
+the game can confirm.
+
+It is a paste rather than a file write, even though the site already has a
+directory handle for the WoW folder. `SavedVariables` are rewritten wholesale
+by the game at logout, so a write there is destroyed or merged into the file
+holding the member's entire grade database; and the other place an addon reads
+at load is `Interface/AddOns`, where files are Lua the client executes. A page
+that can write executable Lua into the game's addon folder is a
+code-execution channel into the client opened by a web origin, and being
+convenient is not a reason to build one.
+
+The addon reports back a hash of whichever list it holds, so the panel can say
+that the display in game is showing a list the member has since changed.
+Without that, "why isn't my new task in the HUD" has no answer anywhere.
 
 ## Sharing with Discord
 
