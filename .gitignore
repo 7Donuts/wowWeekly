@@ -1,3 +1,7 @@
+# The repo has no runtime dependencies, but wrangler gets installed here to
+# dry-run a deploy and .assetsignore alone does not stop it being committed.
+node_modules/
+
 # wrangler files
 .wrangler
 .dev.vars*
