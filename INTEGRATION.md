@@ -128,7 +128,46 @@ and the site does not.
     "recent": [
       { "name": "Bobkin", "realm": "Illidan", "class": "PALADIN",
         "grade": 2, "at": 1756800000, "tags": ["cds", "comms"],
-        "content": "MYTHICPLUS", "encounters": 4 }
+        "content": "MYTHICPLUS", "zone": "Manaforge Omega",
+        "bosses": ["Plexus Sentinel", "Nexus-King"],
+        "encounters": 4 }
+    ]
+  },
+  "stats": {                      // per-run scorecards. See "Scorecards".
+    "at": 1756900000,
+    "window": 10,                 // recent runs per player in this payload
+    "runs": 340,                  // scorecards held locally, all players
+    "measured": 210,              // how many of those carried Details numbers
+    "players": [
+      {
+        "guid": "Player-3676-0A1B2C3D",
+        "name": "Bobkin", "realm": "Illidan",
+        "key": "bobkin-illidan",  // the addon's NameKey, lowercased
+        "class": "PALADIN",
+        "grade": 2,               // null when never graded
+        "held": 34,               // runs held locally, so you know this is a window
+        "career": {
+          "runs": 34, "deaths": 41, "timed": 22, "upgrades": 29,
+          "bestKey": 14, "bestRating": 3102,
+          "avgdps": 1284000, "avghps": 41000,
+          "avginterrupts": 3.2, "avgavoidable": 890000,
+          "bestdps": 1710000,
+          "measured": { "dps": 21, "hps": 21, "interrupts": 21, "avoidable": 21 }
+        },
+        "recent": [
+          { "at": 1756800000, "content": "MYTHICPLUS", "zone": "Ara-Kara",
+            "bosses": ["Avanoxx", "Anub'zekt", "Ki'katal the Harvester"],
+            "keyLevel": 12, "difficulty": null, "upgrade": 2, "timed": true,
+            "result": "completed", "role": "DAMAGER",
+            "left": null,             // true when they left before the end
+            "deaths": 1, "rating": 2847,
+            "dps": 1310000, "hps": 0, "interrupts": 4,
+            "avoidable": 720000, "taken": 8900000,
+            "seconds": 1740, "source": "details",
+            "scope": "overall",       // see "Scorecards"
+            "runDeaths": 4 }
+        ]
+      }
     ]
   }
 }
