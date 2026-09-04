@@ -13,7 +13,15 @@
 
    This is not a DOM. Anything that renders is a no-op; what these tests cover
    is the storage and merge logic, which is the part where a mistake silently
-   corrupts somebody's week. */
+   corrupts somebody's week.
+
+   Note what that means for `characters` and `currentChar` below. storage.js
+   reads both out of the shared scope and js/app.js is what declares them, so
+   loading storage.js without app.js means the harness has to supply them. It
+   did, which is how the declarations could be deleted from app.js and leave
+   every test here passing while the site would not load at all. Whether the
+   page's own scripts declare what each other reach for is not a question this
+   harness can answer; tests/boot.test.js loads the real bundle and asks it. */
 
 const fs = require('fs');
 const path = require('path');

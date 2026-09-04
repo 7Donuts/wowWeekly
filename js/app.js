@@ -5,17 +5,51 @@
      storage.js, confetti.js, theme.js
 ----------------------------------------------- */
 
-/* -------------------------------------------
-   STORAGE: namespaced localStorage abstraction
-   All keys follow the prefix "wow_mn_" to avoid
-   collisions. Change the schema here and it
-   propagates to every page that loads this file.
-------------------------------------------- */
+/* ═══════════════════════════════════════════
+   APP STATE: global mutable state for the
+   current session. Not persisted here; the
+   storage.js layer handles persistence.
+   Note: isLightMode and isCompact live in
+   theme.js so they apply before first paint.
 
+   storage.js loads first and reads currentChar
+   out of this scope, so these declarations have
+   to exist before anything calls into it. They
+   are the whole reason app.js runs at all: a
+   missing one is a ReferenceError on the first
+   render, which takes the page down before the
+   first paint rather than degrading it.
+═══════════════════════════════════════════ */
+let characters      = JSON.parse(localStorage.getItem('wow_midnight_chars') || '["Main"]');
+let currentChar     = characters[0] || 'Main';
+let activeFilters   = new Set(['yourlist']);
+let activeTagFilter = '';               // 'tag-vault' | 'tag-gold' | 'tag-121' | 'tag-s1' | ''
+let collapsed       = {};
+let revealHidden    = false;
+let editingYourList = false;
+let yourListGrouped = localStorage.getItem('wow_mn_yl_grouped') !== 'false'; // default grouped
+let searchQuery     = '';
+let lastChanceMode  = false; // session-only urgency mode
+let hideSeason1     = localStorage.getItem('wow_mn_hide_s1') !== 'false'; // Season 2 is live
 
+const FUNCTIONAL_TAGS = new Set(['tag-vault', 'tag-gold', 'tag-collectible', 'tag-121', 'tag-s1']);
 
+/* ═══════════════════════════════════════════
+   SEASON + CADENCE VISIBILITY
 
+   Season 1 sections stay in data-tasks.js for
+   players still finishing Voidforge, the Omnium
+   Folio chain, Void Assaults or the S1 raids,
+   but they are hidden until someone asks for
+   them. Cadence filters (daily / weekly / long
+   term) cut across categories, so they filter
+   tasks rather than sections.
+═══════════════════════════════════════════ */
+const CADENCE_FILTERS = new Set(['daily', 'weekly', 'longterm']);
 
+function sectionInSeason(sec) {
+  return !(hideSeason1 && (sec.season || 2) === 1);
+}
 
 /* Every read path that renders or counts tasks goes through this, so hiding
    Season 1 hides it everywhere at once: panels, rail counts, progress bar,
