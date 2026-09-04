@@ -9,7 +9,7 @@ change it in one and copy it to the other two in the same change.
 | Repo | What it is | Runs where |
 |---|---|---|
 | `rateaplayer` (Party Ledger) | WoW addon, Lua 5.1 | The game client |
-| `wowWeekly` (The Azeroth Agenda) | Static site + Worker, KV | `agenda.7donuts.dev` |
+| `wowWeekly` (The Azeroth Agenda) | Static site + Worker, D1 and KV | `agenda.7donuts.dev` |
 | `tabard` (Guild Identity) | Discord bot, Worker, D1 | `tabard.7donuts.dev` |
 
 Tabard reads the Agenda; the Agenda never calls Tabard. One direction, so
@@ -478,6 +478,81 @@ A consequence worth stating plainly, because it is easy to expect otherwise:
 "show me my reputation score" cannot be built from this data at all. Nothing
 records it.
 
+## Who owns what
+
+Worth stating plainly, because the answer changed and because two of the three
+programs assumed otherwise for a while.
+
+**The Agenda worker is authoritative for weekly state.** Task completion,
+counters, boss kills, Your List, custom tasks and collections are rows in its
+D1 database, and it reconciles them. The rules are in `worker/merge.js` and
+there is one copy of them.
+
+Before this, all of it lived in two KV blobs that only the member's browser
+wrote and that were replaced wholesale on every save. The merge rules were
+order-independent and then defeated by the transport above them: two devices
+open at once meant whoever saved last erased the other's evening, there was no
+history because each write replaced the last, and nothing pruned the weekly
+keys so the blob grew without bound.
+
+**The Agenda does not own the task catalogue at the server.** Section titles,
+goal thresholds, boss lists and the mapping from a mount's name to a task id
+live in `js/data-tasks.js`, a static file that changes every patch. So the
+worker stores facts and never derives a task from them: a client reports "these
+bosses are dead" *and* "therefore this task is done". This is the same division
+the addon and the site already had, and it is why `/api/observe` accepts a
+derived conclusion alongside the observation it came from.
+
+**The addon owns nothing durable that the site needs.** It records what the
+game did, and everything it records is reproducible from the game. Its saved
+variables are a buffer, not a store, which is why an import replaces the list
+it holds rather than merging into it.
+
+**Tabard owns nothing here at all.** `agenda_cache` in its own D1 is a cache
+in front of `/api/share/*` with a five-minute TTL, and its own migration says
+so. Everything in it is reconstructible by fetching again.
+
+### The state API
+
+Session-authenticated, for the member's own browser. Not for Tabard: it reads
+`/api/share/*` and always has.
+
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/api/observe` | Submit observations. The one write path for weekly state |
+| GET  | `/api/state?week=` | One week, plus the not-weekly things needed to draw it |
+| GET  | `/api/weeks` | Every week the account has rows for |
+| PUT  | `/api/list` | Replace one character's Your List |
+
+An observation is `{ charId, taskId, done?, value?, source, at }`. Four sources
+are recognised, and an unknown one is dropped and counted rather than guessed
+at: `member`, `member-game`, `addon`, `armory`.
+
+Each observation is filed by the reset week **its own timestamp falls in**, not
+by a week the caller names. That is what stops an envelope written last Monday
+from ticking this week's boxes, and it does it structurally rather than with a
+flag every caller has to remember to check.
+
+The reset anchor is stored per account (`account.reset_day`/`reset_hour`) and
+the worker computes the week key from it. There used to be a copy of that rule
+in the worker, a copy in the browser, and a third inert copy shadowing the
+browser's; see "The reset week" below.
+
+### When D1 is not bound
+
+The worker reads `env.DB` where it is bound and falls back to the KV blobs
+where it is not, so the cutover is not a flag day and can be reversed by
+unbinding. `/api/observe` and `/api/state` answer `{ unavailable: true }`, the
+client's state layer becomes a no-op, and the old whole-blob sync remains the
+whole mechanism.
+
+The import off the old blobs is **client-driven**, and for a concrete reason:
+the blob stored boss kills under `taskId + "_" + bossId` concatenated, and both
+halves contain underscores (`vab_h_nekzali`), so splitting one needs the boss
+lists from the catalogue. Until a member's browser has done it,
+`/api/share/agenda` reads their blob, so somebody who has not opened the site
+since the cutover keeps working rather than going quiet.
+
 ## The share API
 
 Served by the Agenda worker. Two callers: the member's own browser (session
@@ -489,7 +564,7 @@ cookie) and Tabard (service token).
 | PUT  | `/api/consent` | session | Update your own consent record |
 | PUT  | `/api/ledger`  | session | Upload a decoded PLW1 envelope |
 | GET  | `/api/ledger`  | session | Read back what was uploaded |
-| GET  | `/api/share/agenda?sub=` | service | Weekly completion for one member |
+| GET  | `/api/share/agenda?sub=` | service | Weekly completion for one member, plus `agenda`: the hash of whichever list is in game |
 | GET  | `/api/share/rating?sub=&player=` | service | Your own grade for one player |
 | GET  | `/api/share/profile?sub=` | service | Rater profile, if published |
 | POST | `/api/share/bind` | service | Record the Discord id against a sub |

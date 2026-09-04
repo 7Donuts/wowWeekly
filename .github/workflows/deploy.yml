@@ -25,6 +25,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Migrations before the deploy, and additive by construction, so the
+      # currently-live worker keeps working against the new schema for the
+      # seconds between the two steps. A no-op until the D1 binding in
+      # wrangler.jsonc is uncommented.
+      - name: Apply D1 migrations
+        uses: cloudflare/wrangler-action@v4
+        continue-on-error: true
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          command: d1 migrations apply azeroth-agenda --remote
+
       - name: Deploy
         uses: cloudflare/wrangler-action@v4
         with:

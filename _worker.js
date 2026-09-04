@@ -1,3 +1,6 @@
+import { Store } from './worker/store.js';
+import { DEFAULT_RESET_ANCHOR, validAnchor, weekKeyFor, weekStartMs } from './worker/merge.js';
+
 // ── JWT helpers ──────────────────────────────────────────────────────────────
 
 const enc = new TextEncoder();
@@ -184,44 +187,32 @@ async function handleApiUser(request, env) {
 
 // ── WoW week key ─────────────────────────────────────────────────────────────
 //
-// Mirrors js/storage.js. The reset is not the same moment in every region, so
-// the anchor is a parameter rather than a constant, and the browser learns the
-// real one from Blizzard's mythic keystone period and syncs it in the member's
-// own blob under `wow_mn_reset_anchor`. Absent that, every region keeps the
-// Tuesday 15:00 UTC rule this site has always used: the default is
-// "unchanged", never a different guess.
+// The reset week. There used to be a copy of the rule here and another in
+// js/storage.js, and this one existed to re-derive a week key so it could
+// parse a blob the browser had written. Both now defer to worker/merge.js,
+// which is the single implementation: an anchor that differs between the two
+// files files a member's progress into a bucket the other does not read, and
+// nothing errors, the week simply looks empty.
 //
-// Both halves of the rule live in getWowWeekStartMs; the key is only its
-// label, so the two cannot drift apart.
-
-const DEFAULT_RESET_ANCHOR = { day: 2, hour: 15 };
+// Where the anchor comes from differs by caller, which is the reason the
+// wrappers below still exist. An account with rows in D1 has a stored anchor
+// (account.reset_day/hour). One that has not been migrated yet has it inside
+// its KV blob, under `wow_mn_reset_anchor`. Absent both, every region keeps
+// the Tuesday 15:00 UTC rule this site has always used: the default is
+// "unchanged", never a different guess.
 
 function readResetAnchor(blob) {
   const stored = blob && blob['wow_mn_reset_anchor'];
-  if (stored && Number.isInteger(stored.day) && Number.isInteger(stored.hour)
-      && stored.day >= 0 && stored.day <= 6 && stored.hour >= 0 && stored.hour <= 23) {
-    return stored;
-  }
-  return DEFAULT_RESET_ANCHOR;
-}
-
-function getWowWeekStartMs(anchor, nowMs) {
-  anchor = anchor || DEFAULT_RESET_ANCHOR;
-  const now = new Date(nowMs == null ? Date.now() : nowMs);
-  const d   = new Date(Date.UTC(
-    now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), anchor.hour, 0, 0));
-  while (d.getUTCDay() !== anchor.day) d.setUTCDate(d.getUTCDate() - 1);
-  if (now < d) d.setUTCDate(d.getUTCDate() - 7);
-  return d.getTime();
+  return validAnchor(stored) ? stored : DEFAULT_RESET_ANCHOR;
 }
 
 function getWowWeekKey(anchor, nowMs) {
-  return new Date(getWowWeekStartMs(anchor, nowMs)).toISOString().slice(0, 10);
+  return weekKeyFor(anchor, nowMs);
 }
 
 // The moment this reset week began, for filtering this-week kills.
 function getWowWeekResetMs(anchor) {
-  return getWowWeekStartMs(anchor);
+  return weekStartMs(anchor);
 }
 
 // Maps Battle.net raid instance names → our task ID prefix.
@@ -690,6 +681,25 @@ async function handlePutLedger(request, env) {
   }
 
   await env.USER_DATA.put('ledger:' + payload.sub, serialized);
+
+  /* The envelope document stays in KV: it has its own shape, its own
+     lifetime, and revoking it should stay one delete. What goes into D1 is
+     the fact of it, plus the one thing the addon reports about the list it is
+     holding, so the site can say "the display in game is showing a list you
+     have since changed" without fetching the whole document.
+
+     Note what does NOT happen here: the envelope's objectives are not merged
+     into task_state. That translation needs the task catalogue (a raid task
+     is done when every boss on its list is dead, and the boss list moves
+     every patch), so the client that has the catalogue turns the envelope
+     into observations and posts them to /api/observe. One write path for
+     state, and no catalogue in the worker. */
+  const store = storeFor(env);
+  if (store) {
+    await store.recordLedgerReceipt(payload.sub, body);
+    await store.recordAgendaList(payload.sub, body.agenda || {});
+  }
+
   return privateJson({ ok: true, storedAt: Date.now() });
 }
 
@@ -767,6 +777,34 @@ async function handleShareAgenda(request, env) {
   const ctx = await shareContext(request, env);
   if (ctx.error) return ctx.error;
   if (!ctx.consent.scopes['agenda.weekly']) return scopeDenied('agenda.weekly');
+
+  /* Two paths, and which one runs depends on whether this account has been
+     folded into D1 yet.
+
+     The rows are the answer where they exist. Where they do not, the blob
+     still is: the import is client-driven (the old boss keys are
+     `taskId_bossId` concatenated and splitting them needs the boss lists), so
+     a member who has not opened the site since the cutover has no rows, and
+     going quiet on them would be worse than reading the blob one more time.
+
+     Tabard's contract does not change either way. It is a separate
+     deployment on its own cadence, and a change of store here should not be a
+     change of contract there. */
+  const store = storeFor(env);
+  if (store && await store.isMigrated(ctx.sub)) {
+    const view = await store.shareView(ctx.sub);
+    const receipt = await store.ledgerReceipt(ctx.sub);
+    return privateJson({
+      week: view.week,
+      characters: view.characters,
+      ledger: receipt
+        ? { generated: receipt.generated_at, addon: receipt.addon }
+        : null,
+      // Which list the member's game client is holding, so a card can say the
+      // in-game display is out of date rather than leaving it unexplained.
+      agenda: await store.agendaList(ctx.sub),
+    });
+  }
 
   const raw = await env.USER_DATA.get('user:' + ctx.sub);
   const blob = raw ? JSON.parse(raw) : {};
@@ -1053,6 +1091,105 @@ async function handleItemIcons(request, env) {
   return Response.json(results);
 }
 
+// ── The authoritative state API ──────────────────────────────────────────────
+//
+// One write path for weekly state, whatever observed it: the member clicking,
+// the member ticking the addon's in-game display, the addon reporting what the
+// game saw, or the Battle.net profile API. They all arrive as observations and
+// the worker reconciles them, which is the change this API exists to make.
+// Before it, the merge rules ran in whichever browser happened to be open and
+// the sync layer above them replaced the whole blob, so two devices open at
+// once meant whoever saved last erased the other's evening.
+//
+// What is deliberately NOT here is the task catalogue. Section titles, goal
+// thresholds, boss lists and the mapping from a mount's name to a task id all
+// live in js/data-tasks.js and change every patch. So a client that has the
+// catalogue derives what needs deriving (a raid task is done when every boss
+// on its list is dead) and sends the conclusion alongside the facts. A worker
+// that carried the catalogue would need redeploying to keep a checkbox right.
+
+// The store is optional. Until the D1 binding in wrangler.jsonc is
+// uncommented these endpoints report themselves unavailable and the site
+// keeps working on the KV blobs, so the cutover is not a flag day and can be
+// undone by commenting the binding out again.
+function storeFor(env) {
+  return env.DB ? new Store(env.DB) : null;
+}
+
+function storeUnavailable() {
+  return privateJson({ unavailable: true, reason: 'no-d1' });
+}
+
+async function sessionSub(request, env) {
+  const payload = await verifyJWT(getSessionCookie(request), env.SESSION_SECRET);
+  return payload ? String(payload.sub) : null;
+}
+
+async function handleObserve(request, env) {
+  const sub = await sessionSub(request, env);
+  if (!sub) return privateText('Unauthorized', 401);
+  const store = storeFor(env);
+  if (!store) return storeUnavailable();
+
+  let body;
+  try { body = await request.json(); } catch (_) { return privateText('Bad JSON', 400); }
+  if (!body || typeof body !== 'object') return privateText('Bad JSON', 400);
+
+  const report = await store.observe(sub, body);
+
+  // A client submitting its pre-cutover localStorage says so, and the worker
+  // records that this account has been folded in. It is the client that has
+  // to do the reading: the boss keys in the old blob are `taskId_bossId`
+  // concatenated, and splitting them needs the boss lists, which only the
+  // catalogue has. See "Turning on the D1 store" in the README.
+  if (body.migrate) {
+    await store.markMigrated(sub, {
+      weeks: Object.keys(report.weeks || {}).length,
+      tasks: report.applied,
+      note: body.migrateNote || null,
+    });
+  }
+
+  return privateJson(report);
+}
+
+async function handleGetState(request, env) {
+  const sub = await sessionSub(request, env);
+  if (!sub) return privateText('Unauthorized', 401);
+  const store = storeFor(env);
+  if (!store) return storeUnavailable();
+
+  const url = new URL(request.url);
+  const week = url.searchParams.get('week') || null;
+  const state = await store.weekState(sub, week);
+  state.migrated = await store.isMigrated(sub);
+  return privateJson(state);
+}
+
+// The question the blob design could not answer at all, and the reason weekly
+// rows are kept rather than pruned: what did I actually do in week X.
+async function handleGetWeeks(request, env) {
+  const sub = await sessionSub(request, env);
+  if (!sub) return privateText('Unauthorized', 401);
+  const store = storeFor(env);
+  if (!store) return storeUnavailable();
+  return privateJson({ weeks: await store.weeks(sub) });
+}
+
+async function handlePutList(request, env) {
+  const sub = await sessionSub(request, env);
+  if (!sub) return privateText('Unauthorized', 401);
+  const store = storeFor(env);
+  if (!store) return storeUnavailable();
+
+  let body;
+  try { body = await request.json(); } catch (_) { return privateText('Bad JSON', 400); }
+  if (!body || !body.charId) return privateText('A list belongs to a character', 400);
+
+  await store.replaceList(sub, String(body.charId), body.entries || [], body.custom || null);
+  return privateJson({ ok: true });
+}
+
 // ── Main fetch handler ────────────────────────────────────────────────────────
 
 export default {
@@ -1085,6 +1222,12 @@ export default {
       if (request.method === 'GET') return handleGetData(request, env);
       if (request.method === 'PUT') return handlePutData(request, env);
     }
+    // The authoritative store. Every weekly write goes through /api/observe so
+    // there is one merge, on the server, instead of one per open browser.
+    if (pathname === '/api/observe' && request.method === 'POST') return handleObserve(request, env);
+    if (pathname === '/api/state'   && request.method === 'GET')  return handleGetState(request, env);
+    if (pathname === '/api/weeks'   && request.method === 'GET')  return handleGetWeeks(request, env);
+    if (pathname === '/api/list'    && request.method === 'PUT')  return handlePutList(request, env);
     if (pathname === '/api/reset-time'        && request.method === 'GET')  return handleResetTime(request, env);
     if (pathname === '/api/item-icons-cache'  && request.method === 'GET')  return handleItemIconsCache(request, env);
     if (pathname === '/api/item-icons'        && request.method === 'POST') return handleItemIcons(request, env);

@@ -144,13 +144,29 @@ function storageKey() { return 'wow_mn_' + currentChar + '_' + getWeekKey(); }
 function loadDone()   { return JSON.parse(localStorage.getItem(storageKey()) || '{}'); }
 function saveDone(d)  { localStorage.setItem(storageKey(), JSON.stringify(d)); }
 
+/* Your List is the member's own curation rather than a stream of events, so
+   it is pushed to the server whole rather than observed. The push is hooked at
+   the four writers below instead of at the two dozen places that call them:
+   starring, un-starring, hiding, clearing, dragging, importing gear targets
+   and adding a custom task all end up in one of these, and instrumenting the
+   callers is how one of them gets missed.
+
+   Debounced, because a drag fires a write per drop. */
+let _listPushTimer = null;
+function _pushListSoon() {
+  if (typeof pushList !== 'function') return;
+  clearTimeout(_listPushTimer);
+  const charName = currentChar;
+  _listPushTimer = setTimeout(() => pushList(charName), 800);
+}
+
 function hiddenKey()      { return 'wow_mn_hidden_' + currentChar; }
 function loadHidden()     { return JSON.parse(localStorage.getItem(hiddenKey()) || '{}'); }
-function saveHidden(h)    { localStorage.setItem(hiddenKey(), JSON.stringify(h)); }
+function saveHidden(h)    { localStorage.setItem(hiddenKey(), JSON.stringify(h)); _pushListSoon(); }
 
 function yourListKey()      { return 'wow_mn_yourlist_' + currentChar; }
 function loadYourList()     { return JSON.parse(localStorage.getItem(yourListKey()) || '[]'); }
-function saveYourList(l)    { localStorage.setItem(yourListKey(), JSON.stringify(l)); }
+function saveYourList(l)    { localStorage.setItem(yourListKey(), JSON.stringify(l)); _pushListSoon(); }
 
 function notesKey()         { return 'wow_mn_notes_' + currentChar; }
 function loadNotes()        { return JSON.parse(localStorage.getItem(notesKey()) || '{}'); }
@@ -158,7 +174,7 @@ function saveNotes(n)       { localStorage.setItem(notesKey(), JSON.stringify(n)
 
 function yourListOrderKey()  { return 'wow_mn_ylorder_' + currentChar; }
 function loadYourListOrder() { return JSON.parse(localStorage.getItem(yourListOrderKey()) || '[]'); }
-function saveYourListOrder(o){ localStorage.setItem(yourListOrderKey(), JSON.stringify(o)); }
+function saveYourListOrder(o){ localStorage.setItem(yourListOrderKey(), JSON.stringify(o)); _pushListSoon(); }
 
 function bossKey()           { return 'wow_mn_bosses_' + currentChar + '_' + getWeekKey(); }
 function loadBossKills()     { return JSON.parse(localStorage.getItem(bossKey()) || '{}'); }
@@ -182,6 +198,17 @@ function toggleBoss(taskId, bossId) {
     // as one: an automatic source must not later claim credit for it, and
     // clearing a bubble must not be undone by the next sync.
     if (typeof markManualToggle === 'function') markManualToggle(taskId, allKilled);
+
+    // The kill and the conclusion drawn from it travel separately, because
+    // only this side knows the boss list. The server stores kills as facts
+    // and never derives a task from them: the list moves every patch and it
+    // lives in data-tasks.js, not in the worker.
+    if (typeof observeBoss === 'function' && kills[k]) {
+      observeBoss(currentChar, taskId, bossId, 'member');
+    }
+    if (typeof observeTask === 'function') {
+      observeTask(currentChar, taskId, { done: allKilled }, 'member');
+    }
   }
   render();
 }
@@ -227,7 +254,7 @@ function snapshotWeekForChar(charName, weekKey) {
   const custom  = JSON.parse(localStorage.getItem('wow_mn_custom_' + charName) || '[]');
   let total = 0, completed = 0;
   const sections = {};
-  SECTIONS.forEach(sec => {
+  activeSections().forEach(sec => {
     let secTotal = 0, secDone = 0;
     sec.tasks.filter(t => !hidden[t.id]).forEach(t => {
       total++; secTotal++;
@@ -235,9 +262,10 @@ function snapshotWeekForChar(charName, weekKey) {
     });
     if (secTotal > 0) sections[sec.id] = { done: secDone, total: secTotal, title: sec.title };
   });
-  if (custom.length) {
+  const nonBisCustom = custom.filter(t => !t.id.startsWith('bis_'));
+  if (nonBisCustom.length) {
     let cTotal = 0, cDone = 0;
-    custom.forEach(t => {
+    nonBisCustom.forEach(t => {
       total++; cTotal++;
       if (done['custom_' + t.id]) { completed++; cDone++; }
     });
@@ -257,7 +285,7 @@ function snapshotWeekForChar(charName, weekKey) {
 
 function customStorageKey() { return 'wow_mn_custom_' + currentChar; }
 function loadCustomTasks()  { return JSON.parse(localStorage.getItem(customStorageKey()) || '[]'); }
-function saveCustomTasks(t) { localStorage.setItem(customStorageKey(), JSON.stringify(t)); }
+function saveCustomTasks(t) { localStorage.setItem(customStorageKey(), JSON.stringify(t)); _pushListSoon(); }
 
 /* ── CHARACTER IDENTITY ── */
 // Identifiers are "Name" (legacy/no realm) or "Name@realm-slug" (realm-aware).
@@ -295,6 +323,20 @@ function loadArmoryData(n)   { return JSON.parse(localStorage.getItem('wow_mn_ar
 function saveArmoryData(n, d){
   localStorage.setItem('wow_mn_armory_' + n, JSON.stringify(d));
   if (d?.gearItems) _cacheItemIcons(d.gearItems);
+  // The four fields a Discord card needs. Sent so Tabard can draw one from
+  // rows rather than by reaching into this blob, which is where it used to
+  // get them. The rest of the armory payload (gear, icons) stays a local
+  // cache: it is large, derived, and nothing else reads it.
+  if (typeof observeCharacter === 'function' && d) {
+    observeCharacter(n, {
+      name: typeof charDisplayName === 'function' ? charDisplayName(n) : n,
+      realmSlug: typeof loadCharRealmSlug === 'function' ? loadCharRealmSlug(n) : null,
+      className: d.className || null,
+      level: d.level || null,
+      ilvl: d.ilvl || null,
+      mythicRating: d.mythicRating || null,
+    });
+  }
 }
 function _cacheItemIcons(gearItems) {
   const cache = JSON.parse(localStorage.getItem('wow_mn_item_icons') || '{}');

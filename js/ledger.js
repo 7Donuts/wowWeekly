@@ -94,6 +94,23 @@ function applyAutoTask(charName, taskId, fields, source) {
     ticked = true;
   }
 
+  /* The same observation, to the server, which is what lets another device
+     and the Discord card see it without this browser being opened again.
+
+     Sent whether or not anything changed locally. "Changed" here means
+     changed on THIS device, and a box this device already had ticked can
+     still be news to the server; the merge rules make a repeat a no-op
+     rather than a write. The source travels as-is, so the server records
+     which of the four ticked it and the badge keeps meaning something. */
+  if (typeof observeTask === 'function') {
+    const out = {};
+    if (fields.done) out.done = true;
+    if (typeof fields.value === 'number') out.value = fields.value;
+    if (out.done !== undefined || out.value !== undefined) {
+      observeTask(charName, taskId, out, source === 'addon-manual' ? 'member-game' : source);
+    }
+  }
+
   return { ticked, progressed, changed: ticked || progressed };
 }
 
@@ -107,6 +124,13 @@ function applyAutoBoss(charName, taskId, bossId, source) {
 
   kills[k] = true;
   localStorage.setItem(bossKey, JSON.stringify(kills));
+
+  // The kill itself, as a fact. The task tick derived from it goes through
+  // applyAutoTask below, which reports separately: the boss list is here and
+  // not in the worker.
+  if (typeof observeBoss === 'function') {
+    observeBoss(charName, taskId, bossId, source === 'addon-manual' ? 'member-game' : source);
+  }
 
   // A raid task is done when every boss on its list is dead. That rule lives
   // on the site because the boss list does, so the addon reports kills and
@@ -321,6 +345,12 @@ function applyLedgerEnvelope(env) {
     report.agenda = agendaListStatus();
   }
 
+  // Everything the envelope produced is queued by now, so send it in one
+  // request rather than letting the debounce fire mid-import: an envelope can
+  // tick eleven boxes across three characters, and eleven requests for one
+  // paste is not a sync, it is a stampede.
+  if (typeof flushObservations === 'function') flushObservations();
+
   if (env.ratings) saveLedgerRatings(env.ratings);
 
   const state = loadLedgerState();
@@ -357,11 +387,18 @@ function applyLedgerCollections(collections, source) {
     }
   };
 
-  for (const name of [].concat(collections.mounts || [], collections.toys || [])) {
+  for (const name of (collections.mounts || [])) {
+    if (typeof observeCollection === 'function') observeCollection('mount', String(name), source);
+    const taskId = byName[String(name).toLowerCase()];
+    if (taskId) tick(taskId);
+  }
+  for (const name of (collections.toys || [])) {
+    if (typeof observeCollection === 'function') observeCollection('toy', String(name), source);
     const taskId = byName[String(name).toLowerCase()];
     if (taskId) tick(taskId);
   }
   for (const id of (collections.achievements || [])) {
+    if (typeof observeCollection === 'function') observeCollection('achievement', String(id), source);
     const taskId = byAchievement[id];
     if (taskId) tick(taskId);
   }

@@ -6,6 +6,7 @@
 .assetsignore
 wrangler.jsonc
 _worker.js
+worker
 cloudflare
 node_modules
 tools

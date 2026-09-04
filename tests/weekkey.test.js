@@ -1,10 +1,17 @@
 /* The weekly reset boundary.
 
-   Two independent implementations of one rule: js/storage.js in the browser
-   and _worker.js on the server. They key every piece of weekly data, so if
-   they ever disagree the browser writes into a bucket the server does not
-   read, and nothing errors — the week simply looks empty. That is the failure
-   mode worth pinning.
+   Still two independent implementations of one rule, but no longer the two it
+   used to be. `_worker.js` carried its own copy so it could re-derive a week
+   key and parse a blob the browser had written; that copy is gone and the
+   server side now lives in worker/merge.js, which the store and every handler
+   share. What remains to compare is js/storage.js in the browser against
+   worker/merge.js on the server.
+
+   They key every piece of weekly data, so if they ever disagree the browser
+   writes into a bucket the server does not read, and nothing errors: the week
+   simply looks empty. That is the failure mode worth pinning, and it is worth
+   pinning even now that the server has one implementation, because the
+   browser's is still a separate file that has to move with it.
 
    The addon is deliberately NOT in this comparison. It cannot know each
    region's reset hour, so its week label is advisory and the site buckets its
@@ -12,29 +19,26 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
-const fs = require('node:fs');
 const path = require('node:path');
-const vm = require('node:vm');
 const { load } = require('./harness');
 
 const ROOT = path.join(__dirname, '..');
 
-// The worker's copies, lifted out so they can be exercised without a fetch.
+let merge;
+test.before(async () => {
+  merge = await import(path.join(ROOT, 'worker', 'merge.js'));
+});
+
+// The server's implementation, imported rather than lifted out by regex. The
+// regex was the price of it being buried in a 1,100-line handler file; it is
+// a module now, so the test can just use it.
 function workerImpl() {
-  const src = fs.readFileSync(path.join(ROOT, '_worker.js'), 'utf8');
-  const wanted = ['DEFAULT_RESET_ANCHOR', 'readResetAnchor', 'getWowWeekStartMs',
-                  'getWowWeekKey', 'getWowWeekResetMs'];
-  const parts = wanted.map((name) => {
-    const re = new RegExp(`\\n(?:const|function) ${name}[\\s\\S]*?\\n}`);
-    const m = src.match(re);
-    assert.ok(m, `${name} not found in _worker.js; this test needs updating`);
-    return m[0];
-  });
-  const ctx = { Date, Number, console };
-  vm.createContext(ctx);
-  vm.runInContext(parts.join('\n') + '\n'
-    + wanted.map((n) => `this.${n}=${n};`).join('\n'), ctx);
-  return ctx;
+  return {
+    DEFAULT_RESET_ANCHOR: { day: merge.DEFAULT_RESET_ANCHOR.day,
+                            hour: merge.DEFAULT_RESET_ANCHOR.hour },
+    getWowWeekKey: (anchor, nowMs) => merge.weekKeyFor(anchor, nowMs),
+    getWowWeekResetMs: (anchor) => merge.weekStartMs(anchor),
+  };
 }
 
 function siteImpl() {

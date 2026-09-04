@@ -42,9 +42,59 @@ test('toggling a task by hand records the manual intent', () => {
 });
 
 test('clearing a boss bubble records it the same way', () => {
+  // storage.js is the only definition now. It was not always: app.js carried
+  // a second copy that won at runtime and had no markManualToggle in it, so
+  // this guard passed for a long time while clearing a bubble was silently
+  // re-ticked by the next automatic sync. The single-definition guard below
+  // is what stops that shape of bug returning.
   const body = functionBody(STORAGE, 'toggleBoss');
   assert.match(body, /markManualToggle\(/,
     'toggleBoss() derives a task tick, so it has to record the manual intent too');
+});
+
+test('the persistence layer is defined once', () => {
+  /* js/storage.js and js/app.js used to define the same 36 functions. They
+     share one scope on the page and app.js loads second, so app.js's copies
+     won and storage.js's were dead, which is the opposite of what its own
+     header says ("change the schema here and it propagates to every page").
+
+     Two of them had drifted, and both drifts were live bugs:
+
+       getWeekKey        app.js's copy hardcoded Tuesday 15:00 UTC and ignored
+                         its arguments, so the learned reset anchor was inert.
+                         migrateWeekKeys compared getWeekKey(old) against
+                         getWeekKey(new), got the same answer both times, and
+                         returned without moving anything. An EU member's site
+                         filed everything under the US key.
+       toggleBoss        app.js's copy had no markManualToggle at all, so
+                         clearing a boss bubble left no tombstone and the next
+                         automatic sync re-ticked the task.
+
+     Neither showed up because the tests that cover them load storage.js
+     without app.js, and so exercised the copy that never runs. This guard is
+     what makes that impossible to reintroduce. */
+  const names = (source) => {
+    const found = new Set();
+    for (const m of source.matchAll(/^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/gm)) {
+      found.add(m[1]);
+    }
+    return found;
+  };
+
+  const inApp = names(APP);
+  const shared = [...names(STORAGE)].filter((name) => inApp.has(name));
+  assert.deepEqual(shared, [],
+    'defined in both js/storage.js and js/app.js, and app.js wins: ' + shared.join(', '));
+});
+
+test('the live week key honours the reset anchor', () => {
+  // The specific regression above. A getWeekKey that takes no arguments
+  // cannot be anchor-aware, and every weekly storage key is filed under it.
+  const body = functionBody(STORAGE, 'getWeekKey');
+  assert.match(body, /function getWeekKey\(anchor/,
+    'getWeekKey must take the anchor, not assume Tuesday');
+  assert.ok(!/function getWeekKey/.test(APP),
+    'and app.js must not shadow it with a copy that does not');
 });
 
 test('both task views show which source ticked a box', () => {

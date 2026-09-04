@@ -27,4 +27,25 @@
       "id": "b0d74ac760774c51bfacdddd5b0fbc55"
     }
   ]
+
+  // D1: the authoritative store for weekly state. Commented out until the
+  // database exists, because a binding that names a database this account
+  // does not have fails the deploy, and the site working is worth more than
+  // the cutover happening on any particular day.
+  //
+  // The worker reads `env.DB` when it is bound and falls back to the KV blobs
+  // when it is not, so this can be turned on without a flag day and turned
+  // back off if something is wrong. See README, "Turning on the D1 store".
+  //
+  //   wrangler d1 create azeroth-agenda
+  //   # paste the id it prints below, uncomment this block
+  //   wrangler d1 migrations apply azeroth-agenda --remote
+  //
+  // , "d1_databases": [
+  //   {
+  //     "binding": "DB",
+  //     "database_name": "azeroth-agenda",
+  //     "database_id": "PASTE-THE-ID-FROM-D1-CREATE"
+  //   }
+  // ]
 }

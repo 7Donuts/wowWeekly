@@ -36,6 +36,21 @@
     if (key === 'wow_mn_welcomed')      return false;   // device-local: has this device seen the welcome
     if (key === 'wow_mn_seen_version')  return false;   // device-local: has this device seen the changelog
     if (key === 'wow_mn_last_battletag') return false;  // device-local: cached battletag for optimistic UI
+
+    // Device-local by construction: a pending observation queue is this
+    // device's unsent work and the state meta is this device's view of the
+    // server. Pushing either into the shared blob would have one device
+    // replay another's writes.
+    if (key === 'wow_mn_obs_queue')     return false;
+    if (key === 'wow_mn_state_meta')    return false;
+
+    // Owned by the worker once this account has been migrated. Two writers
+    // for one value is the race the D1 store exists to remove, so the blob
+    // stops carrying them rather than carrying a second opinion. It is also
+    // what stops the blob growing without bound: nothing ever pruned the
+    // weekly keys, and they were the bulk of it.
+    if (typeof stateOwnsKey === 'function' && stateOwnsKey(key)) return false;
+
     return true;
   }
 
@@ -248,6 +263,25 @@
             }
           } catch (_) {}
         }
+
+        /* The authoritative store, after the blob pull and deliberately so.
+
+           Both write the same weekly keys during the changeover, and the
+           server is the one that reconciled them, so it has to land second.
+           Reversing these two would let a blob some other device pushed
+           overwrite rows the server had already merged, which is the exact
+           failure this replaces.
+
+           A no-op until the D1 binding is uncommented, in which case the
+           blob sync above remains the whole mechanism. */
+        if (typeof startState === 'function') {
+          try {
+            if (await startState()) {
+              if (typeof renderChars === 'function') renderChars();
+              if (typeof render === 'function') render();
+            }
+          } catch (_) {}
+        }
         // Open standalone import modal only when the welcome is not open.
         // When welcome is open the bnet-import step handles character import inline.
         if (sessionStorage.getItem('azeroth_pending_import')) {
@@ -267,6 +301,16 @@
     _origSetItem.call(this, key, value);
     if (this === localStorage && isSyncKey(key)) schedulePush();
   };
+
+  // Anything still queued when the tab goes away. The queue survives in
+  // localStorage either way, so this is a courtesy rather than the guarantee.
+  window.addEventListener('beforeunload', () => {
+    if (typeof flushObservations === 'function') flushObservations();
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && typeof flushObservations === 'function') flushObservations();
+  });
 
   // Background poll: re-pull once the TTL has elapsed even if the tab stays focused.
   setInterval(async () => {

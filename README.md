@@ -15,14 +15,96 @@ storage and merge logic can be tested without a DOM.
 
 | File | Responsibility |
 |---|---|
-| `_worker.js` | OAuth, the Battle.net profile and collections APIs, KV sync, the share API |
+| `_worker.js` | OAuth, the Battle.net profile and collections APIs, the state and share APIs |
+| `worker/merge.js` | The merge rules and the reset week, as pure functions. One implementation, server-side |
+| `worker/store.js` | Every statement that touches D1 |
+| `migrations/` | The D1 schema. `wrangler d1 migrations apply` |
 | `js/data-tasks.js` | The checklist itself: sections, tasks, goals, boss lists |
-| `js/storage.js` | Namespaced localStorage, week keys, per-character state |
+| `js/storage.js` | Namespaced localStorage, week keys, per-character state. The only definition of each: see the guard in tests/wiring.test.js |
+| `js/state.js` | The client half of the authoritative store: the observation queue, hydration, and the one-time import |
 | `js/app.js` | Rendering and interaction |
 | `js/armory.js` | Battle.net character sync, and the auto-checks it drives |
 | `js/ledger.js` | The Party Ledger addon bridge inbound, and the merge rules every automatic source goes through |
 | `js/ledger-out.js` | The other half of that bridge: the member's list, handed to the addon |
 | `js/sync.js` | Cross-device sync against KV |
+
+## Where state actually lives
+
+The worker owns weekly state and reconciles it. That is a change from how this
+worked for most of the site's life, and the reasons are worth keeping written
+down because they are the failure modes, not preferences:
+
+Everything used to live in two KV blobs, `user:<sub>` holding the member's
+entire localStorage and `ledger:<sub>` holding the last envelope the addon
+produced. Both were written only by the browser and replaced wholesale. So:
+
+- **Lost updates.** The merge rules below were written to be order-independent
+  and then applied only to local state. `pullFromCloud` overwrote local with
+  the server's copy key by key and `pushToCloud` sent everything, so two
+  devices open at once meant whoever saved last erased the other's evening.
+  The rules now run in `worker/merge.js`, once, per task.
+- **No history.** Each import replaced the last, so "what did I do in week X"
+  had no answer anywhere. Weekly rows are kept indefinitely; `/api/weeks` is
+  the reader.
+- **Unbounded blobs.** Nothing pruned the old weekly keys. Six characters
+  after a year is about 1,500 keys and a 420KB PUT on every checkbox click,
+  on a path with no size guard and no quota handling.
+
+The shape now:
+
+| Where | What |
+|---|---|
+| D1 | weekly task state, boss kills, Your List, custom tasks, collections, characters, the reset anchor, what the addon is holding |
+| KV `ledger:<sub>` | the addon's envelope document, for the ratings and scorecards Tabard reads |
+| KV `user:<sub>` | everything else that syncs: notes, device preferences, the history rollup |
+| KV, with a TTL | the Battle.net token and the profile API caches |
+
+Writes are optimistic. `js/state.js` writes localStorage first so a checkbox
+never waits for a round trip, queues an observation, and then writes the
+server's reconciled answer back over the top. Where they disagree the server
+wins. The queue lives in localStorage, so losing the network does not lose the
+work, and every rule in `worker/merge.js` is written so that an observation
+which sat in a queue for a day arriving after one made later elsewhere does
+not matter.
+
+The renderer still reads localStorage. That is deliberate: making it async and
+server-driven in the same change that introduced the schema would have been
+two risky changes at once, so localStorage became a mirror of what the server
+decided rather than the source of truth it used to be.
+
+**What the worker does not have is the task catalogue.** Section titles, goal
+thresholds, boss lists and the mapping from a mount's name to a task id all
+live in `js/data-tasks.js` and change every patch. So the worker stores facts
+and never derives a task from them: the client reports "these bosses are dead"
+*and* "therefore this task is done". A worker carrying the catalogue would
+need redeploying to keep a checkbox correct.
+
+## Turning on the D1 store
+
+The binding is commented out in `wrangler.jsonc`, and the worker reads
+`env.DB` when it is bound and falls back to the KV blobs when it is not. So
+this is not a flag day, and it can be undone by commenting the binding out
+again.
+
+    wrangler d1 create azeroth-agenda
+    # paste the printed id into wrangler.jsonc and uncomment the block
+    wrangler d1 migrations apply azeroth-agenda --remote
+
+The deploy workflow applies migrations before deploying, and they are additive
+by construction, so the currently-live worker keeps working against the new
+schema for the seconds between the two steps.
+
+**The import off the old blobs is client-driven, and that is not laziness.**
+The blob stored boss kills under `taskId + "_" + bossId` concatenated into one
+string, and both halves contain underscores (`vab_h_nekzali`), so splitting
+one needs the boss lists. Those are in the catalogue, which the page has and
+the worker deliberately does not. So each member's browser reads its own
+localStorage once, sends it as observations, and the worker records that it
+happened. It is idempotent: three devices at once produce one set of rows.
+
+Until a member's account has been imported, `/api/share/agenda` falls back to
+reading their blob, so somebody who has not opened the site since the cutover
+keeps working rather than going quiet on Discord.
 
 ## Four sources can tick a box
 
@@ -44,8 +126,18 @@ the rules have to be written down:
   member saying they did something are different claims, and they fail in
   different ways.
 
-All of it goes through `applyAutoTask` and `applyAutoBoss` in `js/ledger.js`.
-Nothing else may write to the done map on an automatic path.
+Locally all of it goes through `applyAutoTask` and `applyAutoBoss` in
+`js/ledger.js`, and nothing else may write to the done map on an automatic
+path. The authoritative version of the same rules is `mergeTaskObservation` in
+`worker/merge.js`, which is a pure function of (current row, observation) and
+is where a disagreement is actually settled.
+
+One rule reads oddly until you hit it: the member setting a counter by hand
+**sets** it, while automatic sources take the maximum. A maximum would make
+correcting a mis-click downward impossible. An automatic source can still
+raise it past what they typed, because the game counting eight keys is a fact
+and four was a guess, and that is what the site did locally before any of this
+moved server-side.
 
 ## The addon bridge
 
