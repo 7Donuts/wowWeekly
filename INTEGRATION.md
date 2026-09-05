@@ -251,14 +251,42 @@ the client, and the Agenda supports two of them:
 1. **SavedVariables read (primary).** The Agenda asks once for read access to
    the member's WoW folder through the File System Access API, remembers the
    handle in IndexedDB, and re-reads
-   `WTF/Account/<ACCOUNT>/SavedVariables/PartyLedger.lua` on demand. Chromium
-   only. The file is only written by the game at logout or `/reload`, so the
-   Agenda tells the member how old the data is rather than pretending it is
-   live.
+   `WTF/Account/<ACCOUNT>/SavedVariables/PartyLedger.lua`. Chromium only. The
+   file is only written by the game at logout or `/reload`, so the Agenda
+   tells the member how old the data is rather than pretending it is live.
+
+   The read happens on its own: on page load, on returning to the tab, and on
+   a ten second poll while the tab is visible, each time comparing the file's
+   `lastModified` against the last one applied. Two rules hold on every
+   automatic path. It never calls `requestPermission`, only `queryPermission`,
+   because a prompt raised from a timer is either unseen or spends the
+   member's one chance to grant on a moment they were not looking at the page.
+   And it stays silent unless the import changed something, because a poll
+   that reports every time it ran is noise.
 2. **Paste (fallback).** `/ledger sync` prints the same base64 string into a
-   copy box. Works in every browser.
+   copy box. Works in every browser. The Agenda imports as soon as a string
+   whose prefix names a known transport is pasted, so the button below it is a
+   retry rather than a required step.
 
 There is no third path. The addon never sees the network.
+
+### Why the reload is in the loop, and stays there
+
+No API flushes saved variables. The client serialises them at logout, at a
+disconnect, at quit, and on a UI reload, and nowhere else; `PLAYER_LOGOUT` is
+a hook for changing the table before that happens, not a way of making it
+happen. The alternatives do not survive contact: the combat and chat logs are
+flushed continuously but no addon can put arbitrary text in either, CVars have
+the same flush semantics and are not a data channel, and retail keeps macros
+on the server.
+
+So the reload is load-bearing, and both sides make it cheap rather than
+pretending it is not there. The addon's `/ledger sync` window has a write-and-
+reload button, `/ledger sync auto` will do it unprompted once enough has piled
+up (out of combat, outside instances, alive, announced first, off by default),
+and the heads-up display and minimap tooltip both show how many changes are
+not on disk yet. The site polls, so a reload in game shows up in the browser
+within seconds without the member touching anything.
 
 The inbound direction has one path only, and by choice: the member copies the
 AGL string from the Agenda and runs `/ledger list import`. See "Why a paste,
@@ -409,6 +437,16 @@ holds**, as the `agenda.sig` hash in the envelope. The site compares that
 against the list as it currently stands and can then tell the member that the
 display in front of them is showing a list they have since changed. Without
 it, "why isn't my new task in the heads-up display" has no answer anywhere.
+
+The site keeps a second signature beside it, locally, and the two must not be
+conflated. `agenda.sig` is what the addon confirms it holds, and it can only
+be refreshed by an inbound envelope, which needs a `/reload`. The other is
+what the site last put on the member's clipboard. With only the first, a
+member who copies their list is told it is out of date until they log out and
+sync: precisely wrong, at the moment they have just done what was asked of
+them. So a copy reads as *pending*, an envelope confirming it supersedes and
+clears the pending record, and a list edited again without ever being pasted
+still goes stale. The second signature is site-local state and never travels.
 
 The hash is djb2 over the payload bytes, reduced modulo 4294967291, printed as
 eight hex digits. Deliberately not a bitwise hash: the addon computes it in
