@@ -24,7 +24,7 @@ const EXPOSE = [
   'ledgerAddCharacter', 'ledgerReportIsNews', 'ledgerButtonState',
   'loadCharRealm', 'realmToSlug',
   'taskCoverage', 'coverageSummary', 'blizzardCoverage', 'addonCoverage',
-  'saveArmoryData',
+  'saveArmoryData', 'compareVersions', 'addonUpdateState',
 ];
 
 function setup(opts = {}) {
@@ -248,6 +248,49 @@ test('a quiet sync only speaks when the import changed something', () => {
   // A payload from before the reset is worth saying out loud even though it
   // ticked nothing: it is the reason nothing was ticked.
   assert.equal(ctx.ledgerReportIsNews({ tasks: 0, bosses: 0, collections: 0, progressed: 0, staleWeek: true, unmatched: [] }), true);
+});
+
+/* ── Telling a member their addon is old ────────────────────────────────── */
+
+test('versions compare numerically, not as strings', () => {
+  /* The bug this exists to prevent, and it bites at exactly the point it
+     starts to matter: "0.9.0" sorts after "0.11.0" as a string, so the member
+     furthest behind is the one told they are current. The addon is already
+     past 0.9, so this is not hypothetical. */
+  const ctx = setup();
+  assert.equal(ctx.compareVersions('0.9.0', '0.11.0'), -1, '0.9 is behind 0.11');
+  assert.equal(ctx.compareVersions('0.11.0', '0.9.0'), 1);
+  assert.equal(ctx.compareVersions('0.11.2', '0.11.2'), 0);
+  assert.equal(ctx.compareVersions('1.0.0', '0.99.99'), 1);
+
+  // A missing segment is zero, so the two spellings of the same release are
+  // equal rather than one being behind the other forever.
+  assert.equal(ctx.compareVersions('1.2', '1.2.0'), 0);
+  assert.equal(ctx.compareVersions('1.2', '1.2.1'), -1);
+
+  // A leading v is how the tag is spelled and the .toc is not.
+  assert.equal(ctx.compareVersions('v0.11.2', '0.11.2'), 0);
+});
+
+test('an unparseable version is unanswerable, not a guess', () => {
+  // A hand-edited .toc, a fork's version string, a release candidate. Any of
+  // these guessed at is either a nag that will not go away or a member left
+  // on a broken version, so the answer is "cannot tell".
+  const ctx = setup();
+  assert.equal(ctx.compareVersions('0.11.2-dev', '0.11.2'), null);
+  assert.equal(ctx.compareVersions('', '0.11.2'), null);
+  assert.equal(ctx.compareVersions(undefined, '0.11.2'), null);
+  assert.equal(ctx.compareVersions('0.11.2', null), null);
+});
+
+test('a member who has never synced is not told they are out of date', () => {
+  /* They have not started, which is a different problem with a different
+     answer. Telling them about an update is answering a question they have
+     not reached, and the panel shows install steps instead. */
+  const ctx = setup();
+  ctx.saveLedgerState({});
+  const state = ctx.addonUpdateState();
+  assert.equal(state.latest, null, 'and with no release fetched there is nothing to say at all');
 });
 
 /* ── Which tier answers which task ──────────────────────────────────────── */

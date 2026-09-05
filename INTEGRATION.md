@@ -243,6 +243,28 @@ Two consequences that are easy to get wrong, and both of which have been:
   proves which one a change meant, which is why both repos carry a checked-in
   fixture produced by the other (`tests/fixtures/`).
 
+## Getting the addon
+
+The addon is distributed as a GitHub release from `7Donuts/rateaplayer`:
+`PartyLedger-<version>.zip`, built by `scripts/package.sh`, unpacking to a
+single `PartyLedger` folder for `Interface/AddOns`. WoWUp can track the
+repository as an addon source, so that is a real update path and not a
+placeholder for one. CurseForge and Wago are not wired up; `RELEASING.md` in
+that repository has what each would need.
+
+The `.toc`'s `## Version` is the single source of truth for the version, not
+the git tag, and the release workflow refuses a tag that disagrees with it.
+`PL.version` is read from that field through `GetAddOnMetadata` and travels as
+`addon` in the envelope below and in every error report, so the number the
+site displays and the number a bug report carries are the same committed one.
+
+`GET /api/addon` on the Agenda proxies the latest release from the GitHub API,
+cached for an hour, and returns `{version, url, zip, notes, at}` or `{}` when
+the lookup fails. The page compares it against the `addon` field of the last
+envelope and tells a member whose copy is behind. The comparison is numeric
+per segment: string comparison puts 0.9.0 after 0.11.0, which would tell
+exactly the member furthest behind that they are current.
+
 ## Two tiers, and which answers what
 
 There are two automatic sources and they answer different questions. Neither

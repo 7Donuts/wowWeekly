@@ -377,6 +377,73 @@ function applyLedgerEnvelope(env) {
 }
 
 /* -------------------------------------------------------------------------
+   Getting the addon, and knowing when it is old
+
+   The page has always told members to install an addon and never said where
+   to get one. A manual install has no updater behind it either, so a member
+   running a version from four months ago sees boxes failing to tick and has
+   no way to connect that to the cause.
+
+   The envelope already reports the version it came from, so the only missing
+   half was what the current one is. Fetched once per page and cached, and
+   entirely optional: an unanswered lookup means the page says nothing about
+   updates rather than showing an error about a request nobody asked for.
+------------------------------------------------------------------------- */
+
+let _addonRelease = null;
+
+async function loadAddonRelease() {
+  if (_addonRelease) return _addonRelease;
+  try {
+    const res = await fetch('/api/addon');
+    if (!res.ok) return null;
+    const data = await res.json();
+    _addonRelease = (data && data.version) ? data : null;
+  } catch (_) { _addonRelease = null; }
+  return _addonRelease;
+}
+
+/* Compare two dotted versions numerically.
+
+   String comparison gets this wrong at exactly the point it starts to matter:
+   "0.9.0" sorts after "0.11.0", so the member who most needs telling is the
+   one told they are up to date. Segments are compared as numbers, a missing
+   segment counts as zero so "1.2" and "1.2.0" are equal, and anything
+   non-numeric makes the whole comparison unanswerable rather than guessed at.
+
+   Returns -1, 0, 1, or null when either side is not a version. */
+function compareVersions(a, b) {
+  const parse = (v) => {
+    const parts = String(v == null ? '' : v).trim().replace(/^v/, '').split('.');
+    if (!parts.length || parts.some((p) => !/^\d+$/.test(p))) return null;
+    return parts.map(Number);
+  };
+  const left = parse(a), right = parse(b);
+  if (!left || !right) return null;
+
+  for (let i = 0; i < Math.max(left.length, right.length); i++) {
+    const l = left[i] || 0, r = right[i] || 0;
+    if (l !== r) return l < r ? -1 : 1;
+  }
+  return 0;
+}
+
+/* Is the addon that sent us the last envelope behind the current release?
+
+   Only answers when both versions are known and comparable. A member who has
+   never synced is not "out of date", they have not started, and telling them
+   about an update would be answering a question they have not reached. */
+function addonUpdateState() {
+  const installed = loadLedgerState().addonVersion;
+  const latest    = _addonRelease && _addonRelease.version;
+  if (!latest) return { latest: null };
+  if (!installed) return { latest, installed: null, behind: false };
+
+  const cmp = compareVersions(installed, latest);
+  return { latest, installed, behind: cmp === -1, unknown: cmp === null };
+}
+
+/* -------------------------------------------------------------------------
    Which tier answers which task
 
    There are two automatic sources and they answer different questions.
@@ -1092,8 +1159,15 @@ async function setConsentScope(scope, on) {
 
 async function openLedgerModal() {
   document.getElementById('modal-ledger').classList.add('open');
+  // Painted immediately from what is already known, then repainted as the two
+  // lookups land. Neither is worth a spinner: the panel is useful without
+  // either, and a modal that opens empty while it waits on GitHub is worse
+  // than one that fills in.
   renderLedgerModal();
-  await loadConsent();
+  await Promise.all([
+    loadConsent(),
+    loadAddonRelease(),
+  ]);
   renderLedgerModal();
 }
 
@@ -1165,6 +1239,44 @@ function renderLedgerModal() {
   html += '<p class="ledger-note">The addon records boss kills, keys, delves and '
         + 'collectibles as you earn them, and this reads that file. An addon cannot '
         + 'send anything anywhere, so nothing leaves your machine until you hand it over here.</p>';
+
+  /* Where to get it, which this panel never said.
+     Rendered whether or not the release lookup answered: a member without the
+     addon needs the instructions more than they need a version number, and a
+     GitHub link that is one click further away still beats no link. */
+  const rel = addonUpdateState();
+  if (!state.lastImport) {
+    html += '<div class="ledger-install">';
+    html += '<ol>';
+    html += '<li>Download <code>PartyLedger-' + escHtml(rel.latest || 'latest')
+          + '.zip</code>' + (rel.latest ? '' : ' from the releases page') + '.</li>';
+    html += '<li>Unzip it into <code>World of Warcraft/_retail_/Interface/AddOns</code>, '
+          + 'so you end up with an <code>AddOns/PartyLedger</code> folder.</li>';
+    html += '<li>Log in and play. Then <code>/reload</code>, which is when the game '
+          + 'writes the file this page reads.</li>';
+    html += '<li>Come back and connect your WoW folder below.</li>';
+    html += '</ol>';
+    html += '<div class="ledger-btns">'
+          + '<a class="btn-primary" href="' + escHtml(
+              (_addonRelease && (_addonRelease.zip || _addonRelease.url))
+              || 'https://github.com/7Donuts/rateaplayer/releases/latest')
+          + '" target="_blank" rel="noopener"><i class="ph-fill ph-download-simple"></i>'
+          + 'Download the addon</a></div>';
+    html += '<p class="ledger-note">If you use WoWUp, add '
+          + '<code>github.com/7Donuts/rateaplayer</code> as an addon source and it '
+          + 'will keep this updated for you.</p>';
+    html += '</div>';
+  } else if (rel.behind) {
+    // The case a manual install has no other way to discover. Boxes that stop
+    // ticking after a season change look like a broken addon rather than an
+    // old one, and nothing else on either side would say which.
+    html += '<p class="ledger-note ledger-update"><i class="ph-fill ph-arrow-circle-up"></i> '
+          + 'Your addon reported <strong>' + escHtml(rel.installed) + '</strong> and '
+          + '<strong>' + escHtml(rel.latest) + '</strong> is out. '
+          + '<a href="' + escHtml((_addonRelease && (_addonRelease.zip || _addonRelease.url)) || '#')
+          + '" target="_blank" rel="noopener">Get it</a>, unzip over the old folder, '
+          + 'and <code>/reload</code>.</p>';
+  }
 
   if (status) html += '<p class="ledger-status"><i class="ph-fill ph-check-circle"></i>' + status + '</p>';
 

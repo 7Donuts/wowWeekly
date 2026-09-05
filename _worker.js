@@ -1112,6 +1112,68 @@ async function handleResetTime(request, env) {
   return Response.json(result);
 }
 
+/* The current Party Ledger release.
+ *
+ * The site tells members to install an addon and, until now, never said where
+ * to get one or whether the copy they have is current. A manual install has
+ * no updater behind it, so "my boxes stopped ticking" and "the addon is eight
+ * versions old" look identical from the member's side.
+ *
+ * Proxied rather than fetched from the browser for two reasons: GitHub's
+ * unauthenticated rate limit is per IP and would be shared by everyone behind
+ * a corporate NAT, and a response cached here is one request per hour for the
+ * whole site rather than one per member per page load.
+ *
+ * Failure is not an error. A release lookup that does not answer should cost
+ * the member nothing, so this returns an empty object and the page simply
+ * does not mention an update.
+ */
+const ADDON_REPO      = '7Donuts/rateaplayer';
+const ADDON_CACHE_KEY = '__addon_release__';
+const ADDON_CACHE_MS  = 60 * 60 * 1000;
+
+async function handleGetAddon(request, env) {
+  if (env.USER_DATA) {
+    const cached = await env.USER_DATA.get(ADDON_CACHE_KEY, { type: 'json' });
+    if (cached && (Date.now() - (cached.at || 0)) < ADDON_CACHE_MS) {
+      return Response.json(cached.release || {});
+    }
+  }
+
+  let release = {};
+  try {
+    const res = await fetch(`https://api.github.com/repos/${ADDON_REPO}/releases/latest`, {
+      headers: {
+        // GitHub refuses an API request with no user agent.
+        'User-Agent': 'azeroth-agenda',
+        'Accept':     'application/vnd.github+json',
+      },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      // The zip, not the tarball GitHub attaches to every release: one is
+      // installable and the other is a source archive that unpacks to the
+      // wrong shape.
+      const asset = (data.assets || []).find(a => /\.zip$/i.test(a.name || ''));
+      release = {
+        version: String(data.tag_name || '').replace(/^v/, ''),
+        url:     data.html_url || '',
+        notes:   data.body || '',
+        at:      data.published_at || null,
+        zip:     asset ? asset.browser_download_url : '',
+      };
+    }
+  } catch (_) { /* an unreachable GitHub is not this page's problem */ }
+
+  // Cached even when empty, so an outage does not turn into a request per
+  // page load for as long as it lasts.
+  if (env.USER_DATA) {
+    await env.USER_DATA.put(ADDON_CACHE_KEY,
+      JSON.stringify({ at: Date.now(), release }), { expirationTtl: 86400 });
+  }
+  return Response.json(release);
+}
+
 async function handleItemIconsCache(request, env) {
   const raw = await env.USER_DATA.get('__item_icons__');
   return Response.json(raw ? JSON.parse(raw) : {});
@@ -1337,6 +1399,7 @@ export default {
     if (pathname === '/api/weeks'   && request.method === 'GET')  return handleGetWeeks(request, env);
     if (pathname === '/api/list'    && request.method === 'PUT')  return handlePutList(request, env);
     if (pathname === '/api/reset-time'        && request.method === 'GET')  return handleResetTime(request, env);
+    if (pathname === '/api/addon'             && request.method === 'GET')  return handleGetAddon(request, env);
     if (pathname === '/api/item-icons-cache'  && request.method === 'GET')  return handleItemIconsCache(request, env);
     if (pathname === '/api/item-icons'        && request.method === 'POST') return handleItemIcons(request, env);
     if (pathname === '/api/item-icons-by-id'  && request.method === 'POST') return handleItemIconsById(request, env);

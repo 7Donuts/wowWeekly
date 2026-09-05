@@ -1137,6 +1137,37 @@ body.light-mode .character-dossier.has-class-banner {
 
 .ledger-btns { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 4px; }
 
+/* Getting the addon in the first place, which this panel never covered. */
+.ledger-install {
+  margin: 10px 0 4px;
+  padding: 12px 14px;
+  background: var(--tint-row);
+  border: 1px solid var(--agenda-line);
+  border-radius: var(--r-sm);
+}
+.ledger-install ol { margin: 0; padding-left: 18px; }
+.ledger-install li {
+  margin-bottom: 6px;
+  color: var(--text-400);
+  font-family: var(--font-note);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ledger-install li:last-child { margin-bottom: 0; }
+.ledger-install code {
+  padding: 1px 4px;
+  color: var(--text-300);
+  background: rgba(255, 255, 255, .05);
+  border-radius: 3px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  word-break: break-all;
+}
+.ledger-install a.btn-primary { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+
+.ledger-update { display: flex; gap: 7px; align-items: flex-start; }
+.ledger-update i { flex: 0 0 auto; margin-top: 2px; color: #e0a34b; font-size: 14px; }
+
 /* The two-tier split: which source keeps each part of the list current. */
 .ledger-tiers { margin: 10px 0 0; padding: 0; list-style: none; }
 .ledger-tiers li {
