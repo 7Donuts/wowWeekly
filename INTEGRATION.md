@@ -243,6 +243,85 @@ Two consequences that are easy to get wrong, and both of which have been:
   proves which one a change meant, which is why both repos carry a checked-in
   fixture produced by the other (`tests/fixtures/`).
 
+## Two tiers, and which answers what
+
+There are two automatic sources and they answer different questions. Neither
+is a fallback for the other.
+
+**Battle.net (`/api/armory`, `/api/collections`, `/api/characters`).** Raid
+boss kills per difficulty, keystone runs this period, item level, spec, gear,
+PvP rating, mounts, toys, achievements, and the roster itself. Needs nothing
+installed and no reload, and refreshes whenever the member opens the page. It
+is silent for anyone not signed in to Battle.net, and it can only see what
+Blizzard chose to publish.
+
+**Party Ledger (the envelope below).** Delves, world content, currencies, and
+everything the ledger exists for: who you grouped with, what you thought of
+them, and anything measured through Details. Sees whatever the client sees,
+but only reaches the site through a file the game writes at a reload.
+
+Everything else is the member's to tick by hand, and most of the checklist is
+that. It is not a gap to be closed.
+
+### Neither side describes the other
+
+Each tier reports the task ids it can answer, in its own payload, under
+`covers`. The site subtracts one from the other to decide what to tell the
+member. Nothing on the site carries a list of what the addon can do, and
+nothing in the addon carries a list of what the API can do, because either
+list would be wrong the first time the opposite side gained a row.
+
+`/api/armory` builds its declaration from the same maps that do the ticking,
+so a raid added to `RAID_INSTANCE_MAP` is covered the moment it is mapped. The
+addon builds its from `TaskMap:KnownTasks()`. Coverage does not depend on
+anything having happened: a member who has not entered the raid is still
+covered for it, because the endpoint would report the kills if there were any.
+
+### The overlap, and who drops it
+
+Both tiers see raid kills and keystones. The addon used to report all of them
+in every envelope, which was a second copy of what the site already had from a
+source that needed nothing of the member.
+
+The site now marks them on the way out, as the `settled` field appended to
+each `t` record in the AGL document (version 2). The addon reads the marks and
+omits those objectives from its envelope. Two guards make that safe to do:
+
+- **Only for the current week.** A list is a snapshot and the member may hold
+  one from before the reset. Last week's "already answered" says nothing about
+  this week's lockout.
+- **Only where the site says done, never merely covered.** A task the API
+  could answer but has not is still the addon's to report, because the API may
+  simply be lagging. What is suppressed is only ever a duplicate, never an
+  observation the site lacks.
+
+Boss kills are never dropped, only task-level objectives: the site's raid
+coverage is per task, and a task it counts as done can still be missing
+individual kills the addon saw while Blizzard catches up.
+
+### Whether the Battle.net tier is really the faster one
+
+Treat this as unmeasured. Several profile endpoints refresh lazily rather than
+live, and an endpoint that waits on the character logging out is no fresher
+than the addon's own file, which would put its tasks on the wrong side of the
+split. `/api/armory` therefore returns a `freshness` block carrying each
+sub-request's `Last-Modified` age and the character's `last_login_timestamp`,
+and the browser keeps a rolling sample of it (`blizzardLagReport()` in
+`js/armory.js`, rendered under Diagnostics in the addon modal). An endpoint
+whose lag tracks time-since-logout rather than staying flat is waiting on the
+logout, and its tasks should move.
+
+### Completed quests: read, do not tick
+
+`/quests/completed` is fetched and surfaced, and deliberately wired to
+nothing. It returns bare quest ids with no completion timestamp, so "done this
+reset" and "done last year" are the same answer, which is the one distinction
+this site is built on. It is separately documented as returning an incomplete
+list, because a quest that 404s in the data API is dropped from the profile
+result. The ids are there to be verified against a completion somebody watched
+happen, which is the posture `TaskMap.lua` already takes: an unverified quest
+id stays unmapped, because an invented one is a silently wrong checkbox.
+
 ## The addon bridge
 
 WoW addons cannot make HTTP requests. There are exactly three ways data leaves
@@ -332,16 +411,16 @@ mode on a truncated paste is an error inside a recursive descent, at a call
 depth that tells the member nothing. A split on tabs cannot fail that way.
 
 ```
-AGENDALIST	1
+AGENDALIST	2
 w	2026-09-01
 g	1756900000
 h	agenda.7donuts.dev
 s	vault	1	Great Vault
 s	mythicplus	2	Mythic+ Dungeons
 c	kaelthas-area52	Kaelthas	area-52
-t	v2	vault	weekly	6	bosses	0	4	Fill the Raid row: 2 / 4 / 6 boss kills
-t	v1	vault	weekly	0		1	0	Open your Great Vault
-t	m1	mythicplus	weekly	8	runs	0	0	Complete 8 Mythic+ keys
+t	v2	vault	weekly	6	bosses	0	4	Fill the Raid row: 2 / 4 / 6 boss kills	0
+t	v1	vault	weekly	0		1	0	Open your Great Vault	0
+t	m1	mythicplus	weekly	8	runs	1	8	Complete 8 Mythic+ keys	1
 ```
 
 | Record | Fields |
@@ -352,7 +431,15 @@ t	m1	mythicplus	weekly	8	runs	0	0	Complete 8 Mythic+ keys
 | `h` | the host that produced it |
 | `s` | section id, priority, title |
 | `c` | character key, display name, realm slug |
-| `t` | task id, section id, cadence, goal max, goal label, done (0/1), value, name |
+| `t` | task id, section id, cadence, goal max, goal label, done (0/1), value, name, settled (0/1) |
+
+`settled` is document version 2. It means the Battle.net tier has already
+answered this task for this character, so the addon need not report it back;
+see "The overlap, and who drops it". It is set only where the site has the
+task **done** from that tier, never merely where the tier covers it, and the
+addon additionally refuses to believe it on a list from another week. A
+version 1 document has no such field and every task reads as unsettled, which
+is what the addon did before it existed.
 
 Rules:
 

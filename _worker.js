@@ -261,6 +261,66 @@ const RAID_BOSS_ID_MAP = {
 
 const RAID_DIFF_MAP = { LFR: 'lfr', NORMAL: 'n', HEROIC: 'h', MYTHIC: 'm' };
 
+/* The counter tasks this endpoint set can answer on its own.
+
+   Derived from the mythic keystone profile, which reports every run in the
+   current period. Declared rather than inferred from the response, because
+   "the API can answer this" and "the API says you have done this" are
+   different claims and only the first one belongs in a coverage list: a
+   member with zero keys this week is still fully covered for m1.
+
+   Keep this in step with armoryAutoTrackMythicPlus in js/armory.js, which is
+   what actually ticks them. This is the declaration; that is the doing. */
+const ARMORY_COUNTER_TASKS = ['m1', 'm4', 'v3'];
+
+/* Which task ids this tier can answer, for a given character.
+
+   The point of computing it here rather than on the page is that it cannot
+   drift: it is built from the same maps that do the ticking, so a raid added
+   to RAID_INSTANCE_MAP is covered the moment it is mapped, without a second
+   list on the client agreeing to say so.
+
+   Raid coverage is per difficulty and does not depend on anything having
+   been killed. A member who has not set foot in the raid is still covered
+   for it: the endpoint would report the kills if there were any, and that is
+   what coverage means. Reporting it only once something died would tell the
+   member they need the addon for a raid they simply have not run yet. */
+function armoryCoverage(raidsData, bnetStr) {
+  const covers = new Set(ARMORY_COUNTER_TASKS);
+  for (const exp of (raidsData?.expansions || [])) {
+    for (const inst of (exp.instances || [])) {
+      const prefix = RAID_INSTANCE_MAP[bnetStr(inst.instance?.name)];
+      if (!prefix) continue;
+      for (const mode of (inst.modes || [])) {
+        const diff = RAID_DIFF_MAP[mode.difficulty?.type];
+        if (diff) covers.add(`${prefix}_${diff}`);
+      }
+    }
+  }
+  return [...covers].sort();
+}
+
+/* How far behind the game each endpoint is running.
+
+   "Immediate" is the whole premise of putting the Battle.net tier in front of
+   the addon, and it is a claim nobody here has measured. Several profile
+   endpoints refresh lazily rather than live, and at least some appear to be
+   tied to the character logging out, which would make them no fresher than
+   the addon's own file and would change which tier should answer what.
+
+   So: record it rather than assume it. Last-Modified is the server's own
+   statement about when it last recomputed the resource, and last_login is
+   the event most likely to be what it waits for. Both travel to the browser,
+   which keeps a rolling sample. Costs one header read per response. */
+function endpointAge(res, now) {
+  if (!res || !res.ok) return null;
+  const header = res.headers.get('last-modified') || res.headers.get('date');
+  if (!header) return null;
+  const at = Date.parse(header);
+  if (Number.isNaN(at)) return null;
+  return { at, ageSeconds: Math.max(0, Math.round((now - at) / 1000)) };
+}
+
 // ── Armory sync via Battle.net ────────────────────────────────────────────────
 
 async function handleGetArmory(request, env) {
@@ -289,7 +349,7 @@ async function handleGetArmory(request, env) {
   };
   const charPath = `${apiBase}/profile/wow/character/${encodeURIComponent(realm)}/${encodeURIComponent(char)}`;
 
-  const [profileRes, keystoneRes, equipmentRes, raidsRes, mediaRes, pvp2v2Res, pvp3v3Res, pvpRbgRes] = await Promise.all([
+  const [profileRes, keystoneRes, equipmentRes, raidsRes, mediaRes, pvp2v2Res, pvp3v3Res, pvpRbgRes, questsRes] = await Promise.all([
     fetch(`${charPath}?locale=en_US`,                              { headers }),
     fetch(`${charPath}/mythic-keystone-profile?locale=en_US`,      { headers }),
     fetch(`${charPath}/equipment?locale=en_US`,                    { headers }),
@@ -298,6 +358,8 @@ async function handleGetArmory(request, env) {
     fetch(`${charPath}/pvp-bracket/2v2?locale=en_US`,               { headers }),
     fetch(`${charPath}/pvp-bracket/3v3?locale=en_US`,               { headers }),
     fetch(`${charPath}/pvp-bracket/rbg?locale=en_US`,               { headers }),
+    // Diagnostic only. See questsCompleted below for why nothing ticks off it.
+    fetch(`${charPath}/quests/completed?locale=en_US`,              { headers }),
   ]);
 
   if (profileRes.status === 404) return new Response('Character not found', { status: 404 });
@@ -360,8 +422,12 @@ async function handleGetArmory(request, env) {
   // ── Raid boss kills this reset ────────────────────────────────────────────
   // raidKills: { 'vs_h': { averzian: true, vorasius: true, ... }, 'rd_n': { chimaerus: true }, ... }
   let raidKills = {};
+  // Held outside the block so the coverage declaration below can be built
+  // from the same document, rather than from a second list that agrees with
+  // it today and stops agreeing the next time a raid is added.
+  let raidsData = null;
   if (raidsRes.ok) {
-    const raidsData  = await raidsRes.json();
+    raidsData        = await raidsRes.json();
     const weekReset  = getWowWeekResetMs(anchor);
     for (const exp of (raidsData.expansions || [])) {
       for (const inst of (exp.instances || [])) {
@@ -406,6 +472,32 @@ async function handleGetArmory(request, env) {
     } catch (_) {}
   }
 
+  /* Completed quest ids, carried for mapping and for nothing else.
+
+     This endpoint cannot answer a weekly task and it is important to say why
+     rather than leave somebody to wire it up later and find out. It returns
+     bare quest ids with no completion timestamp, so "done this reset" and
+     "done in March" are the same answer, which is the one distinction this
+     whole site is built on. It is separately documented as returning an
+     incomplete list, because a quest that 404s in the data API is dropped
+     from the profile result.
+
+     So it goes no further than a diagnostic: the ids are here to be read and
+     verified against real one-off completions, the same posture the addon
+     takes in TaskMap.lua, where an unverified quest id is left unmapped
+     because an invented one is a silently wrong checkbox. Nothing ticks off
+     this until an id has been confirmed by somebody who watched it happen. */
+  let questsCompleted = null;
+  if (questsRes.ok) {
+    try {
+      const quests = await questsRes.json();
+      const ids = (quests.quests || []).map(q => q.id).filter(Boolean);
+      questsCompleted = { count: ids.length, ids: ids.slice(0, 2000) };
+    } catch (_) {}
+  }
+
+  const now = Date.now();
+
   return Response.json({
     ilvl:         profile.equipped_item_level || profile.average_item_level || 0,
     spec:         bnetStr(profile.active_spec?.name),
@@ -422,7 +514,23 @@ async function handleGetArmory(request, env) {
     raidKills,
     portrait,
     renderUrl,
-    lastSync:     Date.now(),
+    // Which tasks this tier answers, whether or not it found anything for
+    // them. The page reads this to tell the member which of their list needs
+    // the addon and which does not, without keeping its own idea of what the
+    // Battle.net API is capable of.
+    covers:       armoryCoverage(raidsData, bnetStr),
+    questsCompleted,
+    // See endpointAge. This is the evidence for whether the Battle.net tier
+    // deserves to be called the immediate one.
+    freshness: {
+      at:        now,
+      lastLogin: profile.last_login_timestamp || null,
+      profile:   endpointAge(profileRes,  now),
+      keystone:  endpointAge(keystoneRes, now),
+      raids:     endpointAge(raidsRes,    now),
+      equipment: endpointAge(equipmentRes, now),
+    },
+    lastSync:     now,
   });
 }
 

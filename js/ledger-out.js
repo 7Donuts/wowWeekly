@@ -52,8 +52,12 @@
    confused for each other again.
 ------------------------------------------------------------------------- */
 
-const AGENDA_LIST_DOC     = 'AGENDALIST';
-const AGENDA_LIST_VERSION = 1;
+const AGENDA_LIST_DOC = 'AGENDALIST';
+/* 2 appends `settled` to the `t` record: this task is already answered for
+   this character by the Battle.net tier, so the addon need not report it
+   back. A version 1 reader stops before that field and behaves exactly as it
+   did, which is what appending rather than inserting buys. */
+const AGENDA_LIST_VERSION = 2;
 
 /* Tabs separate fields and newlines separate records, so neither can appear
    in a value. Task names from data-tasks.js contain neither, but custom tasks
@@ -138,6 +142,18 @@ function agendaListTasksFor(charName) {
     return ra - rb;
   };
 
+  /* Which tasks Battle.net has already settled for this character.
+
+     Carried to the addon so it can stop re-reporting them. The test is
+     deliberately "covered AND already done", not "covered": a task the API
+     could answer but has not is still one the addon should report on, and
+     dropping it on coverage alone would lose a delve the member ran on a
+     week the armory happened to be lagging. What gets suppressed is a
+     duplicate of something the site already holds, never an observation only
+     the addon has. */
+  const answered = (typeof blizzardCoverage === 'function')
+    ? blizzardCoverage(charName) : new Set();
+
   const row = (task, id, sectionId) => ({
     id,
     section: sectionId,
@@ -147,6 +163,9 @@ function agendaListTasksFor(charName) {
     done: !!done[id],
     value: goals[id] || 0,
     name: task.name,
+    // Custom tasks are never in the API's coverage, so this is false for them
+    // by construction rather than by exclusion.
+    settled: !!done[id] && answered.has(id),
   });
 
   const groups = [];
@@ -240,7 +259,8 @@ function buildAgendaListText(charNames) {
       for (const r of g.rows) {
         lines.push(['t', agendaListField(r.id), agendaListField(r.section),
                     agendaListField(r.cadence), r.max, agendaListField(r.label),
-                    r.done ? 1 : 0, r.value, agendaListField(r.name)].join('\t'));
+                    r.done ? 1 : 0, r.value, agendaListField(r.name),
+                    r.settled ? 1 : 0].join('\t'));
         taskCount++;
       }
     }

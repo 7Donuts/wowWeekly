@@ -1137,6 +1137,26 @@ body.light-mode .character-dossier.has-class-banner {
 
 .ledger-btns { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 4px; }
 
+/* The two-tier split: which source keeps each part of the list current. */
+.ledger-tiers { margin: 10px 0 0; padding: 0; list-style: none; }
+.ledger-tiers li {
+  display: flex;
+  gap: 9px;
+  padding: 7px 0;
+  color: var(--text-500);
+  font-family: var(--font-note);
+  font-size: 13px;
+  line-height: 1.45;
+  border-top: 1px solid var(--agenda-line);
+}
+.ledger-tiers li:first-child { border-top: 0; }
+.ledger-tiers i { flex: 0 0 auto; margin-top: 2px; font-size: 14px; }
+.ledger-tiers strong { color: var(--text-200); font-weight: 700; }
+.ledger-tiers .tier-blizzard i { color: #61c26b; }
+.ledger-tiers .tier-addon i    { color: var(--arc-400, #8aa8ff); }
+.ledger-tiers .tier-manual i   { color: var(--text-500); }
+.ledger-tiers .tier-unknown i  { color: #e0a34b; }
+
 /* Characters the addon reported that the roster does not have. */
 .ledger-unmatched { display: flex; gap: 7px; margin-top: 12px; color: var(--text-400); }
 .ledger-unmatched i { flex: 0 0 auto; margin-top: 3px; color: #e0a34b; }

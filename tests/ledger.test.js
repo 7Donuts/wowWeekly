@@ -23,6 +23,8 @@ const EXPOSE = [
   'loadLedgerState', 'saveLedgerState',
   'ledgerAddCharacter', 'ledgerReportIsNews', 'ledgerButtonState',
   'loadCharRealm', 'realmToSlug',
+  'taskCoverage', 'coverageSummary', 'blizzardCoverage', 'addonCoverage',
+  'saveArmoryData',
 ];
 
 function setup(opts = {}) {
@@ -246,6 +248,94 @@ test('a quiet sync only speaks when the import changed something', () => {
   // A payload from before the reset is worth saying out loud even though it
   // ticked nothing: it is the reason nothing was ticked.
   assert.equal(ctx.ledgerReportIsNews({ tasks: 0, bosses: 0, collections: 0, progressed: 0, staleWeek: true, unmatched: [] }), true);
+});
+
+/* ── Which tier answers which task ──────────────────────────────────────── */
+
+const CHAR = 'Kaelthas@area-52';
+
+function starList(ctx, ids) {
+  ctx.localStorage.setItem('wow_mn_yourlist_' + CHAR, JSON.stringify(ids));
+}
+
+test('each tier declares its own coverage and the site subtracts', () => {
+  /* The point of this arrangement: neither side carries a list of what the
+     other can do. A raid mapped in the worker is covered the moment it is
+     mapped, and a row added to TaskMap.lua the moment the addon reports it,
+     with nothing on the opposite side agreeing to say so. */
+  const ctx = setup();
+  starList(ctx, ['vab_h', 'm1', 'd1', 'v1']);
+
+  // Nothing has told us anything yet.
+  let cov = ctx.taskCoverage(CHAR);
+  assert.equal(cov.counts.unknown, 4, 'with no declarations, nothing is claimed');
+  assert.equal(cov.counts.manual, 0,
+    'and nothing is written off as manual: "nobody can do this" and "you have not '
+    + 'installed the thing that would" are different answers');
+
+  // The Battle.net tier reports what it answers for this character.
+  ctx.saveArmoryData(CHAR, { covers: ['vab_h', 'vab_n', 'm1', 'm4', 'v3'] });
+  cov = ctx.taskCoverage(CHAR);
+  assert.equal(cov.by.vab_h, 'blizzard');
+  assert.equal(cov.by.m1, 'blizzard');
+  assert.equal(cov.counts.blizzard, 2);
+
+  // The addon reports its own, in an envelope.
+  ctx.applyLedgerEnvelope(envelope({
+    week: ctx.getWeekKey(), characters: {}, covers: ['m1', 'd1'],
+  }));
+  cov = ctx.taskCoverage(CHAR);
+  assert.equal(cov.by.d1, 'addon', 'the addon answers what Blizzard does not publish');
+  assert.equal(cov.by.m1, 'blizzard',
+    'and where both cover a task, the tier that needs nothing of the member wins');
+  assert.equal(cov.by.v1, 'manual',
+    'a task neither covers is the member\'s own, now that we can tell');
+  assert.deepEqual(cov.counts, { blizzard: 2, addon: 1, manual: 1, unknown: 0, total: 4 });
+});
+
+test('an envelope without a coverage list does not erase the one we have', () => {
+  // An older addon says nothing about what it covers. Treating silence as
+  // "covers nothing" would move every addon row to "yours to tick" and tell
+  // the member to do by hand what is already being done for them.
+  const ctx = setup();
+  starList(ctx, ['d1']);
+  ctx.applyLedgerEnvelope(envelope({ week: ctx.getWeekKey(), characters: {}, covers: ['d1'] }));
+  assert.equal(ctx.taskCoverage(CHAR).by.d1, 'addon');
+
+  ctx.applyLedgerEnvelope(envelope({ week: ctx.getWeekKey(), characters: {} }));
+  assert.equal(ctx.taskCoverage(CHAR).by.d1, 'addon', 'silence is not a retraction');
+});
+
+test('collections count as Battle.net coverage without being declared per character', () => {
+  /* Mounts and toys come from /api/collections, which is account-wide and is
+     not the per-character armory call, so they are not in that response's
+     declaration. The rule is a property of the task rather than of the
+     endpoint: a task satisfied by owning something is one the profile API
+     can see. */
+  const ctx = setup();
+  const collectable = ctx.SECTIONS.flatMap(s => s.tasks).find(t => t.collectable || t.mountName);
+  assert.ok(collectable, 'the checklist has at least one collectable task to test with');
+
+  starList(ctx, [collectable.id]);
+  assert.equal(ctx.taskCoverage(CHAR).by[collectable.id], 'unknown',
+    'not until Battle.net has answered for this character at all');
+
+  ctx.saveArmoryData(CHAR, { covers: ['m1'] });
+  assert.equal(ctx.taskCoverage(CHAR).by[collectable.id], 'blizzard');
+});
+
+test('a hidden task is not counted in either tier', () => {
+  // Hiding a task is the member saying they are not doing it. Counting it in
+  // "3 yours to tick" is telling them about work they already declined.
+  const ctx = setup();
+  starList(ctx, ['v1', 'v2']);
+  ctx.localStorage.setItem('wow_mn_hidden_' + CHAR, JSON.stringify({ v2: true }));
+  assert.equal(ctx.taskCoverage(CHAR).counts.total, 1);
+});
+
+test('the coverage summary says nothing when there is no list', () => {
+  const ctx = setup();
+  assert.equal(ctx.coverageSummary(CHAR), null);
 });
 
 test('the account button says how old the game data is, not how old the read is', () => {

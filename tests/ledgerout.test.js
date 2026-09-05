@@ -16,7 +16,7 @@ const EXPOSE = [
   'getWeekKey', 'buildAgendaListText', 'encodeAgendaList', 'agendaListSignature',
   'agendaListField', 'agendaListStatus', 'agendaListCharacters',
   'agendaListTasksFor', 'noteAgendaListInGame', 'noteAgendaListHandedOver',
-  'loadLedgerState',
+  'loadLedgerState', 'AGENDA_LIST_VERSION', 'saveArmoryData', 'applyAutoTask',
   'applyLedgerEnvelope', 'loadAutoSrc', 'ledgerCharKey', 'SECTIONS',
 ];
 
@@ -53,7 +53,7 @@ test('the list names itself, its week and its origin', () => {
   const { text } = ctx.buildAgendaListText();
 
   const lines = text.split('\n');
-  assert.equal(lines[0], 'AGENDALIST\t1', 'the first record is the document header');
+  assert.equal(lines[0], 'AGENDALIST\t2', 'the first record is the document header');
   assert.equal(records(text, 'w')[0][1], ctx.getWeekKey());
   assert.ok(Number(records(text, 'g')[0][1]) > 0, 'a generated timestamp');
   assert.equal(records(text, 'h')[0][1], 'agenda.7donuts.dev');
@@ -194,7 +194,7 @@ test('a name cannot break the record format or the game\'s text escaping', () =>
   const { text } = ctx.buildAgendaListText();
   const rows = records(text, 't');
   assert.equal(rows.length, 1, 'still one record');
-  assert.equal(rows[0].length, 9, 'still nine fields');
+  assert.equal(rows[0].length, 10, 'still ten fields');
   assert.ok(!rows[0][8].includes('|'), 'the pipe is gone');
   assert.equal(rows[0][8], 'Tab here and /cffff0000red/r and a newline');
 });
@@ -281,6 +281,65 @@ test('the site can tell the member their in-game list has moved on', () => {
   const stale = ctx.agendaListStatus();
   assert.equal(stale.state, 'stale');
   assert.match(stale.text, /Copy it again/);
+});
+
+/* ── Telling the addon what Battle.net already answered ─────────────────── */
+
+test('a task Battle.net has already answered is marked on the way out', () => {
+  /* The addon sees raid kills and keystones too, and reported all of them
+     back in every envelope: a second copy of what the site already had from
+     a source that needed nothing installed and no reload. Marking them here
+     is what lets the addon stop. */
+  const ctx = setup();
+  starred(ctx, ['m1', 'v3']);
+
+  // Covered by Battle.net, and it has actually answered m1.
+  ctx.saveArmoryData(CHAR, { covers: ['m1', 'v3'] });
+  ctx.applyAutoTask(CHAR, 'm1', { done: true }, 'armory');
+
+  const rows = ctx.buildAgendaListText().text.split('\n').filter(l => l.startsWith('t\t'));
+  const byId = {};
+  for (const line of rows) { const f = line.split('\t'); byId[f[1]] = f; }
+
+  assert.equal(byId.m1[9], '1', 'answered, so the addon need not report it');
+  assert.equal(byId.v3[9], '0',
+    'covered but not answered: the API may simply be lagging, and dropping it '
+    + 'would lose a real observation');
+});
+
+test('coverage alone never marks a task settled', () => {
+  // The distinction the whole optimisation rests on. What gets suppressed is
+  // a duplicate of something the site holds, never an observation only the
+  // addon has.
+  const ctx = setup();
+  starred(ctx, ['m1']);
+  ctx.saveArmoryData(CHAR, { covers: ['m1'] });
+
+  const line = ctx.buildAgendaListText().text.split('\n').find(l => l.startsWith('t\tm1\t'));
+  assert.equal(line.split('\t')[9], '0');
+});
+
+test('a task the addon ticked is not marked back at the addon', () => {
+  /* Done, but done by the addon rather than by Battle.net. Marking it would
+     tell the addon to stop reporting the only thing keeping it ticked, and
+     the box would fall off the next time the week rolled. */
+  const ctx = setup();
+  starred(ctx, ['d1']);
+  ctx.saveArmoryData(CHAR, { covers: ['m1'] });   // d1 is not covered
+  ctx.applyAutoTask(CHAR, 'd1', { done: true }, 'addon');
+
+  const line = ctx.buildAgendaListText().text.split('\n').find(l => l.startsWith('t\td1\t'));
+  assert.equal(line.split('\t')[9], '0');
+});
+
+test('the document version says it carries the field', () => {
+  // Appended rather than inserted, so a version 1 reader stops early and is
+  // correct rather than merely tolerated.
+  const ctx = setup();
+  starred(ctx, ['v1']);
+  assert.equal(ctx.AGENDA_LIST_VERSION, 2);
+  const header = ctx.buildAgendaListText().text.split('\n')[0];
+  assert.equal(header, 'AGENDALIST\t2');
 });
 
 test('a list just copied does not read as out of date', () => {

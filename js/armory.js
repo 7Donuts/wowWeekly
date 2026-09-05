@@ -29,6 +29,7 @@ async function armorySync(charName) {
 
     const armory = await res.json();
     saveArmoryData(charName, armory);
+    recordBlizzardLag(charName, armory.freshness);
 
     armoryAutoCheckBis(charName);
     armoryAutoTrackMythicPlus(charName);
@@ -89,6 +90,7 @@ async function autoSyncArmory() {
 
       const armory = await res.json();
       saveArmoryData(charName, armory);
+      recordBlizzardLag(charName, armory.freshness);
       armoryAutoCheckBis(charName);
       armoryAutoTrackMythicPlus(charName);
       armoryAutoCheckRaidBosses(charName);
@@ -113,6 +115,78 @@ async function autoSyncArmory() {
     if (typeof renderClassLinksBar === 'function') renderClassLinksBar();
     if (typeof render           === 'function') render();
   }
+}
+
+/* -------------------------------------------------------------------------
+   How far behind the game the Battle.net tier actually runs
+
+   Putting this tier in front of the addon rests on a claim nobody here has
+   measured: that it answers sooner. Several profile endpoints refresh lazily
+   rather than live, and at least some appear to wait on the character logging
+   out, which would make them no fresher than the addon's own file and would
+   change which tier should answer what.
+
+   So rather than assume it, sample it. The worker reads each response's
+   Last-Modified and the character's last_login_timestamp; this keeps a
+   rolling window of those, per endpoint, so the question can be answered from
+   real observations instead of from anybody's recollection of the docs.
+
+   Read it with blizzardLagReport(), which is also what the diagnostics block
+   in the addon modal renders. Bounded so it cannot grow without limit in a
+   member's localStorage.
+------------------------------------------------------------------------- */
+
+const _LAG_KEY     = 'wow_mn_bnet_lag';
+const _LAG_SAMPLES = 40;
+
+function recordBlizzardLag(charName, freshness) {
+  if (!freshness) return;
+  let log;
+  try { log = JSON.parse(localStorage.getItem(_LAG_KEY) || '[]'); } catch (_) { log = []; }
+  if (!Array.isArray(log)) log = [];
+
+  const sample = { char: charName, at: freshness.at, lastLogin: freshness.lastLogin || null };
+  for (const key of ['profile', 'keystone', 'raids', 'equipment']) {
+    const seen = freshness[key];
+    if (seen && typeof seen.ageSeconds === 'number') sample[key] = seen.ageSeconds;
+  }
+
+  log.push(sample);
+  // Newest kept. An old sample says nothing about how the API behaves today.
+  while (log.length > _LAG_SAMPLES) log.shift();
+  try { localStorage.setItem(_LAG_KEY, JSON.stringify(log)); } catch (_) {}
+}
+
+/* Median rather than mean, per endpoint.
+
+   One sample taken while Blizzard was having a bad afternoon should not
+   decide an architecture, and the distribution here is the kind with a long
+   right tail. Median plus worst gives both the usual case and the one that
+   would bite. */
+function blizzardLagReport() {
+  let log;
+  try { log = JSON.parse(localStorage.getItem(_LAG_KEY) || '[]'); } catch (_) { return null; }
+  if (!Array.isArray(log) || !log.length) return null;
+
+  const out = { samples: log.length, endpoints: {} };
+  for (const key of ['profile', 'keystone', 'raids', 'equipment']) {
+    const values = log.map((s) => s[key]).filter((v) => typeof v === 'number').sort((a, b) => a - b);
+    if (!values.length) continue;
+    out.endpoints[key] = {
+      medianSeconds: values[Math.floor(values.length / 2)],
+      worstSeconds:  values[values.length - 1],
+      samples:       values.length,
+    };
+  }
+
+  // How long ago the character last logged out, on the most recent sample.
+  // If an endpoint's lag tracks this rather than staying flat, the endpoint
+  // is waiting on the logout and is no fresher than the addon's file.
+  const last = log[log.length - 1];
+  if (last && last.lastLogin) {
+    out.sinceLastLogin = Math.round((last.at - last.lastLogin) / 1000);
+  }
+  return out;
 }
 
 /* ── CLASS MAP ── */

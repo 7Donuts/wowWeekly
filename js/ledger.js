@@ -368,9 +368,123 @@ function applyLedgerEnvelope(env) {
   // merged: a character that matched this time is not still unmatched, and a
   // stale entry would offer to add a roster member who is already there.
   state.unmatched = report.unmatched;
+  // What the addon says it can tick, as opposed to what it just did. Kept
+  // when an envelope omits it, so an older addon does not erase the answer.
+  if (Array.isArray(env.covers)) state.covers = env.covers;
   saveLedgerState(state);
 
   return report;
+}
+
+/* -------------------------------------------------------------------------
+   Which tier answers which task
+
+   There are two automatic sources and they answer different questions.
+
+     Battle.net    raid kills, keys, gear, collections, the roster itself.
+                   Needs nothing installed and no reload, but it can only
+                   see what Blizzard chose to expose, and it is silent for
+                   anyone not signed in.
+
+     Party Ledger  delves, world content, currencies, and everything the
+                   ledger is actually for. Sees whatever the client sees,
+                   but only reaches the site through a file the game writes
+                   at a reload.
+
+   Everything else is the member's to tick by hand, and there is nothing
+   wrong with that: most of the checklist is things only a person can confirm.
+   What was wrong was that none of this was visible, so a box that did not
+   tick looked the same whichever of the three reasons applied, and the addon
+   looked mandatory for a list it is mostly not needed for.
+
+   Neither tier is described here. Each reports what it covers in its own
+   payload (`covers`), because a list on this side of what the addon can do
+   would be wrong the first time TaskMap.lua gains a row, and the same in
+   reverse. This only subtracts one from the other.
+------------------------------------------------------------------------- */
+
+/* Task ids the Battle.net tier says it answers, for one character.
+
+   Per character, because raid coverage comes out of that character's own
+   encounters document. A character never synced has no declaration and is
+   correctly reported as covered by nothing: we do not know yet. */
+function blizzardCoverage(charName) {
+  const armory = (typeof loadArmoryData === 'function') ? loadArmoryData(charName) : null;
+  const covers = new Set(armory && Array.isArray(armory.covers) ? armory.covers : []);
+
+  // Collections are account-wide and are answered by /api/collections rather
+  // than by the per-character armory call, so they are added here rather than
+  // declared by that response. The rule is a property of the task: a task
+  // satisfied by owning something is one the profile API can see.
+  if (covers.size && typeof SECTIONS !== 'undefined') {
+    for (const t of SECTIONS.flatMap((s) => s.tasks)) {
+      if (t.collectable || t.mountName) covers.add(t.id);
+    }
+  }
+  return covers;
+}
+
+/* Task ids the addon says it can tick, from the last envelope it sent. */
+function addonCoverage() {
+  const state = loadLedgerState();
+  return new Set(Array.isArray(state.covers) ? state.covers : []);
+}
+
+/* Per-task provenance for one character's starred list.
+
+   Returns counts and the per-task answer, so a caller can render either a
+   summary sentence or a badge on a row. "blizzard" wins over "addon" where
+   both cover a task, because it is the tier that needs nothing of the member.
+
+   `addonKnown` is false when no envelope has ever arrived. In that state
+   every uncovered task is reported as `unknown` rather than `manual`: we
+   cannot tell "the addon would do this for you" from "nobody can do this",
+   and guessing the second would talk a member out of installing the thing
+   that would have helped. */
+function taskCoverage(charName) {
+  charName = charName || currentChar;
+  const blizzard = blizzardCoverage(charName);
+  const addon    = addonCoverage();
+  const addonKnown = addon.size > 0;
+
+  const list = JSON.parse(localStorage.getItem('wow_mn_yourlist_' + charName) || '[]');
+  const hidden = JSON.parse(localStorage.getItem('wow_mn_hidden_' + charName) || '{}');
+
+  const by = {};
+  const counts = { blizzard: 0, addon: 0, manual: 0, unknown: 0, total: 0 };
+
+  for (const id of list) {
+    if (hidden[id]) continue;
+    counts.total++;
+    let tier;
+    if (blizzard.has(id))      tier = 'blizzard';
+    else if (addon.has(id))    tier = 'addon';
+    else if (addonKnown)       tier = 'manual';
+    else                       tier = 'unknown';
+    by[id] = tier;
+    counts[tier]++;
+  }
+
+  return { by, counts, addonKnown, blizzardKnown: blizzard.size > 0 };
+}
+
+/* The summary sentence, or null when there is nothing worth saying.
+
+   Deliberately not four numbers in a row. The member is deciding one thing,
+   which is whether they need to go and do something, so the sentence leads
+   with how much is already handled for them. */
+function coverageSummary(charName) {
+  const cov = taskCoverage(charName);
+  if (!cov.counts.total) return null;
+
+  const c = cov.counts;
+  const parts = [];
+  if (c.blizzard) parts.push(c.blizzard + ' live from Battle.net');
+  if (c.addon)    parts.push(c.addon + ' from the addon');
+  if (c.manual)   parts.push(c.manual + ' yours to tick');
+  if (c.unknown)  parts.push(c.unknown + ' unknown until the addon syncs once');
+
+  return { ...cov, text: parts.join(', ') + '.' };
 }
 
 /* Add a character the envelope named and the roster does not have.
@@ -1007,6 +1121,44 @@ function renderLedgerModal() {
 
   let html = '';
 
+  /* ── What answers what ──────────────────────────────────────────────────
+     First, because it is the thing that decides whether the member needs to
+     read the rest of this at all. */
+  const cov = coverageSummary();
+  if (cov) {
+    html += '<div class="ledger-block ledger-coverage">';
+    html += '<h4>Your list, and what keeps it current</h4>';
+    html += '<p class="ledger-note">' + escHtml(cov.text) + '</p>';
+    html += '<ul class="ledger-tiers">';
+    html += '<li class="tier-blizzard"><i class="ph-fill ph-lightning"></i>'
+          + '<span><strong>' + cov.counts.blizzard + ' from Battle.net.</strong> '
+          + 'Raid kills, keys, gear and collections. Nothing to install and no reload: '
+          + 'this refreshes whenever you open the page.</span></li>';
+    html += '<li class="tier-addon"><i class="ph-fill ph-plug"></i>'
+          + '<span><strong>' + cov.counts.addon + ' from the addon.</strong> '
+          + 'Delves, world content and currencies, which Blizzard does not publish. '
+          + 'These move when the game writes its file, at a <code>/reload</code> or a logout.</span></li>';
+    if (cov.counts.manual) {
+      html += '<li class="tier-manual"><i class="ph ph-hand-pointing"></i>'
+            + '<span><strong>' + cov.counts.manual + ' yours to tick.</strong> '
+            + 'Nothing can confirm these from outside your own head, which is not a '
+            + 'gap to be closed.</span></li>';
+    }
+    if (cov.counts.unknown) {
+      html += '<li class="tier-unknown"><i class="ph ph-question"></i>'
+            + '<span><strong>' + cov.counts.unknown + ' not yet known.</strong> '
+            + 'The addon has not told us what it can tick. Sync once and this '
+            + 'splits into the two rows above.</span></li>';
+    }
+    html += '</ul>';
+    if (!cov.blizzardKnown) {
+      html += '<p class="ledger-note"><i class="ph-fill ph-warning"></i> '
+            + 'Not signed in to Battle.net, so none of the first row is running. '
+            + 'Connecting it is the fastest thing you can do here.</p>';
+    }
+    html += '</div>';
+  }
+
   /* ── Connect ── */
   html += '<div class="ledger-block">';
   html += '<h4>Party Ledger addon</h4>';
@@ -1133,7 +1285,79 @@ function renderLedgerModal() {
   }
   html += '</div>';
 
+  html += _diagnosticsBlock();
+
   el.innerHTML = html;
+}
+
+/* -------------------------------------------------------------------------
+   Diagnostics
+
+   Two things that are evidence rather than features, collapsed because
+   nobody needs them to use the site and somebody needs them to decide what
+   the site should do next.
+------------------------------------------------------------------------- */
+
+function _diagnosticsBlock() {
+  const lag = (typeof blizzardLagReport === 'function') ? blizzardLagReport() : null;
+  const armory = (typeof loadArmoryData === 'function') ? loadArmoryData(currentChar) : null;
+  const quests = armory && armory.questsCompleted;
+  if (!lag && !quests) return '';
+
+  let html = '<div class="ledger-block"><details class="ledger-paste">';
+  html += '<summary>Diagnostics</summary>';
+
+  if (lag) {
+    /* Whether the Battle.net tier deserves to be called the immediate one.
+       If an endpoint's lag tracks time-since-logout rather than staying flat,
+       it is waiting on the logout and is no fresher than the addon's file,
+       and that endpoint's tasks belong on the other side of the split. */
+    html += '<p class="ledger-note">How far behind each Battle.net endpoint is running, '
+          + 'over ' + lag.samples + ' sample' + (lag.samples === 1 ? '' : 's') + '. '
+          + 'An endpoint whose lag grows with time since logout is waiting on the logout, '
+          + 'and is no fresher than the addon file.</p>';
+    html += '<ul class="ledger-tiers">';
+    for (const [name, s] of Object.entries(lag.endpoints)) {
+      html += '<li><i class="ph ph-clock"></i><span><strong>' + escHtml(name) + '</strong> '
+            + 'median ' + _mins(s.medianSeconds) + ', worst ' + _mins(s.worstSeconds)
+            + ' (' + s.samples + ')</span></li>';
+    }
+    if (typeof lag.sinceLastLogin === 'number') {
+      html += '<li><i class="ph ph-sign-out"></i><span><strong>since logout</strong> '
+            + _mins(lag.sinceLastLogin) + ' at the last sample</span></li>';
+    }
+    html += '</ul>';
+  }
+
+  if (quests) {
+    /* Deliberately not wired to anything.
+
+       The completed-quests endpoint returns bare ids with no completion
+       timestamp, so "done this reset" and "done in March" are the same
+       answer, which is the one distinction this site is built on. It is also
+       documented as returning an incomplete list. So the ids are here to be
+       read and verified against a completion somebody actually watched
+       happen, which is the posture the addon takes in TaskMap.lua, where an
+       unverified quest id is left unmapped because an invented one is a
+       silently wrong checkbox. */
+    html += '<p class="ledger-note">' + quests.count + ' completed quest ids for '
+          + escHtml(charDisplayName(currentChar)) + '. Nothing ticks off these: the endpoint '
+          + 'carries no completion time, so it cannot tell this reset from last year, '
+          + 'and it is documented as returning an incomplete list. They are here to be '
+          + 'verified and mapped by hand.</p>';
+    html += '<textarea class="ledger-listout-box" rows="3" readonly>'
+          + escHtml((quests.ids || []).join(',')) + '</textarea>';
+  }
+
+  html += '</details></div>';
+  return html;
+}
+
+function _mins(seconds) {
+  if (typeof seconds !== 'number') return '?';
+  if (seconds < 90) return seconds + 's';
+  if (seconds < 5400) return Math.round(seconds / 60) + 'm';
+  return (seconds / 3600).toFixed(1) + 'h';
 }
 
 /* Add a character the last import could not match, then sync again so the
