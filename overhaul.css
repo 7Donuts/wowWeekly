@@ -1081,6 +1081,9 @@ body.light-mode .character-dossier.has-class-banner {
 .ledger-listout-current i { color: #61c26b; }
 .ledger-listout-stale i   { color: #e0a34b; }
 .ledger-listout-never i   { color: var(--text-500); }
+/* Handed over but not yet seen coming back. Deliberately not the warning
+   colour: nothing is wrong, the round trip is just still in flight. */
+.ledger-listout-pending i { color: var(--arc-400, #8aa8ff); }
 .ledger-listout-box {
   width: 100%;
   margin: 6px 0 0;
@@ -1133,6 +1136,17 @@ body.light-mode .character-dossier.has-class-banner {
 .ledger-limit i { flex: 0 0 auto; margin-top: 3px; color: var(--text-500); }
 
 .ledger-btns { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 4px; }
+
+/* Characters the addon reported that the roster does not have. */
+.ledger-unmatched { display: flex; gap: 7px; margin-top: 12px; color: var(--text-400); }
+.ledger-unmatched i { flex: 0 0 auto; margin-top: 3px; color: #e0a34b; }
+
+/* The account button carries the sync state, so it has to be able to say
+   something is out of date without shouting about it. */
+#btn-ledger[data-ledger-state="stale"] i,
+#btn-ledger[data-ledger-state="list-stale"] i { color: #e0a34b; }
+#btn-ledger[data-ledger-state="fresh"] i,
+#btn-ledger[data-ledger-state="synced"] i { color: #61c26b; }
 
 .ledger-paste { margin-top: 12px; }
 .ledger-paste summary {

@@ -21,6 +21,8 @@ const EXPOSE = [
   'applyLedgerCollections', 'ledgerCharKey', 'extractLedgerPayload',
   'ledgerMatchCharacter', 'loadLedgerRatings', 'ledgerStatusText',
   'loadLedgerState', 'saveLedgerState',
+  'ledgerAddCharacter', 'ledgerReportIsNews', 'ledgerButtonState',
+  'loadCharRealm', 'realmToSlug',
 ];
 
 function setup(opts = {}) {
@@ -191,7 +193,97 @@ test('a character the site does not track is reported, not silently dropped', ()
   });
   const report = ctx.applyLedgerEnvelope(env);
   assert.deepEqual(report.characters.map(c => c.name), ['Kaelthas@area-52']);
-  assert.deepEqual(report.unmatched, ['Stranger']);
+  // Name and realm both, because the modal offers to add the character and
+  // making the member retype a realm the envelope already carried is the
+  // reason this used to be a dead end.
+  assert.deepEqual(report.unmatched, [{ key: 'stranger-illidan', name: 'Stranger', realm: 'illidan' }]);
+  // Held across the import so the modal can render the offer later.
+  assert.deepEqual(ctx.loadLedgerState().unmatched, report.unmatched);
+});
+
+test('an unmatched character can be added to the roster with its realm', () => {
+  const ctx = setup();
+  const env = envelope({
+    week: ctx.getWeekKey(),
+    characters: {
+      'stranger-illidan': { name: 'Stranger', realm: 'Illidan', objectives: { m1: { done: true } }, bosses: {} },
+    },
+  });
+  ctx.applyLedgerEnvelope(env);
+
+  const id = ctx.ledgerAddCharacter('Stranger', 'Illidan');
+  assert.equal(id, 'Stranger@illidan');
+
+  const roster = JSON.parse(ctx.localStorage.getItem('wow_midnight_chars'));
+  assert.ok(roster.includes('Stranger@illidan'), 'the character is on the roster');
+  assert.equal(ctx.loadCharRealm('Stranger@illidan'), 'Illidan');
+
+  // Offered once. A character already added must stop being offered, or the
+  // modal keeps a button that would do nothing.
+  assert.deepEqual(ctx.loadLedgerState().unmatched, []);
+
+  // And the envelope now lands on it, which is the whole point of adding it.
+  const report = ctx.applyLedgerEnvelope(env);
+  assert.deepEqual(report.characters.map(c => c.name), ['Stranger@illidan']);
+  assert.deepEqual(report.unmatched, []);
+});
+
+test('adding a character the roster already holds does not duplicate it', () => {
+  const ctx = setup();
+  const before = JSON.parse(ctx.localStorage.getItem('wow_midnight_chars')).length;
+  ctx.ledgerAddCharacter('Kaelthas', 'area-52');
+  const after = JSON.parse(ctx.localStorage.getItem('wow_midnight_chars'));
+  assert.equal(after.length, before, 'no second entry for a character already there');
+});
+
+test('a quiet sync only speaks when the import changed something', () => {
+  const ctx = setup();
+  // Nothing ticked, nothing unmatched: a poll that found a file the game
+  // rewrote without the member having done anything new.
+  assert.equal(ctx.ledgerReportIsNews({ tasks: 0, bosses: 0, collections: 0, progressed: 0, unmatched: [] }), false);
+  assert.equal(ctx.ledgerReportIsNews({ tasks: 1, bosses: 0, collections: 0, progressed: 0, unmatched: [] }), true);
+  assert.equal(ctx.ledgerReportIsNews({ tasks: 0, bosses: 0, collections: 0, progressed: 0, unmatched: [{ name: 'X' }] }), true);
+  // A payload from before the reset is worth saying out loud even though it
+  // ticked nothing: it is the reason nothing was ticked.
+  assert.equal(ctx.ledgerReportIsNews({ tasks: 0, bosses: 0, collections: 0, progressed: 0, staleWeek: true, unmatched: [] }), true);
+});
+
+test('the account button says how old the game data is, not how old the read is', () => {
+  const ctx = setup();
+
+  // Nothing ever synced: the button is an invitation, not a status.
+  assert.equal(ctx.ledgerButtonState().state, 'never');
+
+  const now = Date.now();
+  const hoursAgo = (h) => Math.floor(now / 1000) - h * 3600;
+
+  // Read a second ago, of a file the game wrote yesterday. The read being
+  // fresh is not the question the member is asking.
+  ctx.saveLedgerState({ lastImport: now, lastGenerated: hoursAgo(20) });
+  const stale = ctx.ledgerButtonState();
+  assert.equal(stale.state, 'stale');
+  assert.match(stale.label, /20h old/);
+  assert.match(stale.title, /\/reload/);
+
+  ctx.saveLedgerState({ lastImport: now, lastGenerated: hoursAgo(3) });
+  assert.equal(ctx.ledgerButtonState().state, 'aging');
+
+  ctx.saveLedgerState({ lastImport: now, lastGenerated: hoursAgo(0) });
+  assert.equal(ctx.ledgerButtonState().state, 'fresh');
+});
+
+test('the file timestamp is recorded so a poll can tell new from unchanged', () => {
+  const ctx = setup();
+  const env = envelope({ week: ctx.getWeekKey(), characters: {} });
+  ctx.applyLedgerEnvelope(env);
+  // applyLedgerEnvelope does not stat the file; readLedgerFromDisk does. What
+  // this pins is that nothing else in the import path clears the value the
+  // watcher compares against.
+  const state = ctx.loadLedgerState();
+  state.fileModified = 1756900000000;
+  ctx.saveLedgerState(state);
+  ctx.applyLedgerEnvelope(env);
+  assert.equal(ctx.loadLedgerState().fileModified, 1756900000000);
 });
 
 /* ── The merge rules ────────────────────────────────────────────────────── */

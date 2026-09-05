@@ -299,7 +299,14 @@ function applyLedgerEnvelope(env) {
   for (const [envKey, envChar] of Object.entries(env.characters || {})) {
     const charName = ledgerMatchCharacter(envKey, envChar);
     if (!charName) {
-      report.unmatched.push((envChar && envChar.name) || envKey);
+      // Name and realm, not just a label. The envelope already knows both,
+      // and making the member retype what we were just handed is the reason
+      // "none of your characters matched" used to be a dead end.
+      report.unmatched.push({
+        key:   envKey,
+        name:  (envChar && envChar.name) || envKey,
+        realm: (envChar && envChar.realm) || '',
+      });
       continue;
     }
 
@@ -357,9 +364,49 @@ function applyLedgerEnvelope(env) {
   state.lastImport   = Date.now();
   state.lastGenerated = env.generated;
   state.addonVersion = env.addon;
+  // Held so the modal can offer to add them. Overwritten every import, never
+  // merged: a character that matched this time is not still unmatched, and a
+  // stale entry would offer to add a roster member who is already there.
+  state.unmatched = report.unmatched;
   saveLedgerState(state);
 
   return report;
+}
+
+/* Add a character the envelope named and the roster does not have.
+
+   Mirrors the non-rename branch of saveChar() in app.js rather than calling
+   it, because that one reads the add-character modal's inputs and its class
+   and group pickers, none of which are open here. What the envelope gives us
+   is a name and a realm, so that is what gets written; class arrives on its
+   own from the next armory sync. */
+function ledgerAddCharacter(name, realm) {
+  if (!name) return null;
+  const slug = typeof realmToSlug === 'function' ? realmToSlug(realm || '') : '';
+  const id   = typeof charIdentifier === 'function' ? charIdentifier(name, slug) : name;
+
+  const roster = JSON.parse(localStorage.getItem('wow_midnight_chars') || '[]');
+  if (!roster.includes(id)) {
+    roster.push(id);
+    localStorage.setItem('wow_midnight_chars', JSON.stringify(roster));
+    // app.js holds the roster in a module-level `characters` that every
+    // renderer reads. Writing localStorage alone leaves the page showing the
+    // old list until a refresh. `let` in another script means a bare typeof
+    // still throws while that script is in its temporal dead zone, which this
+    // is not called during but is one script-reorder away from being.
+    try { if (Array.isArray(characters)) characters.push(id); } catch (_) {}
+  }
+  if (realm) {
+    if (typeof saveCharRealm === 'function')     saveCharRealm(id, realm);
+    if (typeof saveCharRealmSlug === 'function') saveCharRealmSlug(id, slug);
+  }
+
+  // Drop it from the held list so the modal stops offering it.
+  const state = loadLedgerState();
+  state.unmatched = (state.unmatched || []).filter((u) => (u.name || u) !== name);
+  saveLedgerState(state);
+
+  return id;
 }
 
 /* Collections are account-wide and permanent, so they tick the collectibles
@@ -580,8 +627,14 @@ async function readLedgerFromDisk(opts) {
     if (!opts.silent) showToast('Connect your WoW folder first.');
     return null;
   }
-  if (!await ledgerEnsurePermission(root)) {
-    showToast('Read access to the folder was declined.');
+  // The automatic paths must never open a permission prompt. Chrome only
+  // grants one inside a user gesture, so a prompt raised from a timer is
+  // either ignored or, worse, spends the member's one chance to say yes on a
+  // moment they were not looking at the page.
+  const permitted = opts.quiet ? await ledgerPermissionGranted(root)
+                               : await ledgerEnsurePermission(root);
+  if (!permitted) {
+    if (!opts.quiet) showToast('Read access to the folder was declined.');
     return null;
   }
 
@@ -598,15 +651,184 @@ async function readLedgerFromDisk(opts) {
 
     const state = loadLedgerState();
     state.account = found.account;
+    // What the automatic reader compares against. Without it every poll
+    // re-reads and re-applies a file nothing has touched.
+    state.fileModified = file.lastModified;
     saveLedgerState(state);
 
     if (typeof render === 'function') render();
     if (typeof renderChars === 'function') renderChars();
-    reportLedgerImport(report);
+    // A quiet read is one nobody asked for, so it only speaks when it has
+    // news. "Nothing new" is the expected result of a poll and saying it
+    // every ten seconds would make the toast useless for everything else.
+    if (!opts.quiet || ledgerReportIsNews(report)) reportLedgerImport(report);
+    updateLedgerButton();
     return report;
   } catch (err) {
-    showToast(err.message);
+    if (!opts.quiet) showToast(err.message);
     return null;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Reading it without being asked
+
+   The handle is already in IndexedDB and a read is one getFile(), so making
+   the member open a modal and press a button for it was a choice, not a
+   constraint. This removes that choice: on load, on returning to the tab, and
+   while the tab is visible, the file's timestamp is checked and a newer file
+   is applied silently.
+
+   Two rules keep it from being intrusive:
+
+     Nothing here ever requests permission. queryPermission is read-only and
+     answers without a prompt; when the answer is anything but granted the
+     automatic path stands down and the button label says so, which is a
+     click the member makes when they are ready.
+
+     Nothing here says "nothing new". A poll that reports every time it ran
+     is noise, and the whole point is that a successful sync should feel like
+     it did not happen.
+
+   The game writes the file at logout or /reload and at no other time, so
+   watching it is watching for exactly one event, and ten seconds is well
+   inside the time it takes to alt-tab after a reload.
+------------------------------------------------------------------------- */
+
+const LEDGER_WATCH_MS = 10000;
+let _ledgerWatchTimer = null;
+let _ledgerBusy = false;
+
+/* Read-only permission check. Never prompts, so it is safe from a timer. */
+async function ledgerPermissionGranted(handle) {
+  if (!handle) return false;
+  if (!handle.queryPermission) return true;
+  try {
+    return await handle.queryPermission({ mode: 'read' }) === 'granted';
+  } catch (_) { return false; }
+}
+
+/* Did this import change anything the member would want told about? */
+function ledgerReportIsNews(report) {
+  if (!report) return false;
+  return !!(report.tasks || report.bosses || report.collections || report.progressed
+            || report.staleWeek || (report.unmatched && report.unmatched.length));
+}
+
+/* The file's mtime, or null for every reason it might not be readable. Cheap
+   enough to call on a timer: it opens no file contents. */
+async function ledgerPeekModified() {
+  const root = await ledgerLoadHandle();
+  if (!root) return null;
+  if (!await ledgerPermissionGranted(root)) return null;
+  try {
+    const found = await ledgerFindSavedVariables(root);
+    return (await found.file.getFile()).lastModified;
+  } catch (_) { return null; }
+}
+
+/* Sync if, and only if, the game has written the file since we last read it.
+
+   `force` is for the first check of a session, where the stored timestamp may
+   be from a previous browser session that read a file this device has since
+   replaced, and for the moment a folder is first connected. */
+async function ledgerAutoSync(opts) {
+  opts = opts || {};
+  if (_ledgerBusy) return null;
+  if (!ledgerFileAccessSupported()) return null;
+
+  _ledgerBusy = true;
+  try {
+    const modified = await ledgerPeekModified();
+    if (modified === null) return null;
+
+    const seen = loadLedgerState().fileModified || 0;
+    if (!opts.force && modified <= seen) return null;
+
+    return await readLedgerFromDisk({ silent: true, quiet: true });
+  } finally {
+    _ledgerBusy = false;
+    updateLedgerButton();
+  }
+}
+
+/* Poll only while the tab is visible. A background tab is a browser the
+   member is not looking at, and the answer would be stale by the time they
+   were, so the visibility handler re-checks on the way back in instead. */
+function startLedgerWatch() {
+  if (typeof document === 'undefined') return;
+  if (_ledgerWatchTimer) return;
+
+  const tick = () => {
+    if (document.hidden) return;
+    ledgerAutoSync();
+  };
+  _ledgerWatchTimer = setInterval(tick, LEDGER_WATCH_MS);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) return;
+    // Coming back to the tab is the single most likely moment for the file to
+    // have changed, because the member has just alt-tabbed out of the game.
+    ledgerAutoSync();
+    updateLedgerButton();
+  });
+}
+
+/* -------------------------------------------------------------------------
+   The ambient signal
+
+   Everything the member needs to know about sync state used to live inside a
+   modal, which meant the answer to "is this current" required opening the
+   thing that would have told you. The account button is on screen already.
+------------------------------------------------------------------------- */
+
+function ledgerButtonState() {
+  const state = loadLedgerState();
+  if (!state.lastImport) {
+    return { state: 'never', label: 'Addon & Discord',
+             title: 'Connect the Party Ledger addon to sync what you did in game.' };
+  }
+
+  // Age of the data, not of the read. A read a second ago of a file the game
+  // wrote yesterday is a day old, and that is the number that decides whether
+  // the member should go and /reload.
+  const hours = state.lastGenerated
+    ? Math.floor((Date.now() / 1000 - state.lastGenerated) / 3600)
+    : null;
+
+  const listStatus = (typeof agendaListStatus === 'function') ? agendaListStatus() : null;
+  if (listStatus && listStatus.state === 'stale') {
+    return { state: 'list-stale', label: 'List out of date in game',
+             title: listStatus.text };
+  }
+
+  if (hours === null) {
+    return { state: 'synced', label: 'Addon synced', title: ledgerStatusText() || '' };
+  }
+  if (hours >= 12) {
+    return { state: 'stale', label: 'Game data ' + hours + 'h old',
+             title: 'The addon writes its file at logout or /reload. Run /reload in game '
+                  + 'to refresh it; this page picks it up on its own.' };
+  }
+  if (hours >= 1) {
+    return { state: 'aging', label: 'Synced · ' + hours + 'h old',
+             title: ledgerStatusText() || '' };
+  }
+  return { state: 'fresh', label: 'Addon synced', title: ledgerStatusText() || '' };
+}
+
+function updateLedgerButton() {
+  if (typeof document === 'undefined') return;
+  const label = document.getElementById('ledger-btn-label');
+  if (!label) return;
+
+  const s = ledgerButtonState();
+  label.textContent = s.label;
+
+  const btn = document.getElementById('btn-ledger');
+  if (btn) {
+    if (s.title) btn.title = s.title;
+    if (btn.dataset) btn.dataset.ledgerState = s.state;
   }
 }
 
@@ -618,6 +840,7 @@ async function importLedgerFromPaste(text) {
     if (typeof render === 'function') render();
     if (typeof renderChars === 'function') renderChars();
     reportLedgerImport(report);
+    updateLedgerButton();
     return report;
   } catch (err) {
     showToast(err.message);
@@ -636,9 +859,11 @@ function reportLedgerImport(report) {
       + 'Collections were applied; weekly objectives were not. Log in and /reload to refresh it.');
     return;
   }
-  if (!report.characters.length && report.unmatched.length) {
-    showToast('Synced, but none of the characters matched: ' + report.unmatched.join(', ')
-      + '. Add them to your roster, or set their realms, and sync again.');
+  const unmatchedNames = (report.unmatched || []).map((u) => (u && u.name) || u);
+
+  if (!report.characters.length && unmatchedNames.length) {
+    showToast('Synced, but none of the characters matched: ' + unmatchedNames.join(', ')
+      + '. Open Addon & Discord to add them in one click.');
     return;
   }
 
@@ -650,8 +875,8 @@ function reportLedgerImport(report) {
 
   let message = parts.length ? 'Synced from Party Ledger: ' + parts.join(', ') + '.'
                              : 'Synced from Party Ledger: nothing new.';
-  if (report.unmatched.length) {
-    message += ' Not matched: ' + report.unmatched.join(', ') + '.';
+  if (unmatchedNames.length) {
+    message += ' Not matched: ' + unmatchedNames.join(', ') + '.';
   }
   showToast(message);
 }
@@ -801,6 +1026,10 @@ function renderLedgerModal() {
             + '<button class="btn-primary" onclick="readLedgerFromDisk()">Sync now</button>'
             + '<button class="btn-cancel" onclick="ledgerForgetHandle().then(renderLedgerModal)">Forget folder</button>'
             + '</div>';
+      html += '<p class="ledger-note">This reads the file on its own when you come back to '
+            + 'the tab, and while the tab is open. The game only writes it at logout or '
+            + '<code>/reload</code>, so a <code>/reload</code> in game is the thing that '
+            + 'makes new results appear here.</p>';
     } else {
       html += '<div class="ledger-btns">'
             + '<button class="btn-primary" onclick="connectLedgerFolder().then(renderLedgerModal)">'
@@ -816,10 +1045,31 @@ function renderLedgerModal() {
   /* ── Paste ── */
   html += '<details class="ledger-paste"' + (canReadFiles ? '' : ' open') + '>';
   html += '<summary>Paste a sync string instead</summary>';
-  html += '<p class="ledger-note">Run <code>/ledger sync</code> in game and copy what it shows you.</p>';
-  html += '<textarea id="ledger-paste-box" rows="4" placeholder="eyJmbXQiOiJQTFcxIi..."></textarea>';
+  html += '<p class="ledger-note">Run <code>/ledger sync</code> in game and copy what it shows you. '
+        + 'It syncs as soon as you paste; the button is there if it does not.</p>';
+  html += '<textarea id="ledger-paste-box" rows="4" placeholder="PLW2:eNqrVkrLz1eyUsp..." '
+        + 'oninput="_ledgerPasteChanged()"></textarea>';
   html += '<div class="ledger-btns"><button class="btn-primary" onclick="_ledgerPasteSubmit()">Sync from string</button></div>';
   html += '</details>';
+
+  /* ── Characters the envelope named and the roster does not have ──
+     Previously a dead end: the toast said "add them to your roster" and the
+     member had to retype a name and realm the payload had already given us. */
+  const unmatched = (state.unmatched || []).filter((u) => u && u.name);
+  if (unmatched.length) {
+    html += '<p class="ledger-note ledger-unmatched"><i class="ph-fill ph-warning"></i> '
+          + 'These characters are in the addon but not on your roster, so nothing they did '
+          + 'was applied.</p>';
+    html += '<div class="ledger-btns">';
+    for (const u of unmatched) {
+      const label = escHtml(u.name + (u.realm ? '-' + u.realm : ''));
+      html += '<button class="btn-cancel" onclick="_ledgerAddUnmatched('
+            + JSON.stringify(u.name).replace(/"/g, '&quot;') + ', '
+            + JSON.stringify(u.realm || '').replace(/"/g, '&quot;') + ')">'
+            + '<i class="ph ph-plus"></i>Add ' + label + '</button>';
+    }
+    html += '</div>';
+  }
   html += '</div>';
 
   /* ── The list, going the other way ──────────────────────────────────────
@@ -835,6 +1085,7 @@ function renderLedgerModal() {
   const listStatus = (typeof agendaListStatus === 'function') ? agendaListStatus() : null;
   if (listStatus) {
     const icon = { current: 'ph-fill ph-check-circle', stale: 'ph-fill ph-warning',
+                   pending: 'ph-fill ph-clipboard-text',
                    never: 'ph ph-arrow-square-out', empty: 'ph ph-star' }[listStatus.state];
     html += '<p class="ledger-listout-status ledger-listout-' + listStatus.state + '">'
           + '<i class="' + icon + '"></i><span>' + escHtml(listStatus.text) + '</span></p>';
@@ -885,6 +1136,19 @@ function renderLedgerModal() {
   el.innerHTML = html;
 }
 
+/* Add a character the last import could not match, then sync again so the
+   week it did in game lands on the roster entry we just made. Re-reading the
+   file is the point: adding the character without it leaves the member
+   looking at an empty week and going back to the game for a second /reload. */
+async function _ledgerAddUnmatched(name, realm) {
+  const id = ledgerAddCharacter(name, realm);
+  if (!id) return;
+  showToast('Added ' + name + (realm ? '-' + realm : '') + '. Re-reading the addon file.');
+  if (typeof renderChars === 'function') renderChars();
+  await ledgerAutoSync({ force: true });
+  renderLedgerModal();
+}
+
 /* Copy straight to the clipboard where the browser allows it, and fall back
    to showing the string with it selected. The clipboard API needs a user
    gesture and a permission, and both can be absent for reasons that have
@@ -892,6 +1156,8 @@ function renderLedgerModal() {
 async function _agendaListCopy() {
   const built = await encodeAgendaList();
   if (!built.tasks) { showToast('Star a few tasks first.'); return; }
+
+  noteAgendaListHandedOver(built.signature);
 
   let copied = false;
   try {
@@ -910,16 +1176,19 @@ async function _agendaListCopy() {
   showToast(copied
     ? built.tasks + ' task' + (built.tasks === 1 ? '' : 's') + ' copied. Paste it into /ledger list import.'
     : 'Select the string below and copy it, then paste it into /ledger list import.');
+  updateLedgerButton();
 }
 
 async function _agendaListShow() {
   const built = await encodeAgendaList();
   const box = document.getElementById('agenda-list-box');
   if (!box) return;
+  noteAgendaListHandedOver(built.signature);
   box.value = built.payload;
   box.hidden = false;
   box.focus();
   box.select();
+  updateLedgerButton();
 }
 
 async function _ledgerPasteSubmit() {
@@ -930,4 +1199,52 @@ async function _ledgerPasteSubmit() {
     box.value = '';
     renderLedgerModal();
   }
+}
+
+/* Import the moment a recognisable payload lands in the box.
+
+   Pasting a sync string and then pressing a button labelled "sync from
+   string" is asking the member to confirm the thing they just did. The button
+   stays, because a paste that arrives in pieces (a slow clipboard, a member
+   typing) should not fire mid-way, and because a failed auto-import needs
+   somewhere to retry from.
+
+   The guard is the prefix, not a parse: parsing is async and inflating a
+   partial payload throws in a way that is indistinguishable from a corrupt
+   one. A string that names a transport we know and is long enough to be more
+   than the prefix is a paste; anything else waits for the button. */
+function _ledgerPasteChanged() {
+  const box = document.getElementById('ledger-paste-box');
+  if (!box) return;
+  const text = String(box.value || '').trim();
+  if (text.length < 64) return;
+
+  const { transport } = ledgerSplitPayload(text);
+  if (!Object.prototype.hasOwnProperty.call(LEDGER_FORMATS, transport)) return;
+  if (box.dataset && box.dataset.autoImported === text.slice(-32)) return;
+  if (box.dataset) box.dataset.autoImported = text.slice(-32);
+
+  _ledgerPasteSubmit();
+}
+
+/* -------------------------------------------------------------------------
+   Boot
+
+   Registered here rather than in app.js so the whole bridge, including when
+   it runs, stays in one file. Nothing in it depends on app.js having
+   initialised: the renderers it would call are typeof-guarded and the roster
+   is read from localStorage.
+------------------------------------------------------------------------- */
+
+if (typeof document !== 'undefined' && document.addEventListener) {
+  document.addEventListener('DOMContentLoaded', () => {
+    updateLedgerButton();
+    startLedgerWatch();
+    // Forced, because the stored timestamp came from whatever this browser
+    // last read and the member may have played on another machine, or cleared
+    // site data, since. One read on load is cheap and settles it.
+    ledgerAutoSync({ force: true });
+    // The data ages while the page sits open, so the label has to as well.
+    setInterval(updateLedgerButton, 60000);
+  });
 }

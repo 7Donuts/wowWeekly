@@ -297,37 +297,74 @@ async function encodeAgendaList(charNames) {
    way to tell the member that the heads-up display they are looking at in
    game is showing them a list they have since changed. Without this the
    answer to "why isn't my new task in the HUD" is invisible.
+
+   There are two signatures, not one, and conflating them was a bug the member
+   saw as the site lying to them. `agendaSignature` is what the addon reported
+   holding, and it can only be refreshed by an inbound envelope, which needs a
+   /reload. `agendaHanded` is what we last put on the clipboard for them.
+
+   With only the first, a member who copies the list is told it is stale until
+   they log out, reload, and sync, because nothing in between can tell the
+   site the paste happened. That is the whole round trip, and it is the exact
+   moment the status is most likely to be read.
+
+   So: confirmed beats handed, handed beats nothing, and a list handed over
+   but not yet seen coming back gets its own state rather than borrowing the
+   wrong one from either side.
 ------------------------------------------------------------------------- */
 
 function agendaListStatus() {
-  const state = loadLedgerState();
-  const held  = state.agendaSignature || null;
-  const built = buildAgendaListText();
+  const state     = loadLedgerState();
+  const confirmed = state.agendaSignature || null;
+  const handed    = state.agendaHanded || null;
+  const built     = buildAgendaListText();
 
   if (!built.tasks) {
     return { state: 'empty',
              text: 'Nothing on your list yet. Star a few tasks and they can go in game.' };
   }
-  if (!held) {
-    return { state: 'never', signature: built.signature, tasks: built.tasks,
-             text: 'The addon has not been given your list yet.' };
+
+  const base = { signature: built.signature, tasks: built.tasks };
+
+  if (confirmed === built.signature) {
+    return { ...base, state: 'current', text: 'The list in game matches this one.' };
   }
-  if (held === built.signature) {
-    return { state: 'current', signature: built.signature, tasks: built.tasks,
-             text: 'The list in game matches this one.' };
+  if (handed === built.signature) {
+    return { ...base, state: 'pending',
+             text: 'Copied. Paste it into /ledger list import in game; this confirms '
+                 + 'itself on your next sync.' };
   }
-  return { state: 'stale', signature: built.signature, tasks: built.tasks,
+  if (!confirmed && !handed) {
+    return { ...base, state: 'never', text: 'The addon has not been given your list yet.' };
+  }
+  return { ...base, state: 'stale',
            text: 'Your list has changed since you last put it in game. '
-               + 'Paste it again to bring the in-game display up to date.' };
+               + 'Copy it again to bring the in-game display up to date.' };
 }
 
-/* Recorded from the inbound envelope, so the comparison above has something
-   to compare against. Called by applyLedgerEnvelope. */
+/* Recorded from the inbound envelope: what the addon says it is holding. */
 function noteAgendaListInGame(agenda) {
   if (!agenda) return;
   const state = loadLedgerState();
   state.agendaSignature = agenda.sig || null;
   state.agendaImported  = agenda.imported || null;
   state.agendaTasks     = agenda.tasks || 0;
+  // A confirmation supersedes the hand-over it confirms. Left in place, a
+  // stale `agendaHanded` would keep a genuinely out-of-date list reading as
+  // "pending" forever, which is the same lie in the other direction.
+  if (state.agendaHanded && state.agendaHanded === state.agendaSignature) {
+    delete state.agendaHanded;
+  }
+  saveLedgerState(state);
+}
+
+/* Recorded when the member takes the list: clipboard or copy box, both count.
+   Neither is proof it reached the game, which is why this is its own state
+   and not a second way of setting the confirmed one. */
+function noteAgendaListHandedOver(signature) {
+  if (!signature) return;
+  const state = loadLedgerState();
+  state.agendaHanded   = signature;
+  state.agendaHandedAt = Date.now();
   saveLedgerState(state);
 }

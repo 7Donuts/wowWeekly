@@ -15,7 +15,8 @@ const FILES = ['js/data-tasks.js', 'js/storage.js', 'js/ledger.js', 'js/ledger-o
 const EXPOSE = [
   'getWeekKey', 'buildAgendaListText', 'encodeAgendaList', 'agendaListSignature',
   'agendaListField', 'agendaListStatus', 'agendaListCharacters',
-  'agendaListTasksFor', 'noteAgendaListInGame', 'loadLedgerState',
+  'agendaListTasksFor', 'noteAgendaListInGame', 'noteAgendaListHandedOver',
+  'loadLedgerState',
   'applyLedgerEnvelope', 'loadAutoSrc', 'ledgerCharKey', 'SECTIONS',
 ];
 
@@ -279,7 +280,49 @@ test('the site can tell the member their in-game list has moved on', () => {
   starred(ctx, ['v1', 'v2', 'm1']);
   const stale = ctx.agendaListStatus();
   assert.equal(stale.state, 'stale');
-  assert.match(stale.text, /Paste it again/);
+  assert.match(stale.text, /Copy it again/);
+});
+
+test('a list just copied does not read as out of date', () => {
+  /* The bug this pins: the only signal the site had was the one the addon
+     sends back in an envelope, and an envelope needs a /reload. So copying
+     the list and looking at the status a second later said "out of date",
+     which is precisely wrong: the member had just done the thing being asked
+     of them, and the site would keep asking until they logged out. */
+  const ctx = setup();
+  starred(ctx, ['v1', 'v2']);
+  const held = ctx.buildAgendaListText().signature;
+  ctx.noteAgendaListInGame({ sig: held, tasks: 2 });
+  assert.equal(ctx.agendaListStatus().state, 'current');
+
+  // Star another, then take the new list. Between the copy and the next
+  // /reload there is nothing the site can observe, so it says so.
+  starred(ctx, ['v1', 'v2', 'm1']);
+  assert.equal(ctx.agendaListStatus().state, 'stale');
+
+  ctx.noteAgendaListHandedOver(ctx.buildAgendaListText().signature);
+  const pending = ctx.agendaListStatus();
+  assert.equal(pending.state, 'pending');
+  assert.match(pending.text, /next sync/);
+
+  // The envelope comes back holding it. Now it is confirmed, not assumed.
+  ctx.noteAgendaListInGame({ sig: ctx.buildAgendaListText().signature, tasks: 3 });
+  assert.equal(ctx.agendaListStatus().state, 'current');
+  assert.equal(ctx.loadLedgerState().agendaHanded, undefined,
+    'a confirmed hand-over is spent, not kept');
+});
+
+test('a hand-over that never reached the game goes stale like anything else', () => {
+  /* "Pending" must not be a state the member can get stuck in. If they copy
+     the list and then edit it again without ever pasting, what is in game is
+     neither of those lists and the status has to say so. */
+  const ctx = setup();
+  starred(ctx, ['v1']);
+  ctx.noteAgendaListHandedOver(ctx.buildAgendaListText().signature);
+  assert.equal(ctx.agendaListStatus().state, 'pending');
+
+  starred(ctx, ['v1', 'v2']);
+  assert.equal(ctx.agendaListStatus().state, 'stale');
 });
 
 test('an addon reporting no list clears the comparison rather than keeping it', () => {
