@@ -1,4 +1,4 @@
-# Cross-platform integration: Party Ledger, The Azeroth Agenda, Tabard
+# Cross-platform integration: Campfire, The Azeroth Agenda, Tabard
 
 One member, three programs, one Battle.net account. This document is the
 contract between them. It is copied verbatim into all three repositories;
@@ -8,12 +8,32 @@ change it in one and copy it to the other two in the same change.
 
 | Repo | What it is | Runs where |
 |---|---|---|
-| `rateaplayer` (Party Ledger) | WoW addon, Lua 5.1 | The game client |
+| `rateaplayer` (Campfire, formerly Party Ledger) | WoW addon, Lua 5.1 | The game client |
 | `wowWeekly` (The Azeroth Agenda) | Static site + Worker, D1 and KV | `agenda.7donuts.dev` |
 | `tabard` (Guild Identity) | Discord bot, Worker, D1 | `tabard.7donuts.dev` |
 
 Tabard reads the Agenda; the Agenda never calls Tabard. One direction, so
 there is only one shared secret and only one side that has to be reachable.
+
+### Where the addon stands
+
+The addon in `rateaplayer` was Party Ledger, a retail keystone and raid
+companion. It is now **Campfire**, a social journal for WoW: Forever, and it
+has absorbed the Journey Tracker addon as its Journey module (Campfire 0.17.0).
+Two consequences for this document, stated here so nobody has to infer them:
+
+- **The PLW and AGL bridge is retired on the addon side.** Campfire no longer
+  loads `Bridge.lua`, `Agenda.lua` or `Details.lua`, and its tests assert that.
+  The sections on the envelope (PLW2), the addon bridge and the list (AGL)
+  describe the Agenda's side, which still reads `PartyLedger.lua`, still
+  accepts a pasted PLW string and still serves `/api/ledger`. Nothing in
+  Campfire currently produces either document. The names in those sections
+  (`PartyLedgerBridgeDB`, `/ledger sync`) are Party Ledger's, because that is
+  what the Agenda's code looks for.
+- **Campfire's live path to Tabard is the journey card**, which does not go
+  through the Agenda at all. See "Journey cards (CFJ1)". It is a second,
+  separate door into Tabard, and it adds no shared secret: the member pastes
+  the card into Discord themselves.
 
 ## The join key
 
@@ -74,6 +94,117 @@ The two directions answer questions only one side can answer:
 |---|---|---|
 | What did I do? | the game | PLW, addon to site |
 | What am I trying to do? | the site | AGL, site to addon |
+| How far along the road to 60 am I? | the game | CFJ1, addon to Tabard, by paste |
+
+## Journey cards (CFJ1)
+
+The Journey module in Campfire (`Campfire/Journey/`, formerly the Journey
+Tracker addon) records one character's road from level 1 to 60: time played,
+each level-up, kills, deaths, quests, travel, gold, professions and a great
+deal more. Two documents leave it, for two audiences, and they are built
+separately rather than one being a filtered copy of the other:
+
+| | Recap (`JT1:`) | Journey card (`CFJ1:`) |
+|---|---|---|
+| For | journeytracker.dev, ranked against strangers | the guild's Discord, via Tabard |
+| Who it names | nobody: a random `characterId` | the character: name and realm |
+| Size | tens to hundreds of KB, everything | under 6,000 characters, a digest |
+| Encoding | JSON, raw deflate, base64 | JSON, **zlib**, base64 |
+| Made by | `Journey/Export.lua` | `Journey/Share.lua` |
+
+```
+  Campfire (in game)  /cf journey share, or Journey tab -> Share with guild
+      | CFJ1 card, one string
+      v
+  the member's clipboard
+      | /journey share code:<card>   (or file:<attachment>)
+      v
+  Tabard  ->  /journey show, /journey board
+```
+
+No program carries it: the member copies it out of the game and pastes it into
+Discord, under their own account. That act is the consent and the identity
+join at once. Tabard keys the card by the Discord account that pasted it and
+does not need the Agenda, `sub`, or a shared secret.
+
+### The card
+
+```jsonc
+{
+  "fmt": "CFJ1", "v": 1,
+  "generated": 1790000000,          // unix seconds, client clock
+  "addon": "0.17.0",                // Campfire's version
+  "character": {
+    "key": "kaelthas-area52",       // Campfire's NameKey; Tabard recomputes it
+    "name": "Kaelthas", "realm": "Area 52",
+    "class": "MAGE", "race": "BloodElf", "faction": "Horde",
+    "level": 5,
+    "ruleset": "PvP"                // as the addon read it; absent if unknown
+  },
+  "played": 90060,                  // /played, seconds
+  "started": 1789000000,            // first login with tracking, or false
+  "reachedMax": false,              // epoch of reaching 60, or false
+  "levels": [                       // [level, /played when reached, epoch]
+    [2, 600, 1789000600],
+    [4, false, 1789003000]          // false: the /played reply never came
+  ],
+  "pace": { "fastest": [2, 900], "slowest": [3, 2700] },  // [level, seconds], or false
+  "totals": { "kills": 312, "deaths": 1, "quests": 41, "xp": 9100,
+              "dungeonRuns": 1, "bossKills": 2, "goldEarned": 123456,
+              "goldSpent": 23456, "goldPeak": 99000, "flights": 3,
+              "hearths": 7, "zones": 3, "fish": 12, "crafted": 4,
+              "longestFall": 22 },  // copper for gold, yards for the fall
+  "professions": { "Tailoring": 75, "Enchanting": 60 },  // at most 8
+  "milestones": [10]                // levels with a saved recap
+}
+```
+
+Rules:
+
+- **`false` means unknown** inside the card, wherever it appears. A Lua array
+  cannot hold nil, so the addon writes `false`; Tabard reads both `false` and
+  `null` as unknown and never as zero.
+- **What the card never carries**, and why: the recap's `characterId` (next
+  to a name, it would join the anonymous recap to the person, which is the
+  one thing the recap promised could not happen); coordinates, death
+  locations, the zone path and the per-zone heat map (where somebody spends
+  their evenings is not a guild statistic); chat counts and typed-word tallies
+  (harmless anonymous, not harmless named); item links and gear (just large).
+  Campfire's tests assert each of these is absent from a real card.
+- **It fits a Discord option.** A string option holds 6,000 characters. The
+  addon refuses to produce a card over 5,800 and thins `levels` to every fifth,
+  then every tenth, level (always keeping the last) before it would refuse. A
+  full 1 to 60 card is about 1,500 characters, so thinning is a backstop.
+- **zlib, for the same reason as PLW2**: the Adler-32 checksum turns a paste
+  that lost its tail into a refusal rather than a shorter card. Tabard decodes
+  with `DecompressionStream("deflate")`; raw deflate is refused.
+- **Tabard treats every field as typed by hand.** Names are letters only
+  (they reach embeds), realms letters, digits, spaces and apostrophes, numbers
+  bounded, unknown totals dropped, professions capped at eight, and the key
+  recomputed from name and realm rather than trusted.
+- **A version higher than Tabard knows is refused**, not guessed at, with a
+  message telling the member an officer needs to update the bot.
+- **Newer replaces, older is refused.** One card per Discord account per
+  character key; a card whose `generated` is not newer than the stored one is
+  turned away, so pasting last week's card by mistake cannot roll anyone back.
+- **Verified means owned.** Where the character is one the member owns in
+  Tabard's identity graph (same name, same realm slug, verified or attested
+  ownership), the card reads as a linked character. Otherwise it reads as
+  self-reported. WoW: Forever characters may not be in the profile API that
+  `/link` reads, so self-reported is the expected case, not an error.
+- **Both repos carry the same fixture**: `tests/fixtures/cfj1-from-addon.txt`
+  in `rateaplayer` (made by the addon's Lua encoder, and a test fails if the
+  encoder drifts from it) and `test/fixtures/cfj1-from-addon.txt` in `tabard`
+  (decoded field by field). Change the card and both move together.
+
+### The recap stays the site's
+
+`JT1:` is unchanged by the move into Campfire. Its encoder is pinned to
+Journey Tracker's own fixture (`tests/fixtures/jt1-recap-testexport.txt`), so
+journeytracker.dev decodes a Campfire recap exactly as it decoded one from the
+standalone addon. The only visible difference is `addonVersion`, which now
+reads `campfire-<version>`. A member who pastes a recap into `/journey share`
+is told which button makes the guild card instead.
 
 ## The envelope (PLW2)
 
@@ -138,6 +269,14 @@ and the site does not.
     "window": 10,                 // recent runs per player in this payload
     "runs": 340,                  // scorecards held locally, all players
     "measured": 210,              // how many of those carried Details numbers
+    "othersMeasurable": false,    // see "Whose numbers exist"
+    "you": {                      // the member's own runs. Always measurable.
+      "name": "Bobkin", "realm": "Illidan", "key": "bobkin-illidan",
+      "class": "PALADIN",
+      "held": 34,
+      "career": { "runs": 34, "avgdps": 1284000 },
+      "recent": [ { "at": 1756800000, "you": true, "dps": 1310000 } ]
+    },
     "players": [
       {
         "guid": "Player-3676-0A1B2C3D",
@@ -162,6 +301,8 @@ and the site does not.
             "left": null,             // true when they left before the end
             "deaths": 1, "rating": 2847,
             "dps": 1310000, "hps": 0, "interrupts": 4,
+            "damage": 2279400000, "healing": 0,
+            "activeSeconds": 1740,   // what the rate was divided by
             "avoidable": 720000, "taken": 8900000,
             "seconds": 1740, "source": "details",
             "scope": "overall",       // see "Scorecards"
@@ -203,6 +344,79 @@ Rules:
   the Blizzard profile API return localized names for the same collection, and
   the Agenda's task entries already carry the name. Ids are carried as an
   optional override where one is known for certain.
+
+### Scorecards
+
+Four of the numbers on a card come from Details!, which the member may not have
+installed. Absent numbers are **null, never zero**. "Not measured" and "did
+nothing" are different claims and the addon refuses to conflate them, so a
+consumer must not sum a null as a zero or an average will quietly drift. Every
+card that carried Details numbers has `"source": "details"`; a card without it
+has `deaths`, `rating`, `keyLevel`, `upgrade` and `timed` only.
+
+`zone` and `bosses` say where the run happened and who died in it. `bosses`
+holds **kills only, deduplicated, in the order they fell**, capped at twelve
+names per run; a boss the group wiped on never appears, and `bosses` is
+absent (not an empty list) when nothing died. `ENCOUNTER_END` fires per
+attempt, so the dedupe is what keeps a night of pulls from writing one name a
+dozen times. On a keystone the list is the dungeon's bosses; on a raid it is
+whatever that night's clear got through, which is why it is worth naming
+rather than counting. The same list is repeated on every card from one run,
+because it is a property of the run and not of the player.
+
+`scope` says what a rate is a rate of, and it is not optional to read.
+"overall" means the numbers cover the whole run, from Details' accumulated
+overall segment. "current" or "segment" means they cover a single fight out of
+that run, because the member does not have Details' Overall Data turned on.
+Comparing an "overall" DPS against a "segment" DPS is comparing a key average
+against one pull, so either normalise or label it in the UI. `runDeaths` is
+the run-wide death count from the keystone API and is context on every card in
+that run rather than a per-player figure.
+
+`career.measured` says how many runs fed each average, for the same reason. An
+`avgdps` over 3 measured runs out of 34 held is a different fact from one over
+all 34, and only `measured` distinguishes them.
+
+`recent` is a window, oldest first, bounded by `window`. `held` is the true
+local count. The addon keeps every run it ever recorded; the payload carries a
+window plus the career rollup so the paste path stays usable. If you need the
+whole history, the SavedVariables read is the path, not a bigger window.
+
+Players appear here whether or not they are graded, because a run happened
+regardless of whether the member formed an opinion about it. `grade` is null in
+that case, and such a player will not appear in `ratings.recent` at all.
+
+`key` is the addon's own name-realm key, lowercased with spaces and
+punctuation stripped from the realm. Match on `guid` where you can: names
+change on rename and realm transfer and the GUID does not. `key` is there
+because it is what a person types into a search box.
+
+### Whose numbers exist
+
+`othersMeasurable: false` means the member's client does not give addons the
+combat log for anybody but themselves. On retail 12.1.0 this is the normal
+case, confirmed on a live client: the meter holds one actor, the member. Every
+teammate card in that payload will have `dps`, `hps`, `interrupts` and
+`avoidable` null no matter how many runs accumulate, and no addon can change
+that. Say so in the UI rather than rendering an empty chart, and do not treat
+those nulls as missing data to backfill later.
+
+What is still true per teammate on such a payload: `keyLevel`, `difficulty`,
+`upgrade`, `timed`, `result`, `role`, `bosses`, `left`, `rating` and
+`runDeaths`. Their individual `deaths` are usually null too.
+
+`stats.you` is the member's own run history, and it is measured in full
+whatever `othersMeasurable` says, because their own actor is the one the meter
+always holds. Same card shape as a player's `recent`, plus `you: true`. It is
+per character rather than per account, so a member with several characters
+sends a different `stats.you` from each. On a 12.1.0 payload it is the only
+series carrying real rates.
+
+`damage` and `healing` are the totals the rates were derived from, and
+`activeSeconds` is what they were divided by. Details divides by how long an
+actor was actually fighting rather than by the segment's length, and on a live
+segment those differed by seven and a half times, so a consumer that wants its
+own basis should use the totals rather than re-deriving from a rate.
 
 ### Transport
 
@@ -550,6 +764,12 @@ it holds rather than merging into it.
 **Tabard owns nothing here at all.** `agenda_cache` in its own D1 is a cache
 in front of `/api/share/*` with a five-minute TTL, and its own migration says
 so. Everything in it is reconstructible by fetching again.
+
+**Tabard does own journey cards**, and that is the exception that proves the
+rule rather than breaks it: nothing else holds them. The addon keeps the
+journey; the card is a copy the member made and handed over, and `journey_card`
+is the only place it lives. So `/journey forget` deletes it outright, and
+`/unlink purge:true` deletes it too and counts it in the leftover check.
 
 ### The state API
 
