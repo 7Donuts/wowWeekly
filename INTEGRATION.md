@@ -19,7 +19,8 @@ there is only one shared secret and only one side that has to be reachable.
 
 The addon in `rateaplayer` was Party Ledger, a retail keystone and raid
 companion. It is now **Campfire**, a social journal for WoW: Forever, and it
-has absorbed the Journey Tracker addon as its Journey module (Campfire 0.17.0).
+has absorbed the Journey Tracker addon, as one app on Campfire's own data
+(Campfire 0.18.0).
 Two consequences for this document, stated here so nobody has to infer them:
 
 - **The PLW and AGL bridge is retired on the addon side.** Campfire no longer
@@ -30,10 +31,9 @@ Two consequences for this document, stated here so nobody has to infer them:
   Campfire currently produces either document. The names in those sections
   (`PartyLedgerBridgeDB`, `/ledger sync`) are Party Ledger's, because that is
   what the Agenda's code looks for.
-- **Campfire's live path to Tabard is the journey card**, which does not go
-  through the Agenda at all. See "Journey cards (CFJ1)". It is a second,
-  separate door into Tabard, and it adds no shared secret: the member pastes
-  the card into Discord themselves.
+- **Campfire's live path to Tabard is its export**, which does not go through
+  the Agenda at all. See "The export (CF1)". It is a second, separate door into
+  Tabard, and it adds no shared secret: the member hands it over themselves.
 
 ## The join key
 
@@ -94,117 +94,121 @@ The two directions answer questions only one side can answer:
 |---|---|---|
 | What did I do? | the game | PLW, addon to site |
 | What am I trying to do? | the site | AGL, site to addon |
-| How far along the road to 60 am I? | the game | CFJ1, addon to Tabard, by paste |
+| How far along the road to 60 am I? | the game | CF1, addon to Tabard, by paste |
 
-## Journey cards (CFJ1)
+## The export (CF1)
 
-The Journey module in Campfire (`Campfire/Journey/`, formerly the Journey
-Tracker addon) records one character's road from level 1 to 60: time played,
-each level-up, kills, deaths, quests, travel, gold, professions and a great
-deal more. Two documents leave it, for two audiences, and they are built
-separately rather than one being a filtered copy of the other:
-
-| | Recap (`JT1:`) | Journey card (`CFJ1:`) |
-|---|---|---|
-| For | journeytracker.dev, ranked against strangers | the guild's Discord, via Tabard |
-| Who it names | nobody: a random `characterId` | the character: name and realm |
-| Size | tens to hundreds of KB, everything | under 6,000 characters, a digest |
-| Encoding | JSON, raw deflate, base64 | JSON, **zlib**, base64 |
-| Made by | `Journey/Export.lua` | `Journey/Share.lua` |
+Campfire records each character's road from level 1 to 60 (it absorbed the
+Journey Tracker addon; see `rateaplayer/HANDOFF.md`, "One app"). It has one
+export, and Tabard is where it goes: Tabard keeps it, ranks it against the
+guild, and draws it as the road-to-60 recap. There is no second, smaller card
+and no anonymous variant any more.
 
 ```
-  Campfire (in game)  /cf journey share, or Journey tab -> Share with guild
-      | CFJ1 card, one string
+  Campfire (in game)  /campfire export, or Export on the Journey tab
+      | CF1, one string (20 to 200 KB)
       v
   the member's clipboard
-      | /journey share code:<card>   (or file:<attachment>)
+      | /journey share in Discord -> a signed link -> paste on that page
+      |   (or attach the string as a file to /journey share)
       v
-  Tabard  ->  /journey show, /journey board
+  Tabard  ->  /j/<slug> (the recap)   /journey show   /journey board
 ```
 
-No program carries it: the member copies it out of the game and pastes it into
-Discord, under their own account. That act is the consent and the identity
-join at once. Tabard keys the card by the Discord account that pasted it and
-does not need the Agenda, `sub`, or a shared secret.
+No program carries it: the member copies it out of the game and hands it to
+Tabard under their own Discord account. That act is the consent and the
+identity join at once. It does not touch the Agenda, `sub`, or a shared secret.
+The signed link exists because the export is far longer than a Discord command
+option can hold; it is good for one member for a short while, and it is the
+only browser path in Tabard that writes a journey.
 
-### The card
+### Transport
+
+    "CF1:" + base64( zlib( UTF-8 JSON ) )
+
+zlib, for the same reason as PLW2: the Adler-32 checksum turns a paste that lost
+its tail into a refusal rather than a shorter journey. Browser and Worker decode
+with `DecompressionStream("deflate")`. Whitespace is stripped first, because chat
+clients wrap long strings. Tabard refuses anything that inflates past 8 MB, and
+anything over 1.5 MB as stored text.
+
+### The document
+
+The JSON is Journey Tracker's journey summary, which the recap page's journey
+model (`model.js`, carried into Tabard) was built around, with these changes:
 
 ```jsonc
 {
-  "fmt": "CFJ1", "v": 1,
-  "generated": 1790000000,          // unix seconds, client clock
-  "addon": "0.17.0",                // Campfire's version
-  "character": {
-    "key": "kaelthas-area52",       // Campfire's NameKey; Tabard recomputes it
-    "name": "Kaelthas", "realm": "Area 52",
-    "class": "MAGE", "race": "BloodElf", "faction": "Horde",
-    "level": 5,
-    "ruleset": "PvP"                // as the addon read it; absent if unknown
-  },
-  "played": 90060,                  // /played, seconds
-  "started": 1789000000,            // first login with tracking, or false
-  "reachedMax": false,              // epoch of reaching 60, or false
-  "levels": [                       // [level, /played when reached, epoch]
-    [2, 600, 1789000600],
-    [4, false, 1789003000]          // false: the /played reply never came
-  ],
-  "pace": { "fastest": [2, 900], "slowest": [3, 2700] },  // [level, seconds], or false
-  "totals": { "kills": 312, "deaths": 1, "quests": 41, "xp": 9100,
-              "dungeonRuns": 1, "bossKills": 2, "goldEarned": 123456,
-              "goldSpent": 23456, "goldPeak": 99000, "flights": 3,
-              "hearths": 7, "zones": 3, "fish": 12, "crafted": 4,
-              "longestFall": 22 },  // copper for gold, yards for the fall
-  "professions": { "Tailoring": 75, "Enchanting": 60 },  // at most 8
-  "milestones": [10]                // levels with a saved recap
+  "format": 2, "source": "campfire",          // Journey Tracker's JT1 was format 1
+  "characterId": "1b4e28ba-...",              // stable per character, UUID v4
+  "addonVersion": "campfire-0.18.0", "schemaVersion": 2,
+  "exportedAt": 1790000000,
+  "milestone": 30,                            // only on a journey saved at a tenth level-up
+  "character": { "name": "Kaelthas", "realm": "Area 52", "key": "kaelthas-area52",
+                 "class": "MAGE", "race": "BloodElf", "faction": "Horde",
+                 "level": 31, "played": 186000, "ruleset": "PvP" },
+  "levels": {...}, "stats": {...}, "class": {...}, "wrapped": {...}, "statistics": {...},
+  "campfire": {
+    "version": "0.18.0",
+    "people": { "met": 212, "groupedWith": 88, "rated": 40, "friends": 12, "whispered": 31,
+                "byLevel": { "12": 4 } },                 // this character's, counts only
+    "lore":   { "entries": 340, "quests": 210, "dialogue": 98, "books": 32 },  // the member's
+    "ledger": { "onlineSeconds": 190000, "activeSeconds": 150000,
+                "gained": 940000, "spent": 610000,
+                "categories": { "loot": 300000, "questRewards": 120000, "vendorSales": 190000 },
+                "unclassified": { "income": 50000, "spending": 0 } },
+    "runs":   { "total": 14, "completed": 11, "dungeons": 13, "raids": 1 }
+  }
 }
 ```
 
 Rules:
 
-- **`false` means unknown** inside the card, wherever it appears. A Lua array
-  cannot hold nil, so the addon writes `false`; Tabard reads both `false` and
-  `null` as unknown and never as zero.
-- **What the card never carries**, and why: the recap's `characterId` (next
-  to a name, it would join the anonymous recap to the person, which is the
-  one thing the recap promised could not happen); coordinates, death
-  locations, the zone path and the per-zone heat map (where somebody spends
-  their evenings is not a guild statistic); chat counts and typed-word tallies
-  (harmless anonymous, not harmless named); item links and gear (just large).
-  Campfire's tests assert each of these is absent from a real card.
-- **It fits a Discord option.** A string option holds 6,000 characters. The
-  addon refuses to produce a card over 5,800 and thins `levels` to every fifth,
-  then every tenth, level (always keeping the last) before it would refuse. A
-  full 1 to 60 card is about 1,500 characters, so thinning is a backstop.
-- **zlib, for the same reason as PLW2**: the Adler-32 checksum turns a paste
-  that lost its tail into a refusal rather than a shorter card. Tabard decodes
-  with `DecompressionStream("deflate")`; raw deflate is refused.
-- **Tabard treats every field as typed by hand.** Names are letters only
-  (they reach embeds), realms letters, digits, spaces and apostrophes, numbers
-  bounded, unknown totals dropped, professions capped at eight, and the key
-  recomputed from name and realm rather than trusted.
-- **A version higher than Tabard knows is refused**, not guessed at, with a
-  message telling the member an officer needs to update the bot.
-- **Newer replaces, older is refused.** One card per Discord account per
-  character key; a card whose `generated` is not newer than the stored one is
-  turned away, so pasting last week's card by mistake cannot roll anyone back.
+- **Sorted keys, and an empty table is `[]`.** The encoder (`Core/JSON.lua`,
+  `JSON.EncodeSorted`) keeps Journey Tracker's rules, which the journey model
+  depends on: object keys sorted, a table keyed 1..n is an array, and so is an
+  empty one. Any map can arrive as `[]` when empty. Campfire's tests pin the
+  rules to Journey Tracker's own fixture.
+- **`stats.money` is Campfire's money ledger**, in the field names the model has
+  always read. A journey carried over from Journey Tracker adds what that addon
+  counted before the move, and the ledger counts toward it only from the move,
+  so nothing is counted twice. `stats.social.unique` is Campfire's count of
+  people grouped with.
+- **Named, and only the member.** The export names the member's own character.
+  It never carries another player's name, chat text, a Battle.net identifier or
+  a GUID. `campfire.people` is counts. Campfire's tests check a real export for
+  the name of a person in the journal and for GUIDs.
+- **Ledger categories rest on proof or on the window.** Most are proven by a game
+  action and its amount; loot, class training and single-item repairs are named
+  by the window that was open. The export does not split them; the ledger in game
+  does (`certainty`).
+- **Tabard treats every field as typed by hand.** Names are letters only, realms
+  letters, digits, spaces and apostrophes, numbers bounded, and the character key
+  recomputed rather than trusted. A JT1 string is refused with a message: it has
+  no name, so there is nobody to file it under.
+- **A version higher than Tabard knows is refused**, not guessed at.
+- **Newer replaces, older is refused**, per member, character and milestone: the
+  journey now and each saved milestone (10 to 60) are kept separately, each with
+  its own recap link, and a stale paste cannot roll anyone back.
 - **Verified means owned.** Where the character is one the member owns in
-  Tabard's identity graph (same name, same realm slug, verified or attested
-  ownership), the card reads as a linked character. Otherwise it reads as
-  self-reported. WoW: Forever characters may not be in the profile API that
-  `/link` reads, so self-reported is the expected case, not an error.
-- **Both repos carry the same fixture**: `tests/fixtures/cfj1-from-addon.txt`
-  in `rateaplayer` (made by the addon's Lua encoder, and a test fails if the
-  encoder drifts from it) and `test/fixtures/cfj1-from-addon.txt` in `tabard`
-  (decoded field by field). Change the card and both move together.
+  Tabard's identity graph, the journey reads as a linked character; otherwise it
+  reads as self-reported. WoW: Forever characters may not be in the profile API
+  `/link` reads, so self-reported is the expected case.
+- **Both repos carry the same fixture**: `tests/fixtures/cf1-from-addon.txt` in
+  `rateaplayer` (a scripted evening through the real code, and a test fails if
+  the export drifts from it) and `test/fixtures/cf1-from-addon.txt` in `tabard`,
+  which decodes it field by field. Change the export and both move together.
+  Tabard also keeps a richer `cf1-synthetic.txt`, built from Journey Tracker's
+  own fixture, for the cases one short scripted evening does not reach.
 
-### The recap stays the site's
+### The recap
 
-`JT1:` is unchanged by the move into Campfire. Its encoder is pinned to
-Journey Tracker's own fixture (`tests/fixtures/jt1-recap-testexport.txt`), so
-journeytracker.dev decodes a Campfire recap exactly as it decoded one from the
-standalone addon. The only visible difference is `addonVersion`, which now
-reads `campfire-<version>`. A member who pastes a recap into `/journey share`
-is told which button makes the guild card instead.
+Tabard serves the recap page Journey Tracker built (credited on the page), fed
+from the stored export, with "ranked against everyone" become "ranked against
+the guild". The page's map art is the game's own and is not in either repo: the
+member who runs Tabard extracts it once from a WoW: Forever install, and Tabard
+serves it as static files. Until then the page leaves the map out rather than
+showing broken images. The steps are in Tabard's README.
 
 ## The envelope (PLW2)
 
@@ -765,11 +769,12 @@ it holds rather than merging into it.
 in front of `/api/share/*` with a five-minute TTL, and its own migration says
 so. Everything in it is reconstructible by fetching again.
 
-**Tabard does own journey cards**, and that is the exception that proves the
+**Tabard does own shared journeys**, and that is the exception that proves the
 rule rather than breaks it: nothing else holds them. The addon keeps the
-journey; the card is a copy the member made and handed over, and `journey_card`
-is the only place it lives. So `/journey forget` deletes it outright, and
-`/unlink purge:true` deletes it too and counts it in the leftover check.
+journey; the export is a copy the member made and handed over, and Tabard's
+`journey` table is the only place it lives. So `/journey forget` deletes it
+outright, and `/unlink purge:true` deletes it too and counts it in the leftover
+check.
 
 ### The state API
 
